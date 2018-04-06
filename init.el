@@ -29,11 +29,11 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") )
 (add-to-list 'package-archives
 	     '("org" . "http://orgmode.org/elpa/"))
+(require 'user-fun)
 
 (require 'dash)
 (require 'pos-tip)
 (require 'keyboard)
-(require 'user-fun)
 ;;======================================================================
 
 ;;; Basic
