@@ -1,0 +1,25 @@
+# Object file
+*.o
+
+recentf
+
+url/
+semanticdb/
+eshell/
+auto-save-list/
+/elpa/archives/
+ac-comphist.dat
+gnupg/
+var/
+
+abbrev_defs
+ede-projects.el
+
+# ecb files
+init.el.before_ecb_2.50
+init.el.before_ecb_2.50__1
+
+elpa/
+
+# vim .log files
+*.log

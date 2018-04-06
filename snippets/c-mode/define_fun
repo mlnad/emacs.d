@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: define_fun
+# key: df
+# --
+${type} ${name}(${args})
+{
+	$0
+}
