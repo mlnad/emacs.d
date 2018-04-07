@@ -25,6 +25,7 @@
 (package-initialize)
 
 (require 'package)
+(require 'cl)
 
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") )
 (add-to-list 'package-archives
@@ -44,7 +45,7 @@
               auto-image-file-mode t
               initial-scratch-message nil
               inhibit-splash-screen t
-	      initial-major-mode 'text-mode
+              initial-major-mode 'text-mode
               )
 
 ;; Set font
