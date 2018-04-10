@@ -11,9 +11,11 @@ auto-save-list/
 ac-comphist.dat
 gnupg/
 var/
+.python-enviroment/
 
 abbrev_defs
 ede-projects.el
+srecode-map.el
 
 # ecb files
 init.el.before_ecb_2.50
