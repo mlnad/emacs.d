@@ -49,7 +49,7 @@
               )
 
 ;; Set font
-(set-frame-font "Consolas 11")
+;; (set-frame-font "Consolas 11")
 ;;(set-frame-font "Source Code Pro 11")
 (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp"))
 
@@ -101,7 +101,7 @@
 ;; (powerline-default-theme)
 (setq dim-list
       '(helm-mode company-mode yas-minor-mode abbrev-mode org-autolist-mode
-		  image-mode iimage-mode visual-line-mode))
+		  image-mode iimage-mode visual-line-mode eldoc-mode))
 (hide-minor-mode dim-list)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode dim-list)))
 
