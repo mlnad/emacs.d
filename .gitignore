@@ -11,6 +11,7 @@ auto-save-list/
 ac-comphist.dat
 gnupg/
 var/
+.python-enviroment/
 
 abbrev_defs
 ede-projects.el
