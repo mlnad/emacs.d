@@ -102,5 +102,9 @@ locate PACKAGE."
     (diminish list))
   )
 
+(defun tty-setup-theme ()
+    (disable-theme 'atom-one-dark)
+    )
+
 (provide 'user-fun)
 ;;; user-fun.el ends here

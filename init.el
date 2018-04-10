@@ -40,6 +40,7 @@
 ;;; Basic
 ;; ===================================================================================
 (load-theme 'atom-one-dark)
+(add-hook 'tty-setup-hook 'tty-setup-theme)
 (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
               visible-bell t ;; Flash the frame to represent a bell
               auto-image-file-mode t
