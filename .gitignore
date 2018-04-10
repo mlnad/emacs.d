@@ -15,6 +15,7 @@ var/
 
 abbrev_defs
 ede-projects.el
+srecode-map.el
 
 # ecb files
 init.el.before_ecb_2.50
