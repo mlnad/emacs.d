@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: math
+# key: mai
+# --
+#include <math.h>

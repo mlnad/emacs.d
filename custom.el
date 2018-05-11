@@ -32,7 +32,7 @@
      mode-line-misc-info mode-line-end-spaces)))
  '(package-selected-packages
    (quote
-    (diminish company-jedi window-jump cnfonts multi-term ebdb helm helm-ebdb lispy atom-one-dark-theme java-imports pcache avy-menu epic list-utils iedit projectile paredit elpy matlab-mode org2ctex company-go page-break-lines company-quickhelp disaster clang-format magit anzu auto-complete auto-complete-pcmp avy bind-key company-c-headers company counsel ecb f flycheck go-mode js2-mode markdown-mode org org-ac org-plus-contrib org-bullets org-autolist pkg-info popup popwin solarized-theme s tablist ws-butler undo-tree use-package ycmd company-ycmd youdao-dictionary zencoding-mode deft company-c-headers)))
+    (wolfram-mode diminish company-jedi window-jump cnfonts multi-term ebdb helm helm-ebdb lispy atom-one-dark-theme java-imports pcache avy-menu epic list-utils iedit projectile paredit elpy matlab-mode org2ctex company-go page-break-lines company-quickhelp disaster clang-format magit anzu auto-complete auto-complete-pcmp avy bind-key company-c-headers company counsel ecb f flycheck go-mode js2-mode markdown-mode org org-ac org-plus-contrib org-bullets org-autolist pkg-info popup popwin solarized-theme s tablist ws-butler undo-tree use-package ycmd company-ycmd youdao-dictionary zencoding-mode deft company-c-headers)))
  '(recentf-mode 1)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)

@@ -2,7 +2,7 @@
 # name: define_fun
 # key: df
 # --
-${type} ${name}(${args})
+${type} ${name}(${})
 {
 	$0
 }
