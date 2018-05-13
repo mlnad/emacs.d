@@ -2,10 +2,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'semantic)
-(require 'company)
-(require 'company-c-headers)
-
+;; package init
 (defvar c-cpp-packages)
 (defvar usr-include-path)
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
@@ -25,6 +22,11 @@
 
 (dolist (c-cpp-pkg c-cpp-packages)
   (require-package c-cpp-pkg))
+
+;;; End with package init and start code
+(require 'semantic)
+(require 'company)
+(require 'company-c-headers)
 
 (when *is-a-linux*
   (setq usr-include-path

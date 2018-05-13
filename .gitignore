@@ -12,6 +12,7 @@ ac-comphist.dat
 gnupg/
 var/
 .python-enviroment/
+custom.el
 
 abbrev_defs
 ede-projects.el
