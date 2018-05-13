@@ -31,13 +31,15 @@
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
 
 (require 'user-fun)
+(require-package 'dash)
+(require-package 'use-package)
+(require-package 'undo-tree)
+(require-package 'multi-term)
+
 (require 'dash)
 (require 'pos-tip)
 (require 'keyboard)
 
-(require-package 'use-package)
-(require-package 'undo-tree)
-(require-package 'multi-term)
 ;;======================================================================
 
 ;;; Basic
