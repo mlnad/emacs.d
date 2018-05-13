@@ -95,10 +95,10 @@
 (require-package 'org)
 (use-package org
   :init
+  (require-package 'org-ac)
   (require-package 'org2ctex)
   (require-package 'org-autolist)
   (require-package 'org-plus-contrib)
-  (require-package 'org-ac)
   
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook 'turn-on-font-lock)
