@@ -9,6 +9,7 @@
 ;;; Get init.el
 ;;---------------------------------------------------------------------------
 (defun mark/open-init-file()
+  "Find and open the init.el."
   (interactive)
   (find-file "~/.emacs.d/init.el"))
 ;;---------------------------------------------------------------------------
@@ -32,19 +33,19 @@
 
 ;;; Packages
 ;;-----------------------------------------------------------------------
-(defun mark/package-installed-p ()
-  (interactive)
+;;(defun mark/package-installed-p ()
+;;  (interactive)
 
-  (loop for pkg in package-selected-packages
-        when (not (package-installed-p pkg)) do (return nil)
-        finally (return t)))
+;;  (loop for pkg in package-selected-packages
+;;        when (not (package-installed-p pkg)) do (return nil)
+;;        finally (return t)))
 
-(unless (mark/package-installed-p)
-  (message "%s" "Refreshing package database...")
-  (package-refresh-contents)
-  (dolist (pkg package-selected-packages)
-    (when (not (package-installed-p pkg))
-      (package-install pkg))))
+;; (unless (mark/package-installed-p)
+;;  (message "%s" "Refreshing package database...")
+;;  (package-refresh-contents)
+;;  (dolist (pkg package-selected-packages)
+;;    (when (not (package-installed-p pkg))
+;;      (package-install pkg))))
 
 (if (fboundp 'with-eval-after-load)
     (defalias 'after-load 'with-eval-after-load)
@@ -103,6 +104,7 @@ locate PACKAGE."
   )
 
 (defun tty-setup-theme ()
+  "Disable theme when use terminal."
     (disable-theme 'atom-one-dark)
     )
 

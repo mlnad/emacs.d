@@ -5,6 +5,12 @@
 ;; Emacs started.
 
 ;;; Code:
+(require-package 'swiper)
+(require-package 'youdao-dictionary)
+(require-package 'window-jump)
+(require-package 'avy-menu)
+(require-package 'avy)
+(require-package 'counsel)
 
 ;;; helm
 ;; ==================================================================

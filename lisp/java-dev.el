@@ -10,6 +10,8 @@
  ;;debug-on-error t
  )
 
+(require-package 'java-imports)
+
 (custom-set-variables
  '(jdee-server-dir "~/.emacs.d/jdee-server"))
 ;; ===================================================================================

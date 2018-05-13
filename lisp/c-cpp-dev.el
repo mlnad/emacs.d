@@ -8,6 +8,8 @@
 
 (defvar c-cpp-packages)
 (defvar usr-include-path)
+(defconst *is-a-linux* (eq system-type 'gnu/linux))
+(defconst *is-a-win* (eq system-type 'windows-nt))
 
 (setq c-cpp-packages
       '(cc-mode
@@ -21,12 +23,19 @@
         ycmd
         ))
 
-(setq usr-include-path
-      '("/usr/include/c++/5.4.0"
-	"c:/msys64/mingw64/x86_64-w64-mingw32/include"
-	"c:/msys64/mingw64/x86_64-w64-mingw32/include/c++"
-	"c:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.12.25827/include"
-       ))
+(dolist (c-cpp-pkg c-cpp-packages)
+  (require-package c-cpp-pkg))
+
+(when *is-a-linux*
+  (setq usr-include-path
+	'("/usr/include/c++5.4.0")))
+(when *is-a-win*
+  (setq usr-include-path
+	'(
+	  "c:/msys64/mingw64/x86_64-w64-mingw32/include"
+	  "c:/msys64/mingw64/x86_64-w64-mingw32/include/c++"
+	)))
+
 
 (defun c-cpp/cc-mode ()
   "Init cc mode for my Emacs."

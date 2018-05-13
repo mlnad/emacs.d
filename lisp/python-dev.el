@@ -4,7 +4,11 @@
 
 (require 'company)
 
+
 (defun python-config()
+  "Config python mode for Emacs."
+  (require-package 'elpy)
+  (require-package 'company-jedi)
   (elpy-enable)
   (add-to-list 'company-backends '(company-jedi company-files))
   )
