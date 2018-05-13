@@ -37,7 +37,6 @@
 (require-package 'multi-term)
 
 (require 'dash)
-(require 'pos-tip)
 (require 'keyboard)
 
 ;;======================================================================
@@ -175,6 +174,9 @@
 ;;; Company
 ;; ===================================================================================
 (require-package 'company)
+(require-package 'company-quickhelp)
+
+(require 'pos-tip)
 (require 'company)
 (add-hook 'prog-mode-hook 'company-mode) ;; Only load company mode when you are programming
 (setq-default company-backends (delete 'company-semantic company-backends))
