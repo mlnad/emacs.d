@@ -81,7 +81,11 @@
 ;;; Helm
 ;; ===================================================================================
 (require-package 'helm)
-(require-package 'helm-ebdb)
+(let ((minver "25.1"))
+  (if (version< emacs-version minver)
+      (message "Emacs is too old to install ebdb.")
+    (require-package 'helm-ebdb)))
+
 (require 'helm-config)
 (helm-mode 1)
 ;; ===================================================================================
