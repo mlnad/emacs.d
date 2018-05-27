@@ -34,9 +34,11 @@
 (when *is-a-win*
   (setq usr-include-path
 	'(
-	  "c:/msys64/mingw64/x86_64-w64-mingw32/include"
-	  "c:/msys64/mingw64/x86_64-w64-mingw32/include/c++"
-	)))
+	  "C:\\Program Files\\mingw-w64\\mingw64\\x86_64-w64-mingw32\\include"
+	  "C:\\Program Files\\mingw-w64\\mingw64\\include"
+	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include"
+	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++"
+	  )))
 
 
 (defun c-cpp/cc-mode ()

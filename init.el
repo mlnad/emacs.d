@@ -7,7 +7,7 @@
 ;; This file is
 
 ;;; Code:
-(setq debug-on-error t)
+;; (setq debug-on-error t)
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
@@ -99,13 +99,16 @@
   (require-package 'org2ctex)
   (require-package 'org-autolist)
   (require-package 'org-plus-contrib)
+
+  (require 'org2ctex)
+  (org2ctex-toggle t)
   
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook 'turn-on-font-lock)
   (add-hook 'message-mode-hook 'turn-on-orgstruct)
   (add-hook 'message-mode-hook 'turn-on-orgstruct++)
   (add-hook 'org-mode-hook (lambda () (org-autolist-mode)));;enable org autolist
-  (add-hook 'org-mode-hook (lambda () (setq truncate-lines nil)))
+;;  (add-hook 'org-mode-hook (lambda () (setq truncate-lines nil)))
   (add-hook 'org-mode-hook 'iimage-mode)
   (add-hook 'org-mode-hook 'visual-line-mode)
 )

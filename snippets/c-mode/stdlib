@@ -1,5 +1,5 @@
 # -*- mode: snippet -*-
 # name: stdlib
-# key: std
+# key: lib
 # --
 #include <stdlib.h>

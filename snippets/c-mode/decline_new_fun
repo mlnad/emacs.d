@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: decline new function
+# key: dcf/
+# --
+${type} ${name}(${});

@@ -8,7 +8,7 @@
 
 ;;; Get init.el
 ;;---------------------------------------------------------------------------
-(defun mark/open-init-file()
+(defun open-init-file()
   "Find and open the init.el."
   (interactive)
   (find-file "~/.emacs.d/init.el"))
