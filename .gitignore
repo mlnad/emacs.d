@@ -26,3 +26,6 @@ elpa/
 
 # vim .log files
 *.log
+
+# session files
+session.*
