@@ -2,6 +2,7 @@
 *.o
 
 recentf
+eww-bookmarks
 
 url/
 semanticdb/
