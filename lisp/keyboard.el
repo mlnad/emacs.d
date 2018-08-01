@@ -36,7 +36,7 @@
 ;;; Youdao search
 ;;==================================================================
 (global-set-key (kbd "M-s s") 'youdao-dictionary-search-from-input)
-(global-set-key (kbd "M-s t") 'youdao-dictionary-search-at-point)
+(global-set-key (kbd "M-s t") 'youdao-dictionary-search-at-point+)
 ;;==================================================================
 
 ;;; Swiper

@@ -88,6 +88,8 @@
 
 (require 'helm-config)
 (helm-mode 1)
+
+;; (setq helm-gtags-ignore-case t)
 ;; ===================================================================================
 
 ;;; Org
@@ -132,8 +134,9 @@
 
 (add-hook 'after-init-hook 'reapply-themes)
 
-(add-hook 'tty-setup-hook 'tty-setup-theme)
+(add-hook 'tty-setup-hook 'tty-setup-theme) ;; disable theme when use a terminal
 
+;; Disable tool bar etc. to simple the Emacs
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp 'set-scroll-bar-mode)
@@ -148,6 +151,7 @@
 (let ((no-border '(internal-border-width . 0)))
   (add-to-list 'default-frame-alist no-border)
   (add-to-list 'initial-frame-alist no-border))
+
 
 (setq-default mode-line-format ;; set mode line
 	      (quote

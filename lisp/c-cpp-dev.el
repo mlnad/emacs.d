@@ -115,7 +115,8 @@
   )
 
 (defun c-cpp/semantic()
-  (add-to-hook 'semantic-mode '(c-mode-hook cpp-mode-hook))
+  "Active semantic mode at c/cpp."
+  (add-to-hook 'semantic-mode '(c-mode-hook c++-mode-hook))
   )
 
 (defun c-cpp/ycmd ()
