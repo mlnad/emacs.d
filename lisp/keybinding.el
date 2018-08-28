@@ -1,29 +1,33 @@
-;;; init-keyboard.el --- This is a file about keyboard setting
+;;; keybinding.el --- This is a file about keyboard setting
 
 ;;; Commentary:
 ;; Here gets some keyboards that could be used when the
 ;; Emacs started.
 
-;;; Code:
-(require-package 'swiper)
-(require-package 'youdao-dictionary)
-(require-package 'window-jump)
-(require-package 'avy-menu)
-(require-package 'avy)
-(require-package 'counsel)
+;;; code:
+(require 'user-fun)
+(require 'basic)
+
+(defun install-key-pack ()
+  " "
+  (let ((key-pack-list
+        '(evil)))
+    (dolist (pack key-pack-list)
+      (require-package pack))
+    ))
+(install-key-pack)
+
+;;; Evil
+;;=====================================================================
+(require 'evil)
+(evil-mode 1)
+;;=====================================================================
 
 ;;; helm
 ;; ==================================================================
 (global-set-key (kbd "M-x") #'helm-M-x)
 (global-set-key (kbd "C-x C-f") #'helm-find-files)
 ;; ==================================================================
-
-;;; Different edit mode
-;;===================================================================
-(global-set-key (kbd "C-c M-d") 'day-editor-mode)
-(global-set-key (kbd "C-c M-n") 'night-editor-mode)
-(global-set-key (kbd "C-c M-c") 'console-editor-mode)
-;;===================================================================
 
 ;;; Org mode global keys
 ;;==================================================================
@@ -39,31 +43,9 @@
 (global-set-key (kbd "M-s t") 'youdao-dictionary-search-at-point)
 ;;==================================================================
 
-;;; Swiper
+;;; Search
 ;;==================================================================
-(global-set-key "\C-s" 'swiper)
-;;(global-set-key (kbd "C-<f6>") 'ivy-resume)
-;;(global-set-key (kbd "M-x") 'counsel-M-x)
-;;(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-;;(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-;;(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-;;(global-set-key (kbd "<f1> l") 'counsel-find-library)
-;;(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-;;(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-;;(global-set-key (kbd "C-c g") 'counsel-git)
-;;(global-set-key (kbd "C-c j") 'counsel-git-grep)
-;;(global-set-key (kbd "C-c k") 'counsel-ag)
-;;(global-set-key (kbd "C-x l") 'counsel-locate)
-;;(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-;;(define-key read-expression-map (kbd "C-r") 'counsel-expression-history)
-;;========================================================================
-
-;;; Flymake
-;;========================================================================
-(global-set-key (kbd "\C-cf") 'flymake-display-err-menu-for-current-line)
-(global-set-key (kbd "\C-c\C-f") 'flymake-goto-next-error)
-(global-set-key (kbd "\C-c\C-b") 'flymake-goto-prev-error)
-;;========================================================================
+(global-set-key "\C-s" 'helm-swoop-without-pre-input)
 
 ;;; Recentf mode
 ;;------------------------------------------------------------------------
@@ -85,5 +67,5 @@
 
 
 
-(provide 'keyboard)
+(provide 'keybinding)
 ;;; keyboard.el ends here

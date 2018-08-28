@@ -4,6 +4,11 @@
 ;; License: See the LICENSE in the .emacs.d/
 ;;
 ;;; Commentary:
-;; 
+;;
 
 ;;; Code:
+(require 'user-fun)
+
+(setq version-control-pack-list
+      '(maigt
+        ))
