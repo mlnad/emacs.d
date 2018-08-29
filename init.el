@@ -56,7 +56,6 @@
 
 ;; ===================================================================================
 
-;;; Face
 ;; ===================================================================================
 ;; (setq-default custom-enabled-themes '(solarized-light))
 (setq solarized-use-variable-pitch nil)
@@ -69,6 +68,7 @@
 (add-hook 'after-init-hook 'reapply-themes)
 ;; (add-hook 'tty-setup-hook 'tty-setup-theme)
 
+;; Disable tool bar etc. to simple the Emacs
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp 'set-scroll-bar-mode)
@@ -83,6 +83,7 @@
 ;; (let ((no-border '(internal-border-width . 0)))
 ;;   (add-to-list 'default-frame-alist no-border)
 ;;   (add-to-list 'initial-frame-alist no-border))
+
 
 (setq-default mode-line-format ;; set mode line
 	      (list
