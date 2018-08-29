@@ -8,65 +8,6 @@
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
 (defconst *is-a-win* (eq system-type 'windows-nt))
 
-(setq c-cpp-packages
-      '(cc-mode
-        clang-format
-        company
-        company-c-headers
-        company-ycmd
-        disaster
-        flycheck
-        semantic
-        ycmd
-        ))
-
-(dolist (c-cpp-pkg c-cpp-packages)
-  (require-package c-cpp-pkg))
-
-;;; End with package init and start code
-(require 'semantic)
-(require 'company)
-(require 'company-c-headers)
-
-(when *is-a-linux*
-  (setq usr-include-path
-	'("/usr/include/c++5.4.0")))
-(when *is-a-win*
-  (setq usr-include-path
-	'(
-	  "C:\\Program Files\\mingw-w64\\mingw64\\x86_64-w64-mingw32\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++"
-	  )))
-
-
-(defun c-cpp/cc-mode ()
-  "Init cc mode for my Emacs."
-  (use-package cc-mode
-    :defer t
-    :init
-    (progn
-      (add-to-list 'auto-mode-alist
-                   `("\\.h\\'" . ,'c++-mode)))
-    :config
-    (progn
-      (require 'compile)
-;;      (c-toggle-auto-newline 1)
-      ;; Disable electric indentation
-      (setq-default c-electric-flag nil)
-
-      (setq c-basic-offset 4)
-      
-      (setq c-default-style '((java-mode . "java")
-                              (other . "linux")))
-
-;;      (add-to-list 'c-cleanup-list 'space-before-funcall)
-      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
-      (add-to-list 'c-cleanup-list 'comment-close-slash)
-      ))
-  )
-
 (defun c-cpp/clang-format ()
   "A clang-format package initilize."
   (use-package clang-format
