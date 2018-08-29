@@ -7,6 +7,7 @@
 ;; This file is
 
 ;;; Code:
+;;======================================================================================
 ;; (setq debug-on-error t)
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
@@ -21,8 +22,8 @@
 (defconst *is-a-mac* (eq system-type 'darwin))
 ;;-----------------------------------------------------------------------
 
-(require 'basic)
 (require 'cl)
+(require 'cl-lib)
 ;;======================================================================
 
 ;;; My Functions
@@ -30,12 +31,12 @@
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
-  (find-file "~/.emacs.d/init.el"))
+  (find-file (concat user-emacs-directory "init.el")))
 
 (defun load-init-file()
   "Load init.el."
   (interactive)
-  (load-file "~/.emacs.d/init.el")
+  (load-file (concat user-emacs-directory "init.el"))
   )
 
 ;;; Rename the current file
@@ -149,11 +150,10 @@ locate PACKAGE."
      nil)))
 
 
-;; Fire up package.el
 (package-initialize)
 
-(require 'cl-lib)
 
+;;; Install some basic packages.
 (let ((basic-edit-pack-list
        '(dash swiper youdao-dictionary deft
               window-jump avy avy-menu counsel use-package undo-tree multi-term
@@ -162,30 +162,48 @@ locate PACKAGE."
               )))
   (dolist (pack basic-edit-pack-list)
     (require-package pack)))
-
-(let ((basic-maybe-pack-list
-       '(helm-ebdb)))
-  (dolist (pack basic-maybe-pack-list)
-    (maybe-require-package pack)))
 ;;=========================================================================================
 
 ;;; Completion
 ;;=========================================================================================
-(require 'pos-tip)
-(require 'company)
-(add-hook 'prog-mode-hook 'company-mode) ;; Only load company mode when you are programming
-(setq-default company-backends (delete 'company-semantic company-backends))
+(let ((completion-pack-list
+       '(company company-quickhelp helm yasnippet helm-ebdb)))
+  (dolist (pack completion-pack-list)
+    (maybe-require-package pack)))
 
+;; Company
+(use-package company
+  :config
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 2)
+  (setq tab-always-indent 'complete)
+  (add-hook 'prog-mode-hook 'company-mode)
+  (diminish 'company-mode)
+  (setq-default company-backends (delete 'company-semantic company-backends))
+  )
+
+;; Use tab as complete
 (setq tab-always-indent 'complete)
-(add-to-list 'completion-styles 'initials t)
-(add-hook 'after-init-hook 'company-quickhelp-mode)
 
-(require 'yasnippet)
-(add-hook 'prog-mode-hook 'yas-reload-all)
-(add-hook 'prog-mode-hook #'yas-minor-mode)
+;; YASnippte
+(use-package yasnippet
+  :init
+  (add-hook 'prog-mode-hook #'yas-minor-mode)
+  :config
+  (add-hook 'prog-mode-hook 'yas-reload-all)
+  (diminish 'yas-minor-mode)
+)
 
-(require 'helm-config)
-(helm-mode 1)
+;; Helm
+(use-package helm
+  :init
+  :bind (("M-x" . #'helm-M-x)
+         ("C-x C-f" . #'helm-find-files)
+         ("C-s" . 'helm-swoop))
+  :config
+  (helm-mode 1)
+  (diminish 'helm-mode)
+  )
 ;;=========================================================================================
 
 ;;; Require *.el files
@@ -196,18 +214,17 @@ locate PACKAGE."
 
 ;; ===================================================================================
 
-;;; Face
+;;; Interface
 ;; ===================================================================================
 ;; (setq-default custom-enabled-themes '(solarized-light))
-(setq solarized-use-variable-pitch nil)
-(setq solarized-use-less-bold t)
-(setq solarized-use-more-italic t)
-(setq solarized-emphasize-indicators nil)
-(setq solarized-scale-org-headlines nil)
+;; (setq solarized-use-variable-pitch nil)
+;; (setq solarized-use-less-bold t)
+;; (setq solarized-use-more-italic t)
+;; (setq solarized-emphasize-indicators nil)
+;; (setq solarized-scale-org-headlines nil)
 ;; (setq solarized-high-contrast-mode-line t)
 
 (add-hook 'after-init-hook 'reapply-themes)
-;; (add-hook 'tty-setup-hook 'tty-setup-theme)
 ;;------------------------------------------------------------------------------------
 
 (when (fboundp 'tool-bar-mode)
@@ -247,7 +264,7 @@ locate PACKAGE."
   "This function hide HIDED-LIST from the modeline to save the space of modeline."
   (let ((dim-list
          ;; minor modes list followed will not show in the mode line.
-         '(helm-mode company-mode yas-minor-mode abbrev-mode org-autolist-mode
+         '(company-mode yas-minor-mode abbrev-mode org-autolist-mode
 		                 image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
         )
     (dolist (list dim-list)
@@ -277,40 +294,31 @@ locate PACKAGE."
 ;; c/cpp mode
 ;;-----------------------------------------------------------------------------------
 (let ((c-cpp-packages
-       '(cc-mode
-         clang-format
-         company
-         company-c-headers
-         company-ycmd
-         disaster
-         flycheck
-         semantic
-         ycmd
+       '(cc-mode clang-format company company-c-headers company-ycmd disaster
+         flycheck semantic ycmd
          )))
   (dolist (c-cpp-pkg c-cpp-packages)
     (require-package c-cpp-pkg))
   )
 
-;;; End with package init and start code
-(require 'semantic)
-(require 'company)
-(require 'company-c-headers)
+(defun init-c-cpp-dev ()
+  " "
+  (use-package company-c-headers
+    :config
+    (add-to-list 'company-backends 'company-c-headers)
+    )
+  (when *is-a-win*
+    (let ((usr-include-path
+	        '(
+	          "C:\\msys64\\mingw64\\x86_64-w64-mingw32\\include"
+	          "C:\\msys64\\mingw64\\include"
+	          "C:\\msys64\\mingw64\\include\\c++\\8.2.0"
+	          )))
+      (dolist (list usr-include-path)
+        (add-to-list 'company-c-headers-path-system list))
+      ))
 
-(when *is-a-linux*
-  (setq usr-include-path
-	'("/usr/include/c++5.4.0")))
-(when *is-a-win*
-  (setq usr-include-path
-	'(
-	  "C:\\Program Files\\mingw-w64\\mingw64\\x86_64-w64-mingw32\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include"
-	  "C:\\Program Files\\mingw-w64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\c++"
-	  )))
 
-
-(defun c-cpp/cc-mode ()
-  "Init cc mode for my Emacs."
   (use-package cc-mode
     :defer t
     :init
@@ -327,15 +335,38 @@ locate PACKAGE."
                               (other . "linux")))
 
       (add-to-list 'c-cleanup-list 'space-before-funcall)
-;;      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
+    ;;      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
       (add-to-list 'c-cleanup-list 'comment-close-slash)
       ))
+
+  (use-package clang-format
+    )
   )
+(add-hook 'c-mode-hook 'init-c-cpp-dev)
+(add-hook 'c++-mode-hook 'init-c-cpp-dev)
 
+;; emacs-lisp
 ;;-----------------------------------------------------------------------------------
-
+(defun init-emacs-lisp-dev ()
+  (use-package eldoc
+    :config
+    (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
+  )
 ;;-----------------------------------------------------------------------------------
-
+;; python
+(defun init-python-dev ()
+  (setq python-indent-offset 4)
+  (setq python-shell-interpreter "python3")
+  (let ((python-dev-pack
+        '(elpy)))
+    (dolist (pack python-dev-pack)
+      (maybe-require-package pack)))
+  (use-package elpy
+    :config
+    (elpy-enable)
+    )
+  )
+(add-hook 'python-mode-hook 'init-python-dev)
 ;;====================================================================================
 
 ;;; Keybinding
@@ -358,10 +389,6 @@ locate PACKAGE."
 (require 'evil)
 (evil-mode 1)
 
-;;; helm
-(global-set-key (kbd "M-x") #'helm-M-x)
-(global-set-key (kbd "C-x C-f") #'helm-find-files)
-
 ;;; Org mode global keys
 (global-set-key "\C-cl" 'org-store-link)
 (global-set-key "\C-ca" 'org-agenda)
@@ -371,9 +398,6 @@ locate PACKAGE."
 ;;; Youdao search
 (global-set-key (kbd "M-s s") 'youdao-dictionary-search-from-input)
 (global-set-key (kbd "M-s t") 'youdao-dictionary-search-at-point)
-
-;;; Search
-(global-set-key "\C-s" 'helm-swoop-without-pre-input)
 
 ;;; Recentf mode
 (global-set-key (kbd "\C-cr") 'recentf-open-files)
