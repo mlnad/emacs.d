@@ -8,7 +8,7 @@
 
 ;;; Code:
 ;;======================================================================================
-;; (setq debug-on-error t)
+(setq debug-on-error t)
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
@@ -151,7 +151,7 @@ locate PACKAGE."
 
 
 (package-initialize)
-
+;;---------------------------------------------------------------------------------------
 
 ;;; Install some basic packages.
 (let ((basic-edit-pack-list
@@ -264,8 +264,8 @@ locate PACKAGE."
   "This function hide HIDED-LIST from the modeline to save the space of modeline."
   (let ((dim-list
          ;; minor modes list followed will not show in the mode line.
-         '(company-mode yas-minor-mode abbrev-mode org-autolist-mode
-		                 image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
+         '(abbrev-mode org-autolist-mode
+		                   image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
         )
     (dolist (list dim-list)
       (diminish list)))
@@ -347,6 +347,11 @@ locate PACKAGE."
 
 ;; emacs-lisp
 ;;-----------------------------------------------------------------------------------
+(let ((elisp-pack-dev
+      '(lispy)))
+  (dolist (pack elisp-pack-dev)
+    (require-package pack)))
+
 (defun init-emacs-lisp-dev ()
   (use-package eldoc
     :config
@@ -354,6 +359,11 @@ locate PACKAGE."
   )
 ;;-----------------------------------------------------------------------------------
 ;; python
+(let ((python-dev-pack
+      '(elpy)))
+  (dolist (pack python-dev-pack)
+    (require-package pack)))
+
 (defun init-python-dev ()
   (setq python-indent-offset 4)
   (setq python-shell-interpreter "python3")
@@ -367,7 +377,28 @@ locate PACKAGE."
     )
   )
 (add-hook 'python-mode-hook 'init-python-dev)
+
+;; Projectile
+;;-----------------------------------------------------------------------------------
+(let ((proj-pack-dev
+       '(projectile helm-projectile)))
+  (dolist (pack proj-pack-dev)
+    (require-package pack)))
+(defun init-project-dev ()
+  " "
+
+  (use-package projectile
+    :config
+    (projectile-mode +1)
+    (diminish 'projectile-mode)
+    (helm-projectile-on)
+    :bind (("C-c p f" . projectile-find-file)
+           ("C-c p h" . helm-projectile))
+    )
+  )
+(add-hook 'prog-mode-hook 'init-project-dev)
 ;;====================================================================================
+
 
 ;;; Keybinding
 ;;====================================================================================
