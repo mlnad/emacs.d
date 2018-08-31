@@ -18,6 +18,7 @@ jdee-server/
 abbrev_defs
 ede-projects.el
 srecode-map.el
+eww-bookmarks
 
 # ecb files
 init.el.before_ecb_2.50

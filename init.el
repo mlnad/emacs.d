@@ -234,6 +234,7 @@ locate PACKAGE."
 ;;(when (fboundp 'menu-bar-mode)
 ;;  (menu-bar-mode -1))
 (recentf-mode 1)
+(global-set-key (kbd "\C-cr") 'recentf-open-files)
 (show-paren-mode 1)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
@@ -273,9 +274,16 @@ locate PACKAGE."
 (add-hook 'after-init-hook 'hide-minor-mode)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
-;; (require 'powerline)
-;; (powerline-default-theme)
-;; ===================================================================================
+;;; window jump
+;;------------------------------------------------------------------------------------
+(use-package windows-jump
+  :bind
+  (("M-s h" . 'window-jump-right)
+   ("M-s l" . 'window-jump-left)
+   ("M-s k" . 'window-jump-up)
+   ("M-s j" . 'window-jump-down))
+  )
+;;===================================================================================
 
 ;;; Deft
 ;; ===================================================================================
@@ -283,6 +291,12 @@ locate PACKAGE."
 	      deft-directory "~/notebook"
 	      deft-recursive t
 	      )
+
+;;; youdao-dict
+;;------------------------------------------------------------------------------------
+(use-package youdao-dictionary
+  :bind (("M-s s" . 'youdao-dictionary-search-at-point+))
+  )
 ;; ===================================================================================
 
 ;;; Program
@@ -341,6 +355,10 @@ locate PACKAGE."
 
   (use-package clang-format
     )
+
+  (use-package disaster
+    :bind (("\C-cd" . 'disaster))
+    )
   )
 (add-hook 'c-mode-hook 'init-c-cpp-dev)
 (add-hook 'c++-mode-hook 'init-c-cpp-dev)
@@ -396,7 +414,7 @@ locate PACKAGE."
            ("C-c p h" . helm-projectile))
     )
   )
-(add-hook 'prog-mode-hook 'init-project-dev)
+(add-hook 'after-init-hook 'init-project-dev)
 ;;====================================================================================
 
 
@@ -427,21 +445,11 @@ locate PACKAGE."
 (global-set-key "\C-cb" 'org-iswitchb)
 
 ;;; Youdao search
-(global-set-key (kbd "M-s s") 'youdao-dictionary-search-from-input)
-(global-set-key (kbd "M-s t") 'youdao-dictionary-search-at-point)
 
 ;;; Recentf mode
-(global-set-key (kbd "\C-cr") 'recentf-open-files)
 
 ;;; disaster
-(global-set-key (kbd "\C-cd") 'disaster)
 
-;;; windows jump
-;;------------------------------------------------------------------------------------
-(global-set-key (kbd "M-s h") 'window-jump-right)
-(global-set-key (kbd "M-s l") 'window-jump-left)
-(global-set-key (kbd "M-s k") 'window-jump-up)
-(global-set-key (kbd "M-s j") 'window-jump-down)
 ;;====================================================================================
 
 (when (file-exists-p custom-file)
