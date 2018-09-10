@@ -23,6 +23,9 @@ srecode-map.el
 init.el.before_ecb_2.50
 init.el.before_ecb_2.50__1
 
+# projectile files
+projectile*
+
 elpa/
 
 # vim .log files
