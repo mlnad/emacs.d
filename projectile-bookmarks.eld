@@ -1,0 +1,1 @@
+("~/.emacs.d/" "d:/source/repos/cpython/")

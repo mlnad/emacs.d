@@ -1,7 +1,0 @@
-[user]
-	email = liumiaogemini@gmail.com
-	name = mark
-[credential]
-	helper = store
-[push]
-	default = simple
