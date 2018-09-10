@@ -276,10 +276,10 @@ locate PACKAGE."
 
 ;;; window jump
 ;;------------------------------------------------------------------------------------
-(use-package windows-jump
+(use-package window-jump
   :bind
-  (("M-s h" . 'window-jump-right)
-   ("M-s l" . 'window-jump-left)
+  (("M-s l" . 'window-jump-right)
+   ("M-s h" . 'window-jump-left)
    ("M-s k" . 'window-jump-up)
    ("M-s j" . 'window-jump-down))
   )
