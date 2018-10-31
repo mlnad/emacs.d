@@ -1,4 +1,4 @@
-;;; init.el --- M.Liu's emacs initilize file
+;; init.el --- M.Liu's emacs initilize file
 
 ;; Author: M.Liu <liumiaogemini@gmail.com>
 ;; License: See the LICENSE in the root directory.
@@ -8,7 +8,7 @@
 
 ;;; Code:
 ;;======================================================================================
-(setq debug-on-error t)
+;; (setq debug-on-error t)
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
@@ -84,10 +84,6 @@
     (add-to-list usr-list list))
   )
 
-(defun tty-setup-theme ()
-  "Disable theme when use terminal."
-    (disable-theme 'atom-one-dark)
-    )
 ;;=====================================================================================
 
 ;;; Basic
@@ -158,7 +154,7 @@ locate PACKAGE."
        '(dash swiper youdao-dictionary deft
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
-              company company-quickhelp cl-lib helm yasnippet
+              company company-quickhelp cl-lib helm helm-describe-modes yasnippet
               )))
   (dolist (pack basic-edit-pack-list)
     (require-package pack)))
@@ -199,7 +195,9 @@ locate PACKAGE."
   :init
   :bind (("M-x" . #'helm-M-x)
          ("C-x C-f" . #'helm-find-files)
-         ("C-s" . 'helm-swoop))
+         ("C-c s s" . 'helm-swoop-without-pre-input)
+	 ("C-c s r" . 'helm-swoop)
+	 ("C-x b" . 'helm-mini))
   :config
   (helm-mode 1)
   (diminish 'helm-mode)
@@ -216,14 +214,13 @@ locate PACKAGE."
 
 ;;; Interface
 ;; ===================================================================================
-;; (setq-default custom-enabled-themes '(solarized-light))
 ;; (setq solarized-use-variable-pitch nil)
 ;; (setq solarized-use-less-bold t)
 ;; (setq solarized-use-more-italic t)
 ;; (setq solarized-emphasize-indicators nil)
 ;; (setq solarized-scale-org-headlines nil)
 ;; (setq solarized-high-contrast-mode-line t)
-
+(setq-default custom-enabled-themes '(spacemacs-light))
 (add-hook 'after-init-hook 'reapply-themes)
 ;;------------------------------------------------------------------------------------
 
@@ -234,7 +231,6 @@ locate PACKAGE."
 ;;(when (fboundp 'menu-bar-mode)
 ;;  (menu-bar-mode -1))
 (recentf-mode 1)
-(global-set-key (kbd "\C-cr") 'recentf-open-files)
 (show-paren-mode 1)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
@@ -295,7 +291,7 @@ locate PACKAGE."
 ;;; youdao-dict
 ;;------------------------------------------------------------------------------------
 (use-package youdao-dictionary
-  :bind (("M-s s" . 'youdao-dictionary-search-at-point+))
+  :bind (("C-c y y" . 'youdao-dictionary-search-at-point+))
   )
 ;; ===================================================================================
 
@@ -447,6 +443,7 @@ locate PACKAGE."
 ;;; Youdao search
 
 ;;; Recentf mode
+(global-set-key (kbd "\C-c f r") 'recentf-open-files)
 
 ;;; disaster
 
