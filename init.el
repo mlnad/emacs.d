@@ -145,8 +145,9 @@ locate PACKAGE."
      (message "Couldn't install optional package `%s': %S" package err)
      nil)))
 
-
-(package-initialize)
+(if (< emacs-major-version 27.0)
+    (package-initialize)
+  )
 ;;---------------------------------------------------------------------------------------
 
 ;;; Install some basic packages.
@@ -202,6 +203,14 @@ locate PACKAGE."
   (helm-mode 1)
   (diminish 'helm-mode)
   )
+;;=========================================================================================
+
+;; Version Control
+;;=========================================================================================
+(let ((vc-pack-list
+       '(evil-magit gitconfig-mode gitconfig-mode git-commit magit magit-gitflow orgit)))
+  (dolist (pack vc-pack-list)
+    (require-package pack)))
 ;;=========================================================================================
 
 ;;; Require *.el files
@@ -262,7 +271,7 @@ locate PACKAGE."
   (let ((dim-list
          ;; minor modes list followed will not show in the mode line.
          '(abbrev-mode org-autolist-mode
-		                   image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
+		       image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
         )
     (dolist (list dim-list)
       (diminish list)))
