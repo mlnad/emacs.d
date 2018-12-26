@@ -353,8 +353,8 @@ locate PACKAGE."
       (setq c-default-style '((java-mode . "java")
                               (other . "linux")))
 
-      (add-to-list 'c-cleanup-list 'space-before-funcall)
-    ;;      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
+      ;;(add-to-list 'c-cleanup-list 'space-before-funcall)
+      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
       (add-to-list 'c-cleanup-list 'comment-close-slash)
       ))
 
