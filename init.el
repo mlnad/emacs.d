@@ -163,7 +163,7 @@ locate PACKAGE."
 ;;; Completion
 ;;=========================================================================================
 (let ((completion-pack-list
-       '(company company-quickhelp helm yasnippet helm-ebdb)))
+       '(company company-quickhelp helm helm-swoop yasnippet helm-ebdb)))
   (dolist (pack completion-pack-list)
     (maybe-require-package pack)))
 
