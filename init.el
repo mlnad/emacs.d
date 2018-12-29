@@ -211,6 +211,11 @@ locate PACKAGE."
        '(evil-magit gitconfig-mode gitconfig-mode git-commit magit magit-gitflow orgit)))
   (dolist (pack vc-pack-list)
     (require-package pack)))
+(use-package magit
+  :bind (("C-c g s" . 'magit-status)
+	 ("C-c g d" . 'magit-diff-range)
+	 )
+  )
 ;;=========================================================================================
 
 ;;; Require *.el files
@@ -270,7 +275,7 @@ locate PACKAGE."
   "This function hide HIDED-LIST from the modeline to save the space of modeline."
   (let ((dim-list
          ;; minor modes list followed will not show in the mode line.
-         '(abbrev-mode org-autolist-mode
+         '(abbrev-mode org-autolist-mode hs-minor-mode auto-revert-mode
 		       image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
         )
     (dolist (list dim-list)
@@ -309,6 +314,8 @@ locate PACKAGE."
 ;; Flycheck
 (require-package 'flycheck)
 (add-hook 'prog-mode-hook 'flycheck-mode)
+;; hs-minor-mode
+(add-hook 'prog-mode-hook 'hs-minor-mode)
 
 ;; c/cpp mode
 ;;-----------------------------------------------------------------------------------
@@ -336,14 +343,21 @@ locate PACKAGE."
       (dolist (list usr-include-path)
         (add-to-list 'company-c-headers-path-system list))
       ))
-
+  (when *is-a-linux*
+    (let ((usr-include-path
+	   '(
+	     "/usr/include/c++/7"
+	     )))
+      (dolist (list usr-include-path)
+	(add-to-list 'company-c-headers-path-system list))
+      ))
 
   (use-package cc-mode
     :defer t
     :init
     (progn
       (add-to-list 'auto-mode-alist
-                   `("\\.h\\'" . ,'c-mode)))
+                   `("\\.h\\'" . ,'c++-mode)))
     :config
     (progn
       (require 'compile)
@@ -376,6 +390,7 @@ locate PACKAGE."
     (require-package pack)))
 
 (defun init-emacs-lisp-dev ()
+  " "
   (use-package eldoc
     :config
     (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
@@ -388,6 +403,7 @@ locate PACKAGE."
     (require-package pack)))
 
 (defun init-python-dev ()
+  " "
   (setq python-indent-offset 4)
   (setq python-shell-interpreter "python3")
   (let ((python-dev-pack
@@ -416,7 +432,8 @@ locate PACKAGE."
     (diminish 'projectile-mode)
     (helm-projectile-on)
     :bind (("C-c p f" . projectile-find-file)
-           ("C-c p h" . helm-projectile))
+           ("C-c p h" . helm-projectile)
+	   ("C-c p p" . helm-projectile-switch-project))
     )
   )
 (add-hook 'after-init-hook 'init-project-dev)
@@ -452,7 +469,7 @@ locate PACKAGE."
 ;;; Youdao search
 
 ;;; Recentf mode
-(global-set-key (kbd "\C-c f r") 'recentf-open-files)
+(global-set-key (kbd "\C-c f r") 'helm-recentf)
 
 ;;; disaster
 
