@@ -31,3 +31,6 @@ elpa/
 
 # projectile files
 projectile*
+#
+# senssion files 
+session.*
