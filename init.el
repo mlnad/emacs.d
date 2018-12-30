@@ -27,7 +27,7 @@
 ;;======================================================================
 
 ;;; My Functions
-;;;=====================================================================================
+;;=====================================================================================
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
@@ -175,8 +175,9 @@ locate PACKAGE."
   (setq company-minimum-prefix-length 2)
   (setq tab-always-indent 'complete)
   (add-hook 'prog-mode-hook 'company-mode)
-  (diminish 'company-mode)
+  ;;(diminish 'company-mode)
   (setq-default company-backends (delete 'company-semantic company-backends))
+  :diminish company-mode
   )
 
 ;; Use tab as complete
@@ -188,7 +189,8 @@ locate PACKAGE."
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all)
-  (diminish 'yas-minor-mode)
+;;  (diminish 'yas-minor-mode)
+  :diminish yas-minor-mode
 )
 
 ;; Helm
@@ -201,7 +203,8 @@ locate PACKAGE."
 	 ("C-x b" . 'helm-mini))
   :config
   (helm-mode 1)
-  (diminish 'helm-mode)
+  :diminish helm-mode
+;;  (diminish 'helm-mode)
   )
 ;;=========================================================================================
 
@@ -309,6 +312,14 @@ locate PACKAGE."
   )
 ;; ===================================================================================
 
+;;; Org mode
+;;====================================================================================
+(let ((org-mode-pack-list
+       '(org evil-org helm-org-rifle org-pomodoro gnuplot htmlize org-present
+	     org-projectile org-autolist org2ctex)))
+  (dolist (org-pkg org-mode-pack-list)
+    (require-package org-pkg)))
+;;====================================================================================
 ;;; Program
 ;;====================================================================================
 ;; Flycheck
@@ -316,6 +327,8 @@ locate PACKAGE."
 (add-hook 'prog-mode-hook 'flycheck-mode)
 ;; hs-minor-mode
 (add-hook 'prog-mode-hook 'hs-minor-mode)
+;; semantic-mode
+(add-hook 'prog-mode-hook 'semantic-mode)
 
 ;; c/cpp mode
 ;;-----------------------------------------------------------------------------------
@@ -429,8 +442,9 @@ locate PACKAGE."
   (use-package projectile
     :config
     (projectile-mode +1)
-    (diminish 'projectile-mode)
     (helm-projectile-on)
+;;    (diminish 'projectile-mode)
+    :diminish projectile-mode
     :bind (("C-c p f" . projectile-find-file)
            ("C-c p h" . helm-projectile)
 	   ("C-c p p" . helm-projectile-switch-project))
