@@ -198,6 +198,7 @@ locate PACKAGE."
   :init
   :bind (("M-x" . #'helm-M-x)
          ("C-x C-f" . #'helm-find-files)
+	 ("C-c f f" . #'helm-find-files)
          ("C-c s s" . 'helm-swoop-without-pre-input)
 	 ("C-c s r" . 'helm-swoop)
 	 ("C-x b" . 'helm-mini))
@@ -214,11 +215,15 @@ locate PACKAGE."
        '(evil-magit gitconfig-mode gitconfig-mode git-commit magit magit-gitflow orgit)))
   (dolist (pack vc-pack-list)
     (require-package pack)))
-(use-package magit
-  :bind (("C-c g s" . 'magit-status)
-	 ("C-c g d" . 'magit-diff-range)
-	 )
+(defun init-vc-mode ()
+  " "
+  (use-package magit
+    :bind (("C-c g s" . 'magit-status)
+	   ("C-c g d" . 'magit-diff)
+	   )
+    )
   )
+(add-hook 'after-init-hook 'init-vc-mode)
 ;;=========================================================================================
 
 ;;; Require *.el files
@@ -411,7 +416,8 @@ locate PACKAGE."
 ;;-----------------------------------------------------------------------------------
 ;; python
 (let ((python-dev-pack
-      '(elpy)))
+       '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
+	      pyenv-mode pytest pyvenv helm-pydoc)))
   (dolist (pack python-dev-pack)
     (require-package pack)))
 
@@ -419,14 +425,52 @@ locate PACKAGE."
   " "
   (setq python-indent-offset 4)
   (setq python-shell-interpreter "python3")
-  (let ((python-dev-pack
-        '(elpy)))
-    (dolist (pack python-dev-pack)
-      (maybe-require-package pack)))
+
   (use-package elpy
+    :defer t
     :config
     (elpy-enable)
     )
+
+  (use-package live-py-mode
+    :defer t
+    :commands live-py-mode
+    :init)
+
+  (use-package pyvenv
+    :defer t
+    :init
+    )
+
+  (use-package pytest
+    :commands(pytest-one
+	      pytest-pdb-one
+	      pytest-all
+	      pytest-pdb-all
+	      pytest-module
+	      pytest-pdb-module))
+
+  (defun python-shell-send-buffer-switch ()
+    "Send buffer content to shell and switch to it in insert mode."
+    (interactive)
+    (python-shell-send-buffer)
+    (python-shell-switch-to-shell)
+    (evil-insert-state))
+
+  (defun python-execute-file (arg)
+    "Execute a python script in a shell."
+    (interactive "P")
+    ;; set compile command to buffer-file-name
+    ;; universal argument put compile buffer in comint mode
+    (let ((universal-argument t)
+          (compile-command (format "python %s" (file-name-nondirectory
+                                                buffer-file-name))))
+      (if arg
+          (call-interactively 'compile)
+        (compile compile-command t)
+        (with-current-buffer (get-buffer "*compilation*")
+          (inferior-python-mode)))))
+  
   )
 (add-hook 'python-mode-hook 'init-python-dev)
 
