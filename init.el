@@ -156,6 +156,7 @@ locate PACKAGE."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
+	      treemacs
               )))
   (dolist (pack basic-edit-pack-list)
     (require-package pack)))
@@ -164,7 +165,7 @@ locate PACKAGE."
 ;;; Completion
 ;;=========================================================================================
 (let ((completion-pack-list
-       '(company company-quickhelp helm helm-swoop yasnippet helm-ebdb)))
+       '(company company-quickhelp)))
   (dolist (pack completion-pack-list)
     (maybe-require-package pack)))
 
@@ -194,11 +195,19 @@ locate PACKAGE."
 )
 
 ;; Helm
+(let ((helm-pack-list
+       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git)))
+  (dolist (pack helm-pack-list)
+    (require-package pack)))
+(require 'helm-xref)
 (use-package helm
   :init
+  (setq xref-show-xrefs-function 'helm-xref-show-xrefs)
+  (helm-autoresize-mode 1)
   :bind (("M-x" . #'helm-M-x)
          ("C-x C-f" . #'helm-find-files)
 	 ("C-c f f" . #'helm-find-files)
+	 ("C-c f r" . 'helm-recentf)
          ("C-c s s" . 'helm-swoop-without-pre-input)
 	 ("C-c s r" . 'helm-swoop)
 	 ("C-x b" . 'helm-mini))
@@ -242,7 +251,7 @@ locate PACKAGE."
 ;; (setq solarized-emphasize-indicators nil)
 ;; (setq solarized-scale-org-headlines nil)
 ;; (setq solarized-high-contrast-mode-line t)
-(setq-default custom-enabled-themes '(spacemacs-light))
+(setq-default custom-enabled-themes '(spacemacs-dark))
 (add-hook 'after-init-hook 'reapply-themes)
 ;;------------------------------------------------------------------------------------
 
@@ -525,9 +534,6 @@ locate PACKAGE."
 (global-set-key "\C-cb" 'org-iswitchb)
 
 ;;; Youdao search
-
-;;; Recentf mode
-(global-set-key (kbd "\C-c f r") 'helm-recentf)
 
 ;;; disaster
 
