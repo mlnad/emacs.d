@@ -12,22 +12,32 @@
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
+;; Requirements
+;; (require 'cl)
+(require 'cl-lib)
 ;; Language and coding
 (set-language-environment 'Chinese-GB)
 (set-keyboard-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
 
+;; consts==============================================================================
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
 (defconst *is-a-win* (eq system-type 'windows-nt))
 (defconst *is-a-mac* (eq system-type 'darwin))
-;;-----------------------------------------------------------------------
+(defconst elpa-pack-dir
+  (expand-file-name "elpa" user-emacs-directory )
+  "Packages install by package-initilize.")
 
-(require 'cl)
-(require 'cl-lib)
-;;======================================================================
+;; variables----------------------------------------------------------------------------
+(defvar helm-display-buffer-regexp
+  `("*.*helm.**"
+    (display-buffer-in-side-window)
+    (inhibit-same-window . t)
+    (side . bottom)
+    (window-width . 0.6)
+    (window-height . 0.4)))
 
-;;; My Functions
-;;=====================================================================================
+;;; My Functions=======================================================================
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
@@ -72,7 +82,6 @@
       (load-theme theme)))
   (custom-set-variables `(custom-enabled-themes (quote ,custom-enabled-themes))))
 
-
 (defun add-to-hook (fun hooks)
   "Add FUN to HOOKS."
   (dolist (hook hooks)
@@ -84,39 +93,7 @@
     (add-to-list usr-list list))
   )
 
-;;=====================================================================================
-
-;;; Basic
-;; ===================================================================================
-(setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
-              visible-bell t ;; Flash the frame to represent a bell
-              auto-image-file-mode t
-              initial-scratch-message nil
-              inhibit-splash-screen t
-	            column-number-mode nil
-	            line-number-mode nil
-              initial-major-mode 'text-mode
-              frame-title-format "%b"
-	            )
-
-;; Set font
-(when *is-a-win*
-  (set-frame-font "Consolas 11")) ;; set when the OS is windows
-(when *is-a-win*
-  (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp")))
-
-;; ===================================================================================
-
-;;; Packages
-;;=========================================================================================
-(setq package--init-file-ensured t
-      package-enable-at-startup nil
-      package-archives '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
-                         ("melpa" . "http://elpa.emacs-china.org/melpa/")
-                         ("org"   . "http://elpa.emacs-china.org/org/"))
-      )
-
-;;; On-demand installation of packages
+;;; On-demand installation of packages-----------------------------------
 (defun require-package (package &optional min-version no-refresh)
   "Install given PACKAGE, optionally requiring MIN-VERSION.
 If NO-REFRESH is non-nil, the available package lists will not be
@@ -145,6 +122,42 @@ locate PACKAGE."
      (message "Couldn't install optional package `%s': %S" package err)
      nil)))
 
+(defun install-pack-list (pack-list &optional is-maybe)
+  "Install all the package in PACK-LIST.
+If IS-MAYBE is t then maybe install these packages."
+  (dolist (pack pack-list)
+    (if (eq is-maybe t)
+	(maybe-require-package pack)
+      (require-package pack))))
+
+;;; Basic=============================================================================
+(setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
+              visible-bell t ;; Flash the frame to represent a bell
+              auto-image-file-mode t
+              initial-scratch-message nil
+              inhibit-splash-screen t
+	      column-number-mode nil
+	      line-number-mode nil
+              initial-major-mode 'text-mode
+              frame-title-format "%b"
+	      )
+
+;; Set font
+(when *is-a-win*
+  (set-frame-font "Consolas 11")) ;; set when the OS is windows
+(when *is-a-win*
+  (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp")))
+
+;; ===================================================================================
+
+;;; Packages===============================================================================
+(setq ;; package--init-file-ensured t
+      package-enable-at-startup nil
+      package-archives '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
+                         ("melpa" . "http://elpa.emacs-china.org/melpa/")
+                         ("org"   . "http://elpa.emacs-china.org/org/"))
+      )
+
 (if (< emacs-major-version 27.0)
     (package-initialize)
   )
@@ -156,30 +169,31 @@ locate PACKAGE."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
-	      treemacs
+	      treemacs popwin pdf-tools projectile
               )))
-  (dolist (pack basic-edit-pack-list)
-    (require-package pack)))
+  (install-pack-list basic-edit-pack-list))
+(require 'popwin)
+
 ;;=========================================================================================
 
-;;; Completion
-;;=========================================================================================
+;;; Completion=============================================================================
 (let ((completion-pack-list
        '(company company-quickhelp)))
-  (dolist (pack completion-pack-list)
-    (maybe-require-package pack)))
+  (install-pack-list completion-pack-list t))
 
-;; Company
+;; Company---------------------------------------------------------------------------------
 (use-package company
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
   (setq tab-always-indent 'complete)
   (add-hook 'prog-mode-hook 'company-mode)
-  ;;(diminish 'company-mode)
   (setq-default company-backends (delete 'company-semantic company-backends))
   :diminish company-mode
   )
+(use-package company-quickhelp
+  :commands company-quickhelp-manual-begin
+  :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
 ;; Use tab as complete
 (setq tab-always-indent 'complete)
@@ -194,57 +208,62 @@ locate PACKAGE."
   :diminish yas-minor-mode
 )
 
-;; Helm
+;; Helm------------------------------------------------------------------------------------
 (let ((helm-pack-list
-       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git)))
-  (dolist (pack helm-pack-list)
-    (require-package pack)))
+       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git helm-projectile)))
+  (install-pack-list helm-pack-list))
 (require 'helm-xref)
 (use-package helm
   :init
   (setq xref-show-xrefs-function 'helm-xref-show-xrefs)
-  (helm-autoresize-mode 1)
+  ;; (setq helm-autoresize-max-height 40)
+  ;; (setq helm-autoresize-min-height 10)
   :bind (("M-x" . #'helm-M-x)
          ("C-x C-f" . #'helm-find-files)
 	 ("C-c f f" . #'helm-find-files)
 	 ("C-c f r" . 'helm-recentf)
          ("C-c s s" . 'helm-swoop-without-pre-input)
 	 ("C-c s r" . 'helm-swoop)
-	 ("C-x b" . 'helm-mini))
+	 ("C-x b" . 'helm-mini)
+	 ("C-c h i" . 'helm-semantic-or-imenu))
   :config
   (helm-mode 1)
   :diminish helm-mode
 ;;  (diminish 'helm-mode)
   )
-;;=========================================================================================
+;; Projectile------------------------------------------------------------------------
+(defun init-project-dev ()
+  " "
 
-;; Version Control
-;;=========================================================================================
+  (use-package projectile
+    :config
+    (projectile-mode +1)
+    (helm-projectile-on)
+;;    (diminish 'projectile-mode)
+    :diminish projectile-mode
+    :bind (("C-c p f" . helm-projectile-find-file)
+           ("C-c p h" . helm-projectile)
+	   ("C-c p p" . helm-projectile-switch-project))
+    )
+  )
+(add-hook 'after-init-hook 'init-project-dev)
+
+;; Version Control=========================================================================
 (let ((vc-pack-list
        '(evil-magit gitconfig-mode gitconfig-mode git-commit magit magit-gitflow orgit)))
-  (dolist (pack vc-pack-list)
-    (require-package pack)))
+  (install-pack-list vc-pack-list))
 (defun init-vc-mode ()
-  " "
+  "Used to initilize version control mode."
   (use-package magit
     :bind (("C-c g s" . 'magit-status)
-	   ("C-c g d" . 'magit-diff)
+	   ("C-c g d" . 'magit-diff-range)
 	   )
     )
   )
 (add-hook 'after-init-hook 'init-vc-mode)
 ;;=========================================================================================
 
-;;; Require *.el files
-;; ===================================================================================
-(defconst pack-dir
-  (expand-file-name "elpa" user-emacs-directory )
-  "Packages install by package-initilize.")
-
-;; ===================================================================================
-
-;;; Interface
-;; ===================================================================================
+;;; Interface=========================================================================
 ;; (setq solarized-use-variable-pitch nil)
 ;; (setq solarized-use-less-bold t)
 ;; (setq solarized-use-more-italic t)
@@ -265,8 +284,12 @@ locate PACKAGE."
 (show-paren-mode 1)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
+(popwin-mode 1)
 
-;; Set the mode line.
+(add-to-list 'popwin:special-display-config
+	     '("*.*helm.**" :regexp t :position bottom))
+
+;; Set the mode line.---------------------------------------------------------------
 (setq-default mode-line-format ;; set mode line
 	            (list
 	             "%e" ;; print error message
@@ -301,8 +324,7 @@ locate PACKAGE."
 (add-hook 'after-init-hook 'hide-minor-mode)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
-;;; window jump
-;;------------------------------------------------------------------------------------
+;;; window jump-----------------------------------------------------------------------
 (use-package window-jump
   :bind
   (("M-s l" . 'window-jump-right)
@@ -312,30 +334,26 @@ locate PACKAGE."
   )
 ;;===================================================================================
 
-;;; Deft
-;; ===================================================================================
+;;; Deft==============================================================================
 (setq-default deft-extensions '("org")
 	      deft-directory "~/notebook"
 	      deft-recursive t
 	      )
 
-;;; youdao-dict
-;;------------------------------------------------------------------------------------
+;;; youdao-dict-----------------------------------------------------------------------
 (use-package youdao-dictionary
   :bind (("C-c y y" . 'youdao-dictionary-search-at-point+))
   )
 ;; ===================================================================================
 
-;;; Org mode
-;;====================================================================================
+;;; Org mode==========================================================================
 (let ((org-mode-pack-list
        '(org evil-org helm-org-rifle org-pomodoro gnuplot htmlize org-present
 	     org-projectile org-autolist org2ctex)))
-  (dolist (org-pkg org-mode-pack-list)
-    (require-package org-pkg)))
+  (install-pack-list org-mode-pack-list t))
 ;;====================================================================================
-;;; Program
-;;====================================================================================
+
+;;; Program===========================================================================
 ;; Flycheck
 (require-package 'flycheck)
 (add-hook 'prog-mode-hook 'flycheck-mode)
@@ -344,8 +362,7 @@ locate PACKAGE."
 ;; semantic-mode
 (add-hook 'prog-mode-hook 'semantic-mode)
 
-;; c/cpp mode
-;;-----------------------------------------------------------------------------------
+;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
        '(cc-mode clang-format company company-c-headers company-ycmd disaster
          flycheck semantic ycmd
@@ -403,18 +420,15 @@ locate PACKAGE."
     )
 
   (use-package disaster
-    :bind (("\C-cd" . 'disaster))
     )
   )
 (add-hook 'c-mode-hook 'init-c-cpp-dev)
 (add-hook 'c++-mode-hook 'init-c-cpp-dev)
 
-;; emacs-lisp
-;;-----------------------------------------------------------------------------------
+;; emacs-lisp------------------------------------------------------------------------
 (let ((elisp-pack-dev
       '(lispy)))
-  (dolist (pack elisp-pack-dev)
-    (require-package pack)))
+  (install-pack-list elisp-pack-dev))
 
 (defun init-emacs-lisp-dev ()
   " "
@@ -422,13 +436,11 @@ locate PACKAGE."
     :config
     (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
   )
-;;-----------------------------------------------------------------------------------
-;; python
+;; python----------------------------------------------------------------------------
 (let ((python-dev-pack
        '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
 	      pyenv-mode pytest pyvenv helm-pydoc)))
-  (dolist (pack python-dev-pack)
-    (require-package pack)))
+  (install-pack-list python-dev-pack t))
 
 (defun init-python-dev ()
   " "
@@ -483,32 +495,10 @@ locate PACKAGE."
   )
 (add-hook 'python-mode-hook 'init-python-dev)
 
-;; Projectile
-;;-----------------------------------------------------------------------------------
-(let ((proj-pack-dev
-       '(projectile helm-projectile)))
-  (dolist (pack proj-pack-dev)
-    (require-package pack)))
-(defun init-project-dev ()
-  " "
-
-  (use-package projectile
-    :config
-    (projectile-mode +1)
-    (helm-projectile-on)
-;;    (diminish 'projectile-mode)
-    :diminish projectile-mode
-    :bind (("C-c p f" . projectile-find-file)
-           ("C-c p h" . helm-projectile)
-	   ("C-c p p" . helm-projectile-switch-project))
-    )
-  )
-(add-hook 'after-init-hook 'init-project-dev)
 ;;====================================================================================
 
 
-;;; Keybinding
-;;====================================================================================
+;;; Keybinding========================================================================
 (let ((key-pack-list
        '(evil evil-anzu evil-args evil-cleverparens evil-escape evil-exchange
         evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state

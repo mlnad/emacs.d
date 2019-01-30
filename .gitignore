@@ -12,6 +12,7 @@ ac-comphist.dat
 gnupg/
 var/
 .python-enviroment/
+.cache
 custom.el
 jdee-server/
 
