@@ -12,7 +12,6 @@
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
-;; Requirements
 ;; (require 'cl)
 (require 'cl-lib)
 ;; Language and coding
@@ -233,7 +232,7 @@ If IS-MAYBE is t then maybe install these packages."
   )
 ;; Projectile------------------------------------------------------------------------
 (defun init-project-dev ()
-  " "
+  "Init."
 
   (use-package projectile
     :config
@@ -241,9 +240,9 @@ If IS-MAYBE is t then maybe install these packages."
     (helm-projectile-on)
 ;;    (diminish 'projectile-mode)
     :diminish projectile-mode
-    :bind (("C-c p f" . helm-projectile-find-file)
-           ("C-c p h" . helm-projectile)
-	   ("C-c p p" . helm-projectile-switch-project))
+    :bind (("C-c p f" . 'helm-projectile-find-file)
+           ("C-c p h" . 'helm-projectile)
+	   ("C-c p p" . 'helm-projectile-switch-project))
     )
   )
 (add-hook 'after-init-hook 'init-project-dev)
@@ -324,16 +323,6 @@ If IS-MAYBE is t then maybe install these packages."
 (add-hook 'after-init-hook 'hide-minor-mode)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
-;;; window jump-----------------------------------------------------------------------
-(use-package window-jump
-  :bind
-  (("M-s l" . 'window-jump-right)
-   ("M-s h" . 'window-jump-left)
-   ("M-s k" . 'window-jump-up)
-   ("M-s j" . 'window-jump-down))
-  )
-;;===================================================================================
-
 ;;; Deft==============================================================================
 (setq-default deft-extensions '("org")
 	      deft-directory "~/notebook"
@@ -342,7 +331,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;;; youdao-dict-----------------------------------------------------------------------
 (use-package youdao-dictionary
-  :bind (("C-c y y" . 'youdao-dictionary-search-at-point+))
+  :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
   )
 ;; ===================================================================================
 
@@ -372,7 +361,7 @@ If IS-MAYBE is t then maybe install these packages."
   )
 
 (defun init-c-cpp-dev ()
-  " "
+  "Init."
   (use-package company-c-headers
     :config
     (add-to-list 'company-backends 'company-c-headers)
@@ -431,7 +420,7 @@ If IS-MAYBE is t then maybe install these packages."
   (install-pack-list elisp-pack-dev))
 
 (defun init-emacs-lisp-dev ()
-  " "
+  "Init."
   (use-package eldoc
     :config
     (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
@@ -443,7 +432,7 @@ If IS-MAYBE is t then maybe install these packages."
   (install-pack-list python-dev-pack t))
 
 (defun init-python-dev ()
-  " "
+  "Init."
   (setq python-indent-offset 4)
   (setq python-shell-interpreter "python3")
 
@@ -515,19 +504,49 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;;; Evil
 (require 'evil)
+(global-evil-leader-mode)
 (evil-mode 1)
+(evil-leader/set-leader "SPC")
+(evil-leader/set-key
+  ;;helm minibuffers-------------------------
+  "f f" 'helm-find-files
+  "f r" 'helm-recentf
+  "SPC" #'helm-M-x
+  "s s" 'helm-swoop-without-pre-input
+  "s r" 'helm-swoop
+  "b b" 'helm-mini
+  "h i" 'helm-semantic-or-imenu
+  ;; magit-----------------------------------
+  "g s" 'magit-status
+  "g d" 'magit-diff-range
+  ;; projectile------------------------------
+  "p f" 'helm-projectile-find-file
+  "p h" 'helm-projectile
+  "p p" 'helm-projectile-switch-project
+  ;; windows jump----------------------------
+  "w l" 'window-jump-right
+  "w h" 'window-jump-left
+  "w k" 'window-jump-up
+  "w j" 'window-jump-down
+  ;;youdao dict------------------------------
+  "o y" 'youdao-dictionary-search-at-point+
+  )
 
 ;;; Org mode global keys
-(global-set-key "\C-cl" 'org-store-link)
-(global-set-key "\C-ca" 'org-agenda)
-(global-set-key "\C-cc" 'org-capture)
-(global-set-key "\C-cb" 'org-iswitchb)
+;; (global-set-key "\C-cl" 'org-store-link)
+;; (global-set-key "\C-ca" 'org-agenda)
+;; (global-set-key "\C-cc" 'org-capture)
+;; (global-set-key "\C-cb" 'org-iswitchb)
 
-;;; Youdao search
-
-;;; disaster
 
 ;;====================================================================================
 
 (when (file-exists-p custom-file)
   (load custom-file))
+
+;;TODO--------------------------------------------------------------------------------
+(require 'smex)
+(smex-initialize)
+
+(provide 'init)
+;;; init.el ends here
