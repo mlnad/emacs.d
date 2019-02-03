@@ -11,6 +11,8 @@
 ;; (setq debug-on-error t)
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+(when (file-exists-p custom-file)
+  (load custom-file))
 
 ;; (require 'cl)
 (require 'cl-lib)
@@ -203,33 +205,36 @@ If IS-MAYBE is t then maybe install these packages."
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all)
-;;  (diminish 'yas-minor-mode)
   :diminish yas-minor-mode
 )
 
 ;; Helm------------------------------------------------------------------------------------
 (let ((helm-pack-list
-       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git helm-projectile)))
+       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git
+	      helm-dash helm-projectile)))
   (install-pack-list helm-pack-list))
+
 (require 'helm-xref)
-(use-package helm
-  :init
-  (setq xref-show-xrefs-function 'helm-xref-show-xrefs)
-  ;; (setq helm-autoresize-max-height 40)
-  ;; (setq helm-autoresize-min-height 10)
-  :bind (("M-x" . #'helm-M-x)
-         ("C-x C-f" . #'helm-find-files)
-	 ("C-c f f" . #'helm-find-files)
-	 ("C-c f r" . 'helm-recentf)
-         ("C-c s s" . 'helm-swoop-without-pre-input)
-	 ("C-c s r" . 'helm-swoop)
-	 ("C-x b" . 'helm-mini)
-	 ("C-c h i" . 'helm-semantic-or-imenu))
-  :config
-  (helm-mode 1)
-  :diminish helm-mode
-;;  (diminish 'helm-mode)
-  )
+(defun init-helm-dev ()
+  "Init helm."
+  (use-package
+    helm
+    :init (setq xref-show-xrefs-function
+		'helm-xref-show-xrefs)
+    ;; (setq helm-autoresize-max-height 40)
+    ;; (setq helm-autoresize-min-height 10)
+    :bind (("M-x" . #'helm-M-x)
+	   ("C-x C-f" . #'helm-find-files)
+	   ("C-c f f" . #'helm-find-files)
+	   ("C-c f r" . 'helm-recentf)
+	   ("C-c s s" . 'helm-swoop-without-pre-input)
+	   ("C-c s r" . 'helm-swoop)
+	   ("C-x b" . 'helm-mini)
+	   ("C-c h i" . 'helm-semantic-or-imenu)
+	   ("C-c h f" . 'helm-flycheck))
+    :config (helm-mode 1)
+    :diminish helm-mode))
+(add-hook 'after-init-hook 'init-helm-dev)
 ;; Projectile------------------------------------------------------------------------
 (defun init-project-dev ()
   "Init."
@@ -238,14 +243,13 @@ If IS-MAYBE is t then maybe install these packages."
     :config
     (projectile-mode +1)
     (helm-projectile-on)
-;;    (diminish 'projectile-mode)
     :diminish projectile-mode
     :bind (("C-c p f" . 'helm-projectile-find-file)
            ("C-c p h" . 'helm-projectile)
 	   ("C-c p p" . 'helm-projectile-switch-project))
     )
   )
-(add-hook 'after-init-hook 'init-project-dev)
+ (add-hook 'after-init-hook 'init-project-dev)
 
 ;; Version Control=========================================================================
 (let ((vc-pack-list
@@ -286,7 +290,7 @@ If IS-MAYBE is t then maybe install these packages."
 (popwin-mode 1)
 
 (add-to-list 'popwin:special-display-config
-	     '("*.*helm.**" :regexp t :position bottom))
+	     '("*.*[Hh]elm.**" :regexp t :position bottom))
 
 ;; Set the mode line.---------------------------------------------------------------
 (setq-default mode-line-format ;; set mode line
@@ -315,7 +319,8 @@ If IS-MAYBE is t then maybe install these packages."
   (let ((dim-list
          ;; minor modes list followed will not show in the mode line.
          '(abbrev-mode org-autolist-mode hs-minor-mode auto-revert-mode
-		       image-mode iimage-mode visual-line-mode eldoc-mode undo-tree-mode))
+		       hs-minor-mode image-mode iimage-mode visual-line-mode
+		       eldoc-mode undo-tree-mode))
         )
     (dolist (list dim-list)
       (diminish list)))
@@ -493,6 +498,7 @@ If IS-MAYBE is t then maybe install these packages."
         evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state
         evil-mc evil-nerd-commenter evil-matchit evil-numbers evil-surround
         evil-tutor
+	evil-leader
         ;; (evil-unimpaired :location (recipe :fetcher local))
         evil-visual-mark-mode
         evil-visualstar
@@ -505,7 +511,6 @@ If IS-MAYBE is t then maybe install these packages."
 ;;; Evil
 (require 'evil)
 (global-evil-leader-mode)
-(evil-mode 1)
 (evil-leader/set-leader "SPC")
 (evil-leader/set-key
   ;;helm minibuffers-------------------------
@@ -516,6 +521,7 @@ If IS-MAYBE is t then maybe install these packages."
   "s r" 'helm-swoop
   "b b" 'helm-mini
   "h i" 'helm-semantic-or-imenu
+  "h f" 'helm-flycheck
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
@@ -531,6 +537,7 @@ If IS-MAYBE is t then maybe install these packages."
   ;;youdao dict------------------------------
   "o y" 'youdao-dictionary-search-at-point+
   )
+(evil-mode 1)
 
 ;;; Org mode global keys
 ;; (global-set-key "\C-cl" 'org-store-link)
@@ -541,8 +548,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;;====================================================================================
 
-(when (file-exists-p custom-file)
-  (load custom-file))
+
 
 ;;TODO--------------------------------------------------------------------------------
 (require 'smex)
