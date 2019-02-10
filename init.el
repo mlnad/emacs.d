@@ -372,6 +372,7 @@ If IS-MAYBE is t then maybe install these packages."
        '(helm-cscope xcscope)))
   (install-pack-list cscope-pack-list))
 
+;TODO: set tag system.
 ;; (defun init-cscope-mode ()
 ;;   "Init."
 ;;   (use-package xcscope
