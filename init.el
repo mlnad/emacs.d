@@ -170,12 +170,10 @@ If IS-MAYBE is t then maybe install these packages."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
-	      treemacs popwin pdf-tools projectile
+	      treemacs popwin pdf-tools projectile hl-todo
               )))
   (install-pack-list basic-edit-pack-list))
 (require 'popwin)
-
-;;=========================================================================================
 
 ;;; Completion=============================================================================
 (let ((completion-pack-list
@@ -189,7 +187,8 @@ If IS-MAYBE is t then maybe install these packages."
   (setq company-minimum-prefix-length 2)
   (setq tab-always-indent 'complete)
   (add-hook 'prog-mode-hook 'company-mode)
-  (setq-default company-backends (delete 'company-semantic company-backends))
+  ;; (setq-default company-backends (delete 'company-semantic company-backends))
+  (push '(company-semantic :with company-yasnippet) company-backends)
   :diminish company-mode
   )
 (use-package company-quickhelp
@@ -230,6 +229,7 @@ If IS-MAYBE is t then maybe install these packages."
 	   ("C-c s s" . 'helm-swoop-without-pre-input)
 	   ("C-c s r" . 'helm-swoop)
 	   ("C-x b" . 'helm-mini)
+	   ("C-c h d" . 'helm-dash)
 	   ("C-c h i" . 'helm-semantic-or-imenu)
 	   ("C-c h f" . 'helm-flycheck))
     :config (helm-mode 1)
@@ -290,7 +290,8 @@ If IS-MAYBE is t then maybe install these packages."
 (popwin-mode 1)
 
 (add-to-list 'popwin:special-display-config
-	     '("*.*[Hh]elm.**" :regexp t :position bottom))
+	     '("*.*[Hh]elm.**" :regexp t :position bottom)
+	     )
 
 ;; Set the mode line.---------------------------------------------------------------
 (setq-default mode-line-format ;; set mode line
@@ -328,6 +329,17 @@ If IS-MAYBE is t then maybe install these packages."
 (add-hook 'after-init-hook 'hide-minor-mode)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
+;;; hl TODO mode ---------------------------------------------------------------------
+(use-package hl-todo
+  :init
+  (global-hl-todo-mode)
+  :bind (("C-c t p" . 'hl-todo-previous)
+	 ("C-c t n" . 'hl-todo-next)
+	 ("C-c t o" . 'hl-todo-occur)
+	 ("C-c t i" . 'hl-todo-insert-keyword)))
+(add-to-list 'popwin:special-display-config
+	     '("Occur" :regexp t :position bottom))
+
 ;;; Deft==============================================================================
 (setq-default deft-extensions '("org")
 	      deft-directory "~/notebook"
@@ -338,7 +350,6 @@ If IS-MAYBE is t then maybe install these packages."
 (use-package youdao-dictionary
   :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
   )
-;; ===================================================================================
 
 ;;; Org mode==========================================================================
 (let ((org-mode-pack-list
@@ -356,11 +367,25 @@ If IS-MAYBE is t then maybe install these packages."
 ;; semantic-mode
 (add-hook 'prog-mode-hook 'semantic-mode)
 
+;; cscope mode-----------------------------------------------------------------------
+(let ((cscope-pack-list
+       '(helm-cscope xcscope)))
+  (install-pack-list cscope-pack-list))
+
+;; (defun init-cscope-mode ()
+;;   "Init."
+;;   (use-package xcscope
+;;     :init
+;;     (progn
+;;       ;; for python projects, we don't want xcscope to rebuild the database
+;;       ;; because it uses sccope instead of pycscope
+;;       )))
+
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
        '(cc-mode clang-format company company-c-headers company-ycmd disaster
-         flycheck semantic ycmd
-         )))
+		 flycheck semantic ycmd
+		 )))
   (dolist (c-cpp-pkg c-cpp-packages)
     (require-package c-cpp-pkg))
   )
@@ -522,6 +547,7 @@ If IS-MAYBE is t then maybe install these packages."
   "b b" 'helm-mini
   "h i" 'helm-semantic-or-imenu
   "h f" 'helm-flycheck
+  "h d" 'helm-dash
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
@@ -536,6 +562,11 @@ If IS-MAYBE is t then maybe install these packages."
   "w j" 'window-jump-down
   ;;youdao dict------------------------------
   "o y" 'youdao-dictionary-search-at-point+
+  ;; todo mode ------------------------------
+  "t p" 'hl-todo-previous
+  "t n" 'hl-todo-next
+  "t o" 'hl-todo-occur
+  "t i" 'hl-todo-insert-keyword
   )
 (evil-mode 1)
 
