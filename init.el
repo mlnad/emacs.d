@@ -231,7 +231,11 @@ If IS-MAYBE is t then maybe install these packages."
 	   ("C-x b" . 'helm-mini)
 	   ("C-c h d" . 'helm-dash)
 	   ("C-c h i" . 'helm-semantic-or-imenu)
-	   ("C-c h f" . 'helm-flycheck))
+	   ("C-c h f" . 'helm-flycheck)
+	   ("C-c h t" . 'helm-gtags-find-tag-from-here)
+	   ("C-c h T" . 'helm-gtags-find-tag-other-window)
+	   ("C-c h r" . 'helm-gtags-find-rtag)
+	   )
     :config (helm-mode 1)
     :diminish helm-mode))
 (add-hook 'after-init-hook 'init-helm-dev)
@@ -366,6 +370,7 @@ If IS-MAYBE is t then maybe install these packages."
 (add-hook 'prog-mode-hook 'hs-minor-mode)
 ;; semantic-mode
 (add-hook 'prog-mode-hook 'semantic-mode)
+(global-semantic-highlight-func-mode t)
 
 ;; cscope mode-----------------------------------------------------------------------
 (let ((cscope-pack-list
@@ -381,6 +386,23 @@ If IS-MAYBE is t then maybe install these packages."
 ;;       ;; for python projects, we don't want xcscope to rebuild the database
 ;;       ;; because it uses sccope instead of pycscope
 ;;       )))
+
+;; tags ----------------------------------------------------------------------------
+(let ((tags-pack-list
+       '(ggtags)))
+  (install-pack-list tags-pack-list))
+;; ggtags
+;; (add-hook 'c-mode-common-hook
+;; 	  (lambda ()
+;; 	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode)
+;; 	      (ggtags-mode 1))))
+;; (add-to-list 'popwin:special-display-config
+;; 	     '("*.gtags.*" :regexp t :position bottom))
+
+;; (defun init-gtags ()
+;;   ;TODO: 
+;;   "Init."
+;;   )
 
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
@@ -549,6 +571,9 @@ If IS-MAYBE is t then maybe install these packages."
   "h i" 'helm-semantic-or-imenu
   "h f" 'helm-flycheck
   "h d" 'helm-dash
+  "h t" 'helm-gtags-find-tag-from-here
+  "h T" 'helm-gtags-find-tag-other-window
+  "h r" 'helm-gtags-find-rtag
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
