@@ -170,7 +170,7 @@ If IS-MAYBE is t then maybe install these packages."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
-	      treemacs popwin pdf-tools projectile hl-todo
+	      treemacs popwin pdf-tools projectile hl-todo smex
               )))
   (install-pack-list basic-edit-pack-list))
 (require 'popwin)
@@ -370,7 +370,9 @@ If IS-MAYBE is t then maybe install these packages."
 (add-hook 'prog-mode-hook 'hs-minor-mode)
 ;; semantic-mode
 (add-hook 'prog-mode-hook 'semantic-mode)
-(global-semantic-highlight-func-mode t)
+(add-hook 'prog-mode-hook
+	  '(lambda ()
+	     (setq global-semantic-highlight-func-mode t)))
 
 ;; cscope mode-----------------------------------------------------------------------
 (let ((cscope-pack-list
