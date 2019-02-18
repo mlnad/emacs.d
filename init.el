@@ -170,7 +170,7 @@ If IS-MAYBE is t then maybe install these packages."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
-	      treemacs popwin pdf-tools projectile hl-todo
+	      treemacs popwin pdf-tools projectile hl-todo zeal-at-point
               )))
   (install-pack-list basic-edit-pack-list))
 (require 'popwin)
@@ -211,7 +211,7 @@ If IS-MAYBE is t then maybe install these packages."
 (let ((helm-pack-list
        '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git
 	      helm-dash helm-projectile)))
-  (install-pack-list helm-pack-list))
+  (install-pack-list helm-pack-list t))
 
 (require 'helm-xref)
 (defun init-helm-dev ()
@@ -360,6 +360,8 @@ If IS-MAYBE is t then maybe install these packages."
        '(org evil-org helm-org-rifle org-pomodoro gnuplot htmlize org-present
 	     org-projectile org-autolist org2ctex)))
   (install-pack-list org-mode-pack-list t))
+(require 'org2ctex)
+(add-hook 'org-mode-hook 'org2ctex-toggle)
 ;;====================================================================================
 
 ;;; Program===========================================================================
