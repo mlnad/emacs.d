@@ -17,7 +17,8 @@
 ;; (require 'cl)
 (require 'cl-lib)
 ;; Language and coding
-(set-language-environment 'Chinese-GB)
+;; (set-language-environment 'Chinese-GB)
+(set-language-environment "utf-8")
 (set-keyboard-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
 
