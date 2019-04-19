@@ -9,6 +9,18 @@
 ;;; Code:
 ;;======================================================================================
 ;; (setq debug-on-error t)
+
+;; Use a hook so the messages doesn't get clobbered by other messages.
+(add-hook 'emacs-startup-hook
+	  (lambda ()
+	    (message "Emacs ready in %s with %d garbage collections."
+		     (format "%.2f seconds"
+			     (float-time
+			      (time-subtract after-init-time before-init-time)))
+		     gcs-done)))
+
+(setq gc-cons-threshold (* 64 1024 1024))
+
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 (when (file-exists-p custom-file)
@@ -174,7 +186,6 @@ If IS-MAYBE is t then maybe install these packages."
 	      treemacs popwin pdf-tools projectile hl-todo smex zeal-at-point
               )))
   (install-pack-list basic-edit-pack-list))
-(require 'popwin)
 
 ;;; Completion=============================================================================
 (let ((completion-pack-list
@@ -183,6 +194,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Company---------------------------------------------------------------------------------
 (use-package company
+  :defer 2
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
@@ -193,6 +205,7 @@ If IS-MAYBE is t then maybe install these packages."
   :diminish company-mode
   )
 (use-package company-quickhelp
+  :defer 2
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
@@ -201,6 +214,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; YASnippte
 (use-package yasnippet
+  :defer 2
   :init
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
@@ -214,13 +228,24 @@ If IS-MAYBE is t then maybe install these packages."
 	      helm-dash helm-projectile)))
   (install-pack-list helm-pack-list t))
 
-(require 'helm-xref)
-(defun init-helm-dev ()
-  "Init helm."
+(use-package popwin)
+
+(use-package helm-xref
+  :defer 2
+  )
+
+;; (defun init-helm-dev ()
+;;   "Init helm."
   (use-package
     helm
+    :config
+    (helm-mode 1)
+    (popwin-mode 1)
     :init (setq xref-show-xrefs-function
 		'helm-xref-show-xrefs)
+    (add-to-list 'popwin:special-display-config
+	       '("*.*[Hh]elm.**" :regexp t :position bottom))
+
     ;; (setq helm-autoresize-max-height 40)
     ;; (setq helm-autoresize-min-height 10)
     :bind (("M-x" . #'helm-M-x)
@@ -237,24 +262,27 @@ If IS-MAYBE is t then maybe install these packages."
 	   ("C-c h T" . 'helm-gtags-find-tag-other-window)
 	   ("C-c h r" . 'helm-gtags-find-rtag)
 	   )
-    :config (helm-mode 1)
-    :diminish helm-mode))
-(add-hook 'after-init-hook 'init-helm-dev)
+    :diminish helm-mode)
+  ;;  )
+;; (add-hook 'after-init-hook 'init-helm-dev)
 ;; Projectile------------------------------------------------------------------------
-(defun init-project-dev ()
-  "Init."
+;; (defun init-project-dev ()
+;;   "Init."
 
-  (use-package projectile
-    :config
-    (projectile-mode +1)
-    (helm-projectile-on)
-    :diminish projectile-mode
-    :bind (("C-c p f" . 'helm-projectile-find-file)
-           ("C-c p h" . 'helm-projectile)
-	   ("C-c p p" . 'helm-projectile-switch-project))
-    )
+(use-package projectile
+  :defer 2
+  :config
+  (projectile-mode +1)
+  (helm-projectile-on)
+  :diminish projectile-mode
+  :bind (("C-c p f" . 'helm-projectile-find-file)
+	 ("C-c p h" . 'helm-projectile)
+	 ("C-c p p" . 'helm-projectile-switch-project))
   )
- (add-hook 'after-init-hook 'init-project-dev)
+;;  )
+;; (add-hook 'after-init-hook 'init-project-dev)
+(use-package recentf
+  :defer 1)
 
 ;; Version Control=========================================================================
 (let ((vc-pack-list
@@ -288,15 +316,11 @@ If IS-MAYBE is t then maybe install these packages."
   (set-scroll-bar-mode nil))
 ;;(when (fboundp 'menu-bar-mode)
 ;;  (menu-bar-mode -1))
-(recentf-mode 1)
 (show-paren-mode 1)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
-(popwin-mode 1)
-
-(add-to-list 'popwin:special-display-config
-	     '("*.*[Hh]elm.**" :regexp t :position bottom)
-	     )
+;; (popwin-mode 1)
+(size-indication-mode t)
 
 ;; Set the mode line.---------------------------------------------------------------
 (setq-default mode-line-format ;; set mode line
@@ -308,9 +332,9 @@ If IS-MAYBE is t then maybe install these packages."
 	             mode-line-remote
 	             mode-line-frame-identification mode-line-buffer-identification ;; buffer files
 	             "   "
-	             "["
+	             ;; "["
 	             mode-line-position ;; position of this buffer
-	             "/%I] "
+	             ;; "/%I] "
 	             "  "
 	             mode-line-modes ;; Major mode and some important minor modes.
 	             '(vc-mode vc-mode) ;; version control messages.
@@ -448,7 +472,7 @@ If IS-MAYBE is t then maybe install these packages."
     :init
     (progn
       (add-to-list 'auto-mode-alist
-                   `("\\.h\\'" . ,'c++-mode)))
+                   `("\\.h\\'" . ,'c-mode)))
     :config
     (progn
       (require 'compile)
@@ -569,6 +593,7 @@ If IS-MAYBE is t then maybe install these packages."
   ;;helm minibuffers-------------------------
   "f f" 'helm-find-files
   "f r" 'helm-recentf
+  "f s" 'save-buffer
   "SPC" #'helm-M-x
   "s s" 'helm-swoop-without-pre-input
   "s r" 'helm-swoop
@@ -586,11 +611,14 @@ If IS-MAYBE is t then maybe install these packages."
   "p f" 'helm-projectile-find-file
   "p h" 'helm-projectile
   "p p" 'helm-projectile-switch-project
-  ;; windows jump----------------------------
+  ;; windows options-------------------------
   "w l" 'window-jump-right
   "w h" 'window-jump-left
   "w k" 'window-jump-up
   "w j" 'window-jump-down
+  "w 2" 'split-window-right
+  "w 0" 'delete-window
+  "w 1" 'delete-other-windows
   ;;youdao dict------------------------------
   "o y" 'youdao-dictionary-search-at-point+
   ;; todo mode ------------------------------
@@ -615,6 +643,8 @@ If IS-MAYBE is t then maybe install these packages."
 ;;TODO--------------------------------------------------------------------------------
 (require 'smex)
 (smex-initialize)
+
+(setq gc-cons-threshold (* 2 1000 1000))
 
 (provide 'init)
 ;;; init.el ends here
