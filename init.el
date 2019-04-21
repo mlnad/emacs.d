@@ -19,7 +19,10 @@
 			      (time-subtract after-init-time before-init-time)))
 		     gcs-done)))
 
-(setq gc-cons-threshold (* 64 1024 1024))
+;; adjust garbage collection thresholds during startup, and thereafter
+(setq gc-cons-threshold (* 128 1024 1024))
+(add-hook 'emacs-startup-hook
+	  (lambda () (setq gc-cons-threshold (* 20 1024 1024))))
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
@@ -144,6 +147,31 @@ If IS-MAYBE is t then maybe install these packages."
 	(maybe-require-package pack)
       (require-package pack))))
 
+(defun get-include-path (lang)
+  "Get the include path about LANG from gcc."
+  (defvar inc-dirs-cmd (format "sh echo | gcc -v -x %s -E -" lang))
+  (let ((start "#include <...> search starts here:")
+	(end "End of search list.")
+	(inc-dirs nil)
+	(output (split-string (shell-command-to-string inc-dirs-cmd)
+			      "\n" t "[ ]+"))
+	)
+  
+    (while (not (eq output nil))
+      (if (string-equal (car output) start)
+	  (progn
+	    (setq output (cdr output))
+	    (while (not (string-equal (car output) end))
+	      (add-to-list 'inc-dirs (car output))
+	      (setq output (cdr output)))
+	    )
+	(setq output (cdr output)))
+      )
+    (if inc-dirs
+	inc-dirs
+      '("/usr/include" "/usr/local/include/"))
+    ))
+
 ;;; Basic=============================================================================
 (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
               visible-bell t ;; Flash the frame to represent a bell
@@ -157,9 +185,8 @@ If IS-MAYBE is t then maybe install these packages."
 	      )
 
 ;; Set font
-(when *is-a-win*
-  (set-frame-font "Consolas 11")) ;; set when the OS is windows
-(when *is-a-win*
+(set-frame-font "Source Code Pro 11" t t)
+(if (< emacs-major-version 26.0)
   (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp")))
 
 ;; ===================================================================================
@@ -194,7 +221,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Company---------------------------------------------------------------------------------
 (use-package company
-  :defer 2
+  :defer t
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
@@ -205,7 +232,7 @@ If IS-MAYBE is t then maybe install these packages."
   :diminish company-mode
   )
 (use-package company-quickhelp
-  :defer 2
+  :defer t
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
@@ -214,7 +241,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; YASnippte
 (use-package yasnippet
-  :defer 2
+  :defer t
   :init
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
@@ -224,26 +251,25 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Helm------------------------------------------------------------------------------------
 (let ((helm-pack-list
-       '(helm helm-swoop helm-ebdb helm-xref helm-gtags helm-ls-git
+       '(helm helm-swoop helm-xref helm-gtags helm-ls-git
 	      helm-dash helm-projectile)))
   (install-pack-list helm-pack-list t))
 
 (use-package popwin)
 
 (use-package helm-xref
-  :defer 2
   )
 
 ;; (defun init-helm-dev ()
 ;;   "Init helm."
-  (use-package
-    helm
-    :config
-    (helm-mode 1)
-    (popwin-mode 1)
-    :init (setq xref-show-xrefs-function
-		'helm-xref-show-xrefs)
-    (add-to-list 'popwin:special-display-config
+(use-package helm
+  :config
+  (helm-mode 1)
+  (popwin-mode 1)
+  :init
+  (setq xref-show-xrefs-function
+	      'helm-xref-show-xrefs)
+  (add-to-list 'popwin:special-display-config
 	       '("*.*[Hh]elm.**" :regexp t :position bottom))
 
     ;; (setq helm-autoresize-max-height 40)
@@ -264,13 +290,9 @@ If IS-MAYBE is t then maybe install these packages."
 	   )
     :diminish helm-mode)
   ;;  )
-;; (add-hook 'after-init-hook 'init-helm-dev)
 ;; Projectile------------------------------------------------------------------------
-;; (defun init-project-dev ()
-;;   "Init."
-
 (use-package projectile
-  :defer 2
+  :defer t
   :config
   (projectile-mode +1)
   (helm-projectile-on)
@@ -279,8 +301,6 @@ If IS-MAYBE is t then maybe install these packages."
 	 ("C-c p h" . 'helm-projectile)
 	 ("C-c p p" . 'helm-projectile-switch-project))
   )
-;;  )
-;; (add-hook 'after-init-hook 'init-project-dev)
 (use-package recentf
   :defer 1)
 
@@ -300,22 +320,16 @@ If IS-MAYBE is t then maybe install these packages."
 ;;=========================================================================================
 
 ;;; Interface=========================================================================
-;; (setq solarized-use-variable-pitch nil)
-;; (setq solarized-use-less-bold t)
-;; (setq solarized-use-more-italic t)
-;; (setq solarized-emphasize-indicators nil)
-;; (setq solarized-scale-org-headlines nil)
-;; (setq solarized-high-contrast-mode-line t)
-(setq-default custom-enabled-themes '(spacemacs-dark))
-(add-hook 'after-init-hook 'reapply-themes)
+;; (setq-default custom-enabled-themes '(spacemacs-dark))
+;; (add-hook 'after-init-hook 'reapply-themes)
 ;;------------------------------------------------------------------------------------
 
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp 'set-scroll-bar-mode)
   (set-scroll-bar-mode nil))
-;;(when (fboundp 'menu-bar-mode)
-;;  (menu-bar-mode -1))
+(when (fboundp 'menu-bar-mode)
+  (menu-bar-mode -1))
 (show-paren-mode 1)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
@@ -429,9 +443,13 @@ If IS-MAYBE is t then maybe install these packages."
 ;; 	     '("*.gtags.*" :regexp t :position bottom))
 
 ;; (defun init-gtags ()
-;;   ;TODO: 
+;;   ;TODO:
 ;;   "Init."
 ;;   )
+
+;; Compile package
+(use-package compile
+  :defer t)
 
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
@@ -442,129 +460,100 @@ If IS-MAYBE is t then maybe install these packages."
     (require-package c-cpp-pkg))
   )
 
-(defun init-c-cpp-dev ()
-  "Init."
-  (use-package company-c-headers
-    :config
-    (add-to-list 'company-backends 'company-c-headers)
-    )
-  (when *is-a-win*
-    (let ((usr-include-path
-	        '(
-	          "C:\\msys64\\mingw64\\x86_64-w64-mingw32\\include"
-	          "C:\\msys64\\mingw64\\include"
-	          "C:\\msys64\\mingw64\\include\\c++\\8.2.0"
-	          )))
-      (dolist (list usr-include-path)
-        (add-to-list 'company-c-headers-path-system list))
-      ))
-  (when *is-a-linux*
-    (let ((usr-include-path
-	   '(
-	     "/usr/include/c++/7"
-	     )))
-      (dolist (list usr-include-path)
-	(add-to-list 'company-c-headers-path-system list))
-      ))
-
-  (use-package cc-mode
-    :defer t
-    :init
-    (progn
-      (add-to-list 'auto-mode-alist
-                   `("\\.h\\'" . ,'c-mode)))
-    :config
-    (progn
-      (require 'compile)
-      ;; Disable electric indentation
-      ;; (setq-default c-electric-flag nil)
-      (setq c-basic-offset 4)
-      (setq c-default-style '((java-mode . "java")
-                              (other . "linux")))
-
-      ;;(add-to-list 'c-cleanup-list 'space-before-funcall)
-      (add-to-list 'c-cleanup-list 'compact-empty-funcall)
-      (add-to-list 'c-cleanup-list 'comment-close-slash)
-      ))
-
-  (use-package clang-format
-    )
-
-  (use-package disaster
-    )
+(use-package company-c-headers
+  :config
+  (add-to-list 'company-backends 'company-c-headers)
+  (dolist (list (get-include-path "c++"))
+    (add-to-list 'company-c-headers-path-system list))
   )
-(add-hook 'c-mode-hook 'init-c-cpp-dev)
-(add-hook 'c++-mode-hook 'init-c-cpp-dev)
+
+  ;; (dolist (list (get-include-path "c"))
+  ;;   (add-to-list 'company-c-headers-path-system list))
+  
+(use-package cc-mode
+  :init
+  (progn
+    (add-to-list 'auto-mode-alist
+		 `("\\.h\\'" . ,'c++-mode)))
+  :config
+  ;; (progn
+    ;; Disable electric indentation
+    ;; (setq-default c-electric-flag nil)
+    ;; (setq c-basic-offset 4)
+    ;; (setq c-default-style '((java-mode . "java")
+    ;; 			    (other . "linux")))
+    
+    ;; (add-to-list 'c-cleanup-list 'space-before-funcall)
+    ;; (add-to-list 'c-cleanup-list 'compact-empty-funcall)
+    ;; (add-to-list 'c-cleanup-list 'comment-close-slash)
+  ;; )
+)
+
+(use-package clang-format
+  )
+
+(use-package disaster
+  )
 
 ;; emacs-lisp------------------------------------------------------------------------
 (let ((elisp-pack-dev
       '(lispy)))
   (install-pack-list elisp-pack-dev))
 
-(defun init-emacs-lisp-dev ()
-  "Init."
-  (use-package eldoc
-    :config
-    (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
-  )
+(use-package eldoc
+  :config
+  (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
 ;; python----------------------------------------------------------------------------
 (let ((python-dev-pack
        '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
 	      pyenv-mode pytest pyvenv helm-pydoc)))
   (install-pack-list python-dev-pack t))
 
-(defun init-python-dev ()
-  "Init."
-  (setq python-indent-offset 4)
-  (setq python-shell-interpreter "python3")
 
-  (use-package elpy
-    :defer t
-    :config
-    (elpy-enable)
-    )
-
-  (use-package live-py-mode
-    :defer t
-    :commands live-py-mode
-    :init)
-
-  (use-package pyvenv
-    :defer t
-    :init
-    )
-
-  (use-package pytest
-    :commands(pytest-one
-	      pytest-pdb-one
-	      pytest-all
-	      pytest-pdb-all
-	      pytest-module
-	      pytest-pdb-module))
-
-  (defun python-shell-send-buffer-switch ()
-    "Send buffer content to shell and switch to it in insert mode."
-    (interactive)
-    (python-shell-send-buffer)
-    (python-shell-switch-to-shell)
-    (evil-insert-state))
-
-  (defun python-execute-file (arg)
-    "Execute a python script in a shell."
-    (interactive "P")
-    ;; set compile command to buffer-file-name
-    ;; universal argument put compile buffer in comint mode
-    (let ((universal-argument t)
-          (compile-command (format "python %s" (file-name-nondirectory
-                                                buffer-file-name))))
-      (if arg
-          (call-interactively 'compile)
-        (compile compile-command t)
-        (with-current-buffer (get-buffer "*compilation*")
-          (inferior-python-mode)))))
-  
+(use-package elpy
+  :defer t
+  :config
+  (elpy-enable)
   )
-(add-hook 'python-mode-hook 'init-python-dev)
+
+(use-package live-py-mode
+  :defer t
+  :commands live-py-mode
+  :init)
+
+(use-package pyvenv
+  :defer t
+  :init
+  )
+
+(use-package pytest
+  :commands(pytest-one
+	    pytest-pdb-one
+	    pytest-all
+	    pytest-pdb-all
+	    pytest-module
+	    pytest-pdb-module))
+
+(defun python-shell-send-buffer-switch ()
+  "Send buffer content to shell and switch to it in insert mode."
+  (interactive)
+  (python-shell-send-buffer)
+  (python-shell-switch-to-shell)
+  (evil-insert-state))
+
+(defun python-execute-file (arg)
+  "Execute a python script in a shell with ARG."
+  (interactive "P")
+  ;; set compile command to buffer-file-name
+  ;; universal argument put compile buffer in comint mode
+  (let ((universal-argument t)
+	(compile-command (format "python %s" (file-name-nondirectory
+					      buffer-file-name))))
+    (if arg
+	(call-interactively 'compile)
+      (compile compile-command t)
+      (with-current-buffer (get-buffer "*compilation*")
+	(inferior-python-mode)))))
 
 ;;====================================================================================
 
@@ -641,8 +630,8 @@ If IS-MAYBE is t then maybe install these packages."
 
 
 ;;TODO--------------------------------------------------------------------------------
-(require 'smex)
-(smex-initialize)
+;; (require 'smex)
+;; (smex-initialize)
 
 (setq gc-cons-threshold (* 2 1000 1000))
 
