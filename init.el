@@ -293,9 +293,10 @@ If IS-MAYBE is t then maybe install these packages."
 ;; Projectile------------------------------------------------------------------------
 (use-package projectile
   :defer t
+  :init
+  (helm-projectile-on)
   :config
   (projectile-mode +1)
-  (helm-projectile-on)
   :diminish projectile-mode
   :bind (("C-c p f" . 'helm-projectile-find-file)
 	 ("C-c p h" . 'helm-projectile)
@@ -586,13 +587,16 @@ If IS-MAYBE is t then maybe install these packages."
   "SPC" #'helm-M-x
   "s s" 'helm-swoop-without-pre-input
   "s r" 'helm-swoop
-  "b b" 'helm-mini
   "h i" 'helm-semantic-or-imenu
   "h f" 'helm-flycheck
   "h d" 'helm-dash
   "h t" 'helm-gtags-find-tag-from-here
   "h T" 'helm-gtags-find-tag-other-window
   "h r" 'helm-gtags-find-rtag
+  ;; buffer
+  "b d" 'kill-current-buffer
+  "b k" 'kill-buffer
+  "b b" 'helm-mini
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
