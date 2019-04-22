@@ -210,7 +210,8 @@ If IS-MAYBE is t then maybe install these packages."
               window-jump avy avy-menu counsel use-package undo-tree multi-term
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
-	      treemacs popwin pdf-tools projectile hl-todo smex zeal-at-point
+	      treemacs popwin pdf-tools projectile hl-todo smex zeal-at-point spacemacs-theme
+	      tao-theme
               )))
   (install-pack-list basic-edit-pack-list))
 
@@ -321,7 +322,7 @@ If IS-MAYBE is t then maybe install these packages."
 ;;=========================================================================================
 
 ;;; Interface=========================================================================
-;; (setq-default custom-enabled-themes '(spacemacs-dark))
+(setq-default custom-enabled-themes '(spacemacs-dark tao-yang atom-one-dark))
 ;; (add-hook 'after-init-hook 'reapply-themes)
 ;;------------------------------------------------------------------------------------
 
@@ -571,9 +572,18 @@ If IS-MAYBE is t then maybe install these packages."
         evil-visualstar
         ;; (hs-minor-mode :location built-in)
         ;; (linum-relative :toggle (version< emacs-version "26"))
+	which-key
         )))
   (dolist (pack key-pack-list)
     (require-package pack)))
+
+(use-package which-key
+  :defer t
+  :init
+  (which-key-mode)
+  :config
+  :diminish which-key-mode
+  )
 
 ;;; Evil
 (require 'evil)
@@ -636,8 +646,6 @@ If IS-MAYBE is t then maybe install these packages."
 ;;TODO--------------------------------------------------------------------------------
 ;; (require 'smex)
 ;; (smex-initialize)
-
-(setq gc-cons-threshold (* 2 1000 1000))
 
 (provide 'init)
 ;;; init.el ends here
