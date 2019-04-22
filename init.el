@@ -222,7 +222,6 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Company---------------------------------------------------------------------------------
 (use-package company
-  :defer t
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
@@ -233,7 +232,7 @@ If IS-MAYBE is t then maybe install these packages."
   :diminish company-mode
   )
 (use-package company-quickhelp
-  :defer t
+  :defer company
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
@@ -242,7 +241,6 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; YASnippte
 (use-package yasnippet
-  :defer t
   :init
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
@@ -293,7 +291,6 @@ If IS-MAYBE is t then maybe install these packages."
   ;;  )
 ;; Projectile------------------------------------------------------------------------
 (use-package projectile
-  :defer t
   :init
   (helm-projectile-on)
   :config
@@ -310,15 +307,11 @@ If IS-MAYBE is t then maybe install these packages."
 (let ((vc-pack-list
        '(evil-magit gitconfig-mode gitconfig-mode git-commit magit magit-gitflow orgit)))
   (install-pack-list vc-pack-list))
-(defun init-vc-mode ()
-  "Used to initilize version control mode."
-  (use-package magit
-    :bind (("C-c g s" . 'magit-status)
-	   ("C-c g d" . 'magit-diff-range)
-	   )
-    )
+(use-package magit
+  :bind (("C-c g s" . 'magit-status)
+	 ("C-c g d" . 'magit-diff-range)
+	 )
   )
-(add-hook 'after-init-hook 'init-vc-mode)
 ;;=========================================================================================
 
 ;;; Interface=========================================================================
@@ -451,7 +444,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Compile package
 (use-package compile
-  :defer t)
+  )
 
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
@@ -513,18 +506,15 @@ If IS-MAYBE is t then maybe install these packages."
 
 
 (use-package elpy
-  :defer t
   :config
   (elpy-enable)
   )
 
 (use-package live-py-mode
-  :defer t
   :commands live-py-mode
   :init)
 
 (use-package pyvenv
-  :defer t
   :init
   )
 
@@ -578,7 +568,6 @@ If IS-MAYBE is t then maybe install these packages."
     (require-package pack)))
 
 (use-package which-key
-  :defer t
   :init
   (which-key-mode)
   :config
