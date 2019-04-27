@@ -186,7 +186,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Set font
 (set-frame-font "Source Code Pro 11" t t)
-(if (< emacs-major-version 26.0)
+(if *is-a-win*
   (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp")))
 
 ;; ===================================================================================
@@ -236,9 +236,6 @@ If IS-MAYBE is t then maybe install these packages."
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
-;; Use tab as complete
-(setq tab-always-indent 'complete)
-
 ;; YASnippte
 (use-package yasnippet
   :init
@@ -271,22 +268,20 @@ If IS-MAYBE is t then maybe install these packages."
   (add-to-list 'popwin:special-display-config
 	       '("*.*[Hh]elm.**" :regexp t :position bottom))
 
-    ;; (setq helm-autoresize-max-height 40)
-    ;; (setq helm-autoresize-min-height 10)
-    :bind (("M-x" . #'helm-M-x)
-	   ("C-x C-f" . #'helm-find-files)
-	   ("C-c f f" . #'helm-find-files)
-	   ("C-c f r" . 'helm-recentf)
-	   ("C-c s s" . 'helm-swoop-without-pre-input)
-	   ("C-c s r" . 'helm-swoop)
-	   ("C-x b" . 'helm-mini)
-	   ("C-c h d" . 'helm-dash)
-	   ("C-c h i" . 'helm-semantic-or-imenu)
-	   ("C-c h f" . 'helm-flycheck)
-	   ("C-c h t" . 'helm-gtags-find-tag-from-here)
-	   ("C-c h T" . 'helm-gtags-find-tag-other-window)
-	   ("C-c h r" . 'helm-gtags-find-rtag)
-	   )
+  :bind (("M-x" . #'helm-M-x)
+	 ("C-x C-f" . #'helm-find-files)
+	 ("C-c f f" . #'helm-find-files)
+	 ("C-c f r" . 'helm-recentf)
+	 ("C-c s s" . 'helm-swoop-without-pre-input)
+	 ("C-c s r" . 'helm-swoop)
+	 ("C-x b" . 'helm-mini)
+	 ("C-c h d" . 'helm-dash)
+	 ("C-c h i" . 'helm-semantic-or-imenu)
+	 ("C-c h f" . 'helm-flycheck)
+	 ("C-c h t" . 'helm-gtags-find-tag-from-here)
+	 ("C-c h T" . 'helm-gtags-find-tag-other-window)
+	 ("C-c h r" . 'helm-gtags-find-rtag)
+	 )
     :diminish helm-mode)
   ;;  )
 ;; Projectile------------------------------------------------------------------------
@@ -374,7 +369,7 @@ If IS-MAYBE is t then maybe install these packages."
   :bind (("C-c t p" . 'hl-todo-previous)
 	 ("C-c t n" . 'hl-todo-next)
 	 ("C-c t o" . 'hl-todo-occur)
-	 ("C-c t i" . 'hl-todo-insert-keyword)))
+	 ("C-c t i" . 'hl-todo-insert)))
 (add-to-list 'popwin:special-display-config
 	     '("Occur" :regexp t :position bottom))
 
@@ -394,21 +389,30 @@ If IS-MAYBE is t then maybe install these packages."
        '(org evil-org helm-org-rifle org-pomodoro gnuplot htmlize org-present
 	     org-projectile org-autolist org2ctex)))
   (install-pack-list org-mode-pack-list t))
-(require 'org2ctex)
-(add-hook 'org-mode-hook 'org2ctex-toggle)
+(use-package org
+  :mode ("\\.org\\'" . org-mode)
+  )
+;; (require 'org2ctex)
+;; (add-hook 'org-mode-hook 'org2ctex-toggle)
+(use-package org2ctex
+  :hook (org-mode . org2ctex-toggle)
+)
 ;;====================================================================================
 
 ;;; Program===========================================================================
 ;; Flycheck
 (require-package 'flycheck)
-(add-hook 'prog-mode-hook 'flycheck-mode)
+(use-package flycheck-mode
+  :hook prog-mode)
 ;; hs-minor-mode
-(add-hook 'prog-mode-hook 'hs-minor-mode)
+(use-package hs-minor-mode
+  :hook prog-mode)
 ;; semantic-mode
-(add-hook 'prog-mode-hook 'semantic-mode)
-(add-hook 'prog-mode-hook
-	  '(lambda ()
-	     (setq global-semantic-highlight-func-mode t)))
+(use-package semantic-mode
+  :hook prog-mode
+  :config
+  (global-semantic-highlight-func-mode)
+  )
 
 ;; cscope mode-----------------------------------------------------------------------
 (let ((cscope-pack-list
