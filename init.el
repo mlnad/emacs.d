@@ -449,6 +449,9 @@ If IS-MAYBE is t then maybe install these packages."
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
+  "g p" 'magit-push-current
+  "g P" 'magit-pull-branch
+  "g c" 'magit-commit
   ;; projectile------------------------------
   "p f" 'helm-projectile-find-file
   "p h" 'helm-projectile
@@ -500,28 +503,6 @@ If IS-MAYBE is t then maybe install these packages."
 ;;       ;; for python projects, we don't want xcscope to rebuild the database
 ;;       ;; because it uses sccope instead of pycscope
 ;;       )))
-
-;; tags ----------------------------------------------------------------------------
-(let ((tags-pack-list
-       '(ggtags)))
-  (install-pack-list tags-pack-list))
-;; ggtags
-;; (add-hook 'c-mode-common-hook
-;; 	  (lambda ()
-;; 	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode)
-;; 	      (ggtags-mode 1))))
-;; (add-to-list 'popwin:special-display-config
-;; 	     '("*.gtags.*" :regexp t :position bottom))
-
-;; (defun init-gtags ()
-;;   ;TODO:
-;;   "Init."
-;;   )
-
-;; Compile package
-(use-package compile
-  :hook prog-mode
-  )
 
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
@@ -579,7 +560,7 @@ If IS-MAYBE is t then maybe install these packages."
 
 (use-package lispy-mode
   :hook emacs-lisp-mode
-  :diminish lispy-mode)
+  :diminish lispy)
 
 ;; python----------------------------------------------------------------------------
 (let ((python-dev-pack
