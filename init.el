@@ -335,12 +335,10 @@ If IS-MAYBE is t then maybe install these packages."
 	             mode-line-mule-info mode-line-client mode-line-modified
 	             mode-line-remote
 	             mode-line-frame-identification mode-line-buffer-identification ;; buffer files
-	             "   "
-	             ;; "["
-	             mode-line-position ;; position of this buffer
-	             ;; "/%I] "
-	             "  "
 	             mode-line-modes ;; Major mode and some important minor modes.
+		     " "
+	             mode-line-position ;; position of this buffer
+	             ;; "   "
 	             '(vc-mode vc-mode) ;; version control messages.
 	             mode-line-misc-info mode-line-end-spaces)) ;; end of mode line
 
