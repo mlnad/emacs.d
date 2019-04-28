@@ -397,160 +397,6 @@ If IS-MAYBE is t then maybe install these packages."
 )
 ;;====================================================================================
 
-;;; Program===========================================================================
-;; Flycheck
-(require-package 'flycheck)
-(use-package flycheck-mode
-  :hook prog-mode)
-;; hs-minor-mode
-(use-package hs-minor-mode
-  :hook prog-mode)
-;; semantic-mode
-(use-package semantic-mode
-  :hook prog-mode
-  :config
-  (global-semantic-highlight-func-mode)
-  )
-
-;; cscope mode-----------------------------------------------------------------------
-(let ((cscope-pack-list
-       '(helm-cscope xcscope)))
-  (install-pack-list cscope-pack-list))
-
-;TODO: set tag system.
-;; (defun init-cscope-mode ()
-;;   "Init."
-;;   (use-package xcscope
-;;     :init
-;;     (progn
-;;       ;; for python projects, we don't want xcscope to rebuild the database
-;;       ;; because it uses sccope instead of pycscope
-;;       )))
-
-;; tags ----------------------------------------------------------------------------
-(let ((tags-pack-list
-       '(ggtags)))
-  (install-pack-list tags-pack-list))
-;; ggtags
-;; (add-hook 'c-mode-common-hook
-;; 	  (lambda ()
-;; 	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode)
-;; 	      (ggtags-mode 1))))
-;; (add-to-list 'popwin:special-display-config
-;; 	     '("*.gtags.*" :regexp t :position bottom))
-
-;; (defun init-gtags ()
-;;   ;TODO:
-;;   "Init."
-;;   )
-
-;; Compile package
-(use-package compile
-  )
-
-;; c/cpp mode------------------------------------------------------------------------
-(let ((c-cpp-packages
-       '(cc-mode clang-format company company-c-headers company-ycmd disaster
-		 flycheck semantic ycmd
-		 )))
-  (dolist (c-cpp-pkg c-cpp-packages)
-    (require-package c-cpp-pkg))
-  )
-
-(use-package company-c-headers
-  :config
-  (add-to-list 'company-backends 'company-c-headers)
-  (dolist (list (get-include-path "c++"))
-    (add-to-list 'company-c-headers-path-system list))
-  )
-
-  ;; (dolist (list (get-include-path "c"))
-  ;;   (add-to-list 'company-c-headers-path-system list))
-  
-(use-package cc-mode
-  :init
-  (progn
-    (add-to-list 'auto-mode-alist
-		 `("\\.h\\'" . ,'c++-mode)))
-  :config
-  ;; (progn
-    ;; Disable electric indentation
-    ;; (setq-default c-electric-flag nil)
-    ;; (setq c-basic-offset 4)
-    ;; (setq c-default-style '((java-mode . "java")
-    ;; 			    (other . "linux")))
-    
-    ;; (add-to-list 'c-cleanup-list 'space-before-funcall)
-    ;; (add-to-list 'c-cleanup-list 'compact-empty-funcall)
-    ;; (add-to-list 'c-cleanup-list 'comment-close-slash)
-  ;; )
-)
-
-(use-package clang-format
-  )
-
-(use-package disaster
-  )
-
-;; emacs-lisp------------------------------------------------------------------------
-(let ((elisp-pack-dev
-      '(lispy)))
-  (install-pack-list elisp-pack-dev))
-
-(use-package eldoc
-  :config
-  (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
-;; python----------------------------------------------------------------------------
-(let ((python-dev-pack
-       '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
-	      pyenv-mode pytest pyvenv helm-pydoc)))
-  (install-pack-list python-dev-pack t))
-
-
-(use-package elpy
-  :config
-  (elpy-enable)
-  )
-
-(use-package live-py-mode
-  :commands live-py-mode
-  :init)
-
-(use-package pyvenv
-  :init
-  )
-
-(use-package pytest
-  :commands(pytest-one
-	    pytest-pdb-one
-	    pytest-all
-	    pytest-pdb-all
-	    pytest-module
-	    pytest-pdb-module))
-
-(defun python-shell-send-buffer-switch ()
-  "Send buffer content to shell and switch to it in insert mode."
-  (interactive)
-  (python-shell-send-buffer)
-  (python-shell-switch-to-shell)
-  (evil-insert-state))
-
-(defun python-execute-file (arg)
-  "Execute a python script in a shell with ARG."
-  (interactive "P")
-  ;; set compile command to buffer-file-name
-  ;; universal argument put compile buffer in comint mode
-  (let ((universal-argument t)
-	(compile-command (format "python %s" (file-name-nondirectory
-					      buffer-file-name))))
-    (if arg
-	(call-interactively 'compile)
-      (compile compile-command t)
-      (with-current-buffer (get-buffer "*compilation*")
-	(inferior-python-mode)))))
-
-;;====================================================================================
-
 
 ;;; Keybinding========================================================================
 (let ((key-pack-list
@@ -601,6 +447,9 @@ If IS-MAYBE is t then maybe install these packages."
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
+  "g p" 'magit-push-current
+  "g P" 'magit-pull-branch
+  "g c" 'magit-commit
   ;; projectile------------------------------
   "p f" 'helm-projectile-find-file
   "p h" 'helm-projectile
@@ -623,15 +472,144 @@ If IS-MAYBE is t then maybe install these packages."
   )
 (evil-mode 1)
 
-;;; Org mode global keys
-;; (global-set-key "\C-cl" 'org-store-link)
-;; (global-set-key "\C-ca" 'org-agenda)
-;; (global-set-key "\C-cc" 'org-capture)
-;; (global-set-key "\C-cb" 'org-iswitchb)
+;;; Program===========================================================================
+;; Flycheck
+(require-package 'flycheck)
+(use-package flycheck-mode
+  :hook prog-mode)
+;; hs-minor-mode
+(use-package hs-minor-mode
+  :hook prog-mode)
+;; semantic-mode
+(use-package semantic-mode
+  :hook prog-mode
+  :config
+  (global-semantic-highlight-func-mode)
+  )
 
+;; cscope mode-----------------------------------------------------------------------
+(let ((cscope-pack-list
+       '(helm-cscope xcscope)))
+  (install-pack-list cscope-pack-list))
+
+;TODO: set tag system.
+;; (defun init-cscope-mode ()
+;;   "Init."
+;;   (use-package xcscope
+;;     :init
+;;     (progn
+;;       ;; for python projects, we don't want xcscope to rebuild the database
+;;       ;; because it uses sccope instead of pycscope
+;;       )))
+
+;; c/cpp mode------------------------------------------------------------------------
+(let ((c-cpp-packages
+       '(cc-mode clang-format company company-c-headers company-ycmd disaster
+		 flycheck semantic ycmd
+		 )))
+  (dolist (c-cpp-pkg c-cpp-packages)
+    (require-package c-cpp-pkg))
+  )
+
+(use-package company-c-headers
+  :config
+  (add-to-list 'company-backends 'company-c-headers)
+  (dolist (list (get-include-path "c++"))
+    (add-to-list 'company-c-headers-path-system list))
+  )
+
+  ;; (dolist (list (get-include-path "c"))
+  ;;   (add-to-list 'company-c-headers-path-system list))
+  
+(use-package cc-mode
+  :init
+  (progn
+    (add-to-list 'auto-mode-alist
+		 `("\\.h\\'" . ,'c++-mode)))
+  :config
+  ;; (progn
+    ;; Disable electric indentation
+    ;; (setq-default c-electric-flag nil)
+    ;; (setq c-basic-offset 4)
+    ;; (setq c-default-style '((java-mode . "java")
+    ;; 			    (other . "linux")))
+    
+    ;; (add-to-list 'c-cleanup-list 'space-before-funcall)
+    ;; (add-to-list 'c-cleanup-list 'compact-empty-funcall)
+    ;; (add-to-list 'c-cleanup-list 'comment-close-slash)
+  ;; )
+)
+
+(use-package clang-format
+  )
+
+;; (use-package disaster
+;;   )
+
+;; emacs-lisp------------------------------------------------------------------------
+(let ((elisp-pack-dev
+      '(lispy)))
+  (install-pack-list elisp-pack-dev))
+
+(use-package eldoc-mode
+  :hook emacs-lisp-mode
+  :diminish eldoc-mode
+  :config)
+
+(use-package lispy-mode
+  :hook emacs-lisp-mode
+  :diminish lispy)
+
+;; python----------------------------------------------------------------------------
+(let ((python-dev-pack
+       '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
+	      pyenv-mode pytest pyvenv helm-pydoc)))
+  (install-pack-list python-dev-pack t))
+
+
+(use-package elpy
+  :config
+  (elpy-enable)
+  )
+
+(use-package live-py-mode
+  :commands live-py-mode
+  :init)
+
+(use-package pyvenv
+  :init
+  )
+
+(use-package pytest
+  :commands(pytest-one
+	    pytest-pdb-one
+	    pytest-all
+	    pytest-pdb-all
+	    pytest-module
+	    pytest-pdb-module))
+
+(defun python-shell-send-buffer-switch ()
+  "Send buffer content to shell and switch to it in insert mode."
+  (interactive)
+  (python-shell-send-buffer)
+  (python-shell-switch-to-shell)
+  (evil-insert-state))
+
+(defun python-execute-file (arg)
+  "Execute a python script in a shell with ARG."
+  (interactive "P")
+  ;; set compile command to buffer-file-name
+  ;; universal argument put compile buffer in comint mode
+  (let ((universal-argument t)
+	(compile-command (format "python %s" (file-name-nondirectory
+					      buffer-file-name))))
+    (if arg
+	(call-interactively 'compile)
+      (compile compile-command t)
+      (with-current-buffer (get-buffer "*compilation*")
+	(inferior-python-mode)))))
 
 ;;====================================================================================
-
 
 
 ;;TODO--------------------------------------------------------------------------------
