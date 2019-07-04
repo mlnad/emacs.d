@@ -186,9 +186,6 @@ If IS-MAYBE is t then maybe install these packages."
 
 ;; Set font
 (set-frame-font "Source Code Pro 11" t t)
-(if *is-a-win*
-  (set-fontset-font "fontset-default" 'gb18030 '("DengXian" . "unicode-bmp")))
-
 ;; ===================================================================================
 
 ;;; Packages===============================================================================
@@ -211,7 +208,7 @@ If IS-MAYBE is t then maybe install these packages."
               cnfonts powerline atom-one-dark-theme diminish list-utils
               company company-quickhelp cl-lib helm helm-describe-modes yasnippet
 	      treemacs popwin pdf-tools projectile hl-todo smex zeal-at-point spacemacs-theme
-	      tao-theme
+	      tao-theme helpful
               )))
   (install-pack-list basic-edit-pack-list))
 
@@ -256,8 +253,6 @@ If IS-MAYBE is t then maybe install these packages."
 (use-package helm-xref
   )
 
-;; (defun init-helm-dev ()
-;;   "Init helm."
 (use-package helm
   :config
   (helm-mode 1)
@@ -283,7 +278,14 @@ If IS-MAYBE is t then maybe install these packages."
 	 ("C-c h r" . 'helm-gtags-find-rtag)
 	 )
     :diminish helm-mode)
-  ;;  )
+
+;; (use-package helpful
+;;   :bind (("C-h k" . helpful-key)
+;; 	 ("C-h f" . helpful-function)
+;; 	 ("C-h v" . helpful-variable)
+;; 	 ("C-c hh" . helpful-at-point))
+;;   :commands (helpful-callable helpful-variable))
+
 ;; Projectile------------------------------------------------------------------------
 (use-package projectile
   :init
@@ -310,10 +312,6 @@ If IS-MAYBE is t then maybe install these packages."
 ;;=========================================================================================
 
 ;;; Interface=========================================================================
-(setq-default custom-enabled-themes '(spacemacs-dark tao-yang atom-one-dark))
-;; (add-hook 'after-init-hook 'reapply-themes)
-;;------------------------------------------------------------------------------------
-
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp 'set-scroll-bar-mode)
@@ -325,22 +323,30 @@ If IS-MAYBE is t then maybe install these packages."
 (electric-pair-mode 1)
 ;; (popwin-mode 1)
 (size-indication-mode t)
+;; use y-n to replace yes-no
+(fset 'yes-or-no-p 'y-or-n-p)
 
 ;; Set the mode line.---------------------------------------------------------------
-(setq-default mode-line-format ;; set mode line
-	            (list
-	             "%e" ;; print error message
-	             mode-line-front-space
-	             '(:eval evil-mode-line-tag) ;; Show evil mode.
-	             mode-line-mule-info mode-line-client mode-line-modified
-	             mode-line-remote
-	             mode-line-frame-identification mode-line-buffer-identification ;; buffer files
-	             mode-line-modes ;; Major mode and some important minor modes.
-		     " "
-	             mode-line-position ;; position of this buffer
-	             ;; "   "
-	             '(vc-mode vc-mode) ;; version control messages.
-	             mode-line-misc-info mode-line-end-spaces)) ;; end of mode line
+;; (setq-default mode-line-format ;; set mode line
+;; 	      (list
+;; 	       "%e" ;; print error message
+;; 	       mode-line-front-space
+;; 	       '(:eval evil-mode-line-tag) ;; Show evil mode.
+;; 	       mode-line-mule-info mode-line-client mode-line-modified
+;; 	       mode-line-remote
+;; 	       mode-line-frame-identification mode-line-buffer-identification ;; buffer files
+;; 	       mode-line-modes ;; Major mode and some important minor modes.
+;; 	       " "
+;; 	       mode-line-position	;; position of this buffer
+;; 	       ;; "   "
+;; 	       '(vc-mode vc-mode) ;; version control messages.
+;; 	       mode-line-misc-info mode-line-end-spaces))
+;; end of mode line
+
+(use-package powerline
+  :config
+  (powerline-vim-theme)
+  )
 
 (add-hook 'prog-mode-hook 'linum-mode)
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
@@ -385,33 +391,54 @@ If IS-MAYBE is t then maybe install these packages."
 ;;; Org mode==========================================================================
 (let ((org-mode-pack-list
        '(org evil-org helm-org-rifle org-pomodoro gnuplot htmlize org-present
-	     org-projectile org-autolist org2ctex)))
+	     org-projectile org-autolist)))
   (install-pack-list org-mode-pack-list t))
+(require 'use-org)
 (use-package org
   :mode ("\\.org\\'" . org-mode)
+  :init
+  (setq  org-log-done t
+	 org-edit-timestamp-down-means-later t
+	 org-export-coding-system 'utf-8
+	 org-catch-invisible-edits 'show
+	 org-tags-column 80
+	 )
+  (add-hook 'org-mode-hook '(lambda ()
+			      (setq truncate-lines nil)))
+  (add-hook 'org-mode-hook 'iimage-mode)
+  (add-hook 'org-mode-hook 'visual-line-mode)
+  (add-hook 'org-mode-hook 'org-autolist-mode)
+  (use-package ox-latex
+    :config
+    (add-all-to-list 'org-latex-classes org-user-latex-class)
+    )
   )
-;; (require 'org2ctex)
-;; (add-hook 'org-mode-hook 'org2ctex-toggle)
-(use-package org2ctex
-  :hook (org-mode . org2ctex-toggle)
-)
+(add-hook 'org-mode-hook '(lambda ()
+			    (dolist (charset '(kana han cjk-misc bopomofo chinese-gbk))
+			      (set-fontset-font (frame-parameter nil 'font) charset
+						(font-spec :family "Noto Sans Mono CJK SC Regular"
+							   :size 18)))))
+
+;;; Writing room mode
+(use-package writeroom-mode
+  :bind ("C-c wr" . writeroom-mode))
 ;;====================================================================================
 
 
 ;;; Keybinding========================================================================
 (let ((key-pack-list
        '(evil evil-anzu evil-args evil-cleverparens evil-escape evil-exchange
-        evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state
-        evil-mc evil-nerd-commenter evil-matchit evil-numbers evil-surround
-        evil-tutor
-	evil-leader
-        ;; (evil-unimpaired :location (recipe :fetcher local))
-        evil-visual-mark-mode
-        evil-visualstar
-        ;; (hs-minor-mode :location built-in)
-        ;; (linum-relative :toggle (version< emacs-version "26"))
-	which-key
-        )))
+              evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state
+              evil-mc evil-nerd-commenter evil-matchit evil-numbers evil-surround
+              evil-tutor
+	      evil-leader
+	      ;; (evil-unimpaired :location (recipe :fetcher local))
+              evil-visual-mark-mode
+              evil-visualstar
+	      ;; (hs-minor-mode :location built-in)
+	      ;; (linum-relative :toggle (version< emacs-version "26"))
+	      which-key
+              )))
   (dolist (pack key-pack-list)
     (require-package pack)))
 
