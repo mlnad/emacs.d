@@ -8,7 +8,7 @@
 
 ;;; Code:
 ;;======================================================================================
-;; (setq debug-on-error t)
+(setq debug-on-error t)
 
 ;; Use a hook so the messages doesn't get clobbered by other messages.
 (add-hook 'emacs-startup-hook
@@ -32,7 +32,6 @@
 ;; (require 'cl)
 (require 'cl-lib)
 ;; Language and coding
-;; (set-language-environment 'Chinese-GB)
 (set-language-environment "utf-8")
 (set-keyboard-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
@@ -279,12 +278,15 @@ If IS-MAYBE is t then maybe install these packages."
 	 )
     :diminish helm-mode)
 
-;; (use-package helpful
-;;   :bind (("C-h k" . helpful-key)
-;; 	 ("C-h f" . helpful-function)
-;; 	 ("C-h v" . helpful-variable)
-;; 	 ("C-c hh" . helpful-at-point))
-;;   :commands (helpful-callable helpful-variable))
+(use-package helpful
+  :bind (("C-h k" . helpful-key)
+	 ("C-h f" . helpful-function)
+	 ("C-h v" . helpful-variable)
+	 ("C-c hh" . helpful-at-point))
+  :commands (helpful-callable helpful-variable)
+  :init
+  (add-to-list 'popwin:special-display-config
+	       '("*.*helpful.*" :regexp t :position bottom :dedicated t)))
 
 ;; Projectile------------------------------------------------------------------------
 (use-package projectile
@@ -327,26 +329,20 @@ If IS-MAYBE is t then maybe install these packages."
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; Set the mode line.---------------------------------------------------------------
-;; (setq-default mode-line-format ;; set mode line
-;; 	      (list
-;; 	       "%e" ;; print error message
-;; 	       mode-line-front-space
-;; 	       '(:eval evil-mode-line-tag) ;; Show evil mode.
-;; 	       mode-line-mule-info mode-line-client mode-line-modified
-;; 	       mode-line-remote
-;; 	       mode-line-frame-identification mode-line-buffer-identification ;; buffer files
-;; 	       mode-line-modes ;; Major mode and some important minor modes.
-;; 	       " "
-;; 	       mode-line-position	;; position of this buffer
-;; 	       ;; "   "
-;; 	       '(vc-mode vc-mode) ;; version control messages.
-;; 	       mode-line-misc-info mode-line-end-spaces))
-;; end of mode line
-
-(use-package powerline
-  :config
-  (powerline-vim-theme)
-  )
+(setq-default mode-line-format ;; set mode line
+	      (list
+	       "%e" ;; print error message
+	       mode-line-front-space
+	       '(:eval evil-mode-line-tag) ;; Show evil mode.
+	       mode-line-mule-info mode-line-client mode-line-modified
+	       mode-line-remote
+	       mode-line-frame-identification mode-line-buffer-identification ;; buffer files
+	       mode-line-modes ;; Major mode and some important minor modes.
+	       " "
+	       mode-line-position	;; position of this buffer
+	       ;; "   "
+	       '(vc-mode vc-mode) ;; version control messages.
+	       mode-line-misc-info mode-line-end-spaces))
 
 (add-hook 'prog-mode-hook 'linum-mode)
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
@@ -414,14 +410,24 @@ If IS-MAYBE is t then maybe install these packages."
     )
   )
 (add-hook 'org-mode-hook '(lambda ()
-			    (dolist (charset '(kana han cjk-misc bopomofo chinese-gbk))
-			      (set-fontset-font (frame-parameter nil 'font) charset
-						(font-spec :family "Noto Sans Mono CJK SC Regular"
-							   :size 18)))))
+ 			    (dolist (charset '(kana han cjk-misc bopomofo chinese-gbk))
+ 			      (set-fontset-font (frame-parameter nil 'font) charset
+ 						(font-spec :family "Noto Sans Mono CJK SC Regular"
+ 							   :size 18)))))
+
+;;; markdown mode
+(use-package markdown-mode
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+	 ("\\.md\\'" . markdown-mode)
+	 ("\\.markdown\\'" . markdown-mode))
+  )
 
 ;;; Writing room mode
 (use-package writeroom-mode
-  :bind ("C-c wr" . writeroom-mode))
+  :bind ("C-c wr" . writeroom-mode)
+  :init
+  (setq writeroom-width 120))
 ;;====================================================================================
 
 
