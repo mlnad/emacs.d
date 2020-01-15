@@ -252,13 +252,21 @@ If IS-MAYBE is t then maybe install these packages."
 (use-package helm-xref
   )
 
+(use-package helm-swoop
+  :init
+  (progn
+    (setq
+	  helm-swoop-split-window-function 'helm-default-display-buffer
+	  helm-swoop-split-with-multiple-windows t
+	  helm-swoop-split-direction 'split-window-vertically)))
+
 (use-package helm
   :config
   (helm-mode 1)
   (popwin-mode 1)
   :init
   (setq xref-show-xrefs-function
-	      'helm-xref-show-xrefs)
+	'helm-xref-show-xrefs)
   (add-to-list 'popwin:special-display-config
 	       '("*.*[Hh]elm.**" :regexp t :position bottom))
 
@@ -276,7 +284,7 @@ If IS-MAYBE is t then maybe install these packages."
 	 ("C-c h T" . 'helm-gtags-find-tag-other-window)
 	 ("C-c h r" . 'helm-gtags-find-rtag)
 	 )
-    :diminish helm-mode)
+  :diminish helm-mode)
 
 (use-package helpful
   :bind (("C-h k" . helpful-key)
@@ -513,27 +521,9 @@ If IS-MAYBE is t then maybe install these packages."
 ;; hs-minor-mode
 (use-package hs-minor-mode
   :hook prog-mode)
-;; semantic-mode
-(use-package semantic-mode
-  :hook prog-mode
-  :config
-  (global-semantic-highlight-func-mode)
-  )
 
-;; cscope mode-----------------------------------------------------------------------
-(let ((cscope-pack-list
-       '(helm-cscope xcscope)))
-  (install-pack-list cscope-pack-list))
+;; LSP
 
-;TODO: set tag system.
-;; (defun init-cscope-mode ()
-;;   "Init."
-;;   (use-package xcscope
-;;     :init
-;;     (progn
-;;       ;; for python projects, we don't want xcscope to rebuild the database
-;;       ;; because it uses sccope instead of pycscope
-;;       )))
 
 ;; c/cpp mode------------------------------------------------------------------------
 (let ((c-cpp-packages
