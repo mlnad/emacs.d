@@ -90,14 +90,6 @@
 
 ;;-----------------------------------------------------------------------
 
-;; Ensure that themes will be applied even if they have not been customized
-(defun reapply-themes ()
-  "Forcibly load the themes listed in `custom-enabled-themes'."
-  (dolist (theme custom-enabled-themes)
-    (unless (custom-theme-p theme)
-      (load-theme theme)))
-  (custom-set-variables `(custom-enabled-themes (quote ,custom-enabled-themes))))
-
 (defun add-to-hook (fun hooks)
   "Add FUN to HOOKS."
   (dolist (hook hooks)
@@ -145,31 +137,6 @@ If IS-MAYBE is t then maybe install these packages."
     (if (eq is-maybe t)
 	(maybe-require-package pack)
       (require-package pack))))
-
-(defun get-include-path (lang)
-  "Get the include path about LANG from gcc."
-  (defvar inc-dirs-cmd (format "sh echo | gcc -v -x %s -E -" lang))
-  (let ((start "#include <...> search starts here:")
-	(end "End of search list.")
-	(inc-dirs nil)
-	(output (split-string (shell-command-to-string inc-dirs-cmd)
-			      "\n" t "[ ]+"))
-	)
-  
-    (while (not (eq output nil))
-      (if (string-equal (car output) start)
-	  (progn
-	    (setq output (cdr output))
-	    (while (not (string-equal (car output) end))
-	      (add-to-list 'inc-dirs (car output))
-	      (setq output (cdr output)))
-	    )
-	(setq output (cdr output)))
-      )
-    (if inc-dirs
-	inc-dirs
-      '("/usr/include" "/usr/local/include/"))
-    ))
 
 ;;; Basic=============================================================================
 (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
@@ -249,7 +216,6 @@ If IS-MAYBE is t then maybe install these packages."
 
 (use-package popwin)
 
-<<<<<<< HEAD
 (use-package helm-xref
   )
 
@@ -440,6 +406,92 @@ If IS-MAYBE is t then maybe install these packages."
 ;;====================================================================================
 
 
+
+;;; Program===========================================================================
+;; Flycheck
+(require-package 'flycheck)
+(use-package flycheck-mode
+  :hook prog-mode)
+;; hs-minor-mode
+(use-package hs-minor-mode
+  :hook prog-mode)
+
+;; LSP
+
+
+;; c/cpp mode------------------------------------------------------------------------
+(let ((c-cpp-packages
+       '(cc-mode clang-format company company-c-headers company-ycmd disaster
+		 flycheck semantic ycmd
+		 )))
+  (dolist (c-cpp-pkg c-cpp-packages)
+    (require-package c-cpp-pkg))
+  )
+
+(use-package clang-format
+  )
+
+;; (use-package disaster
+;;   )
+
+;; emacs-lisp------------------------------------------------------------------------
+(let ((elisp-pack-dev
+      '(lispy)))
+  (install-pack-list elisp-pack-dev))
+
+(use-package eldoc-mode
+  :hook emacs-lisp-mode
+  :diminish eldoc-mode
+  :config)
+
+(use-package lispy-mode
+  :hook emacs-lisp-mode
+  :diminish lispy)
+
+;; python----------------------------------------------------------------------------
+(let ((python-dev-pack
+       '(anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
+	      pyenv-mode pytest pyvenv helm-pydoc)))
+  (install-pack-list python-dev-pack t))
+
+
+(use-package live-py-mode
+  :commands live-py-mode
+  :init)
+
+(use-package pyvenv
+  :init
+  )
+
+(use-package pytest
+  :commands(pytest-one
+	    pytest-pdb-one
+	    pytest-all
+	    pytest-pdb-all
+	    pytest-module
+	    pytest-pdb-module))
+
+(defun python-shell-send-buffer-switch ()
+  "Send buffer content to shell and switch to it in insert mode."
+  (interactive)
+  (python-shell-send-buffer)
+  (python-shell-switch-to-shell)
+  (evil-insert-state))
+
+(defun python-execute-file (arg)
+  "Execute a python script in a shell with ARG."
+  (interactive "P")
+  ;; set compile command to buffer-file-name
+  ;; universal argument put compile buffer in comint mode
+  (let ((universal-argument t)
+	(compile-command (format "python %s" (file-name-nondirectory
+					      buffer-file-name))))
+    (if arg
+	(call-interactively 'compile)
+      (compile compile-command t)
+      (with-current-buffer (get-buffer "*compilation*")
+	(inferior-python-mode)))))
+
 ;;; Keybinding========================================================================
 (let ((key-pack-list
        '(evil evil-anzu evil-args evil-cleverparens evil-escape evil-exchange
@@ -514,131 +566,6 @@ If IS-MAYBE is t then maybe install these packages."
   )
 (evil-mode 1)
 
-;;; Program===========================================================================
-;; Flycheck
-(require-package 'flycheck)
-(use-package flycheck-mode
-  :hook prog-mode)
-;; hs-minor-mode
-(use-package hs-minor-mode
-  :hook prog-mode)
-
-;; LSP
-
-
-;; c/cpp mode------------------------------------------------------------------------
-(let ((c-cpp-packages
-       '(cc-mode clang-format company company-c-headers company-ycmd disaster
-		 flycheck semantic ycmd
-		 )))
-  (dolist (c-cpp-pkg c-cpp-packages)
-    (require-package c-cpp-pkg))
-  )
-
-(use-package company-c-headers
-  :config
-  (add-to-list 'company-backends 'company-c-headers)
-  (dolist (list (get-include-path "c++"))
-    (add-to-list 'company-c-headers-path-system list))
-  )
-
-  ;; (dolist (list (get-include-path "c"))
-  ;;   (add-to-list 'company-c-headers-path-system list))
-  
-(use-package cc-mode
-  :init
-  (progn
-    (add-to-list 'auto-mode-alist
-		 `("\\.h\\'" . ,'c++-mode)))
-  :config
-  ;; (progn
-    ;; Disable electric indentation
-    ;; (setq-default c-electric-flag nil)
-    ;; (setq c-basic-offset 4)
-    ;; (setq c-default-style '((java-mode . "java")
-    ;; 			    (other . "linux")))
-    
-    ;; (add-to-list 'c-cleanup-list 'space-before-funcall)
-    ;; (add-to-list 'c-cleanup-list 'compact-empty-funcall)
-    ;; (add-to-list 'c-cleanup-list 'comment-close-slash)
-  ;; )
-)
-
-(use-package clang-format
-  )
-
-;; (use-package disaster
-;;   )
-
-;; emacs-lisp------------------------------------------------------------------------
-(let ((elisp-pack-dev
-      '(lispy)))
-  (install-pack-list elisp-pack-dev))
-
-(use-package eldoc-mode
-  :hook emacs-lisp-mode
-  :diminish eldoc-mode
-  :config)
-
-(use-package lispy-mode
-  :hook emacs-lisp-mode
-  :diminish lispy)
-
-;; python----------------------------------------------------------------------------
-(let ((python-dev-pack
-       '(elpy anaconda-mode cython-mode eldoc live-py-mode pip-requirements py-isort
-	      pyenv-mode pytest pyvenv helm-pydoc)))
-  (install-pack-list python-dev-pack t))
-
-
-(use-package elpy
-  :config
-  (elpy-enable)
-  )
-
-(use-package live-py-mode
-  :commands live-py-mode
-  :init)
-
-(use-package pyvenv
-  :init
-  )
-
-(use-package pytest
-  :commands(pytest-one
-	    pytest-pdb-one
-	    pytest-all
-	    pytest-pdb-all
-	    pytest-module
-	    pytest-pdb-module))
-
-(defun python-shell-send-buffer-switch ()
-  "Send buffer content to shell and switch to it in insert mode."
-  (interactive)
-  (python-shell-send-buffer)
-  (python-shell-switch-to-shell)
-  (evil-insert-state))
-
-(defun python-execute-file (arg)
-  "Execute a python script in a shell with ARG."
-  (interactive "P")
-  ;; set compile command to buffer-file-name
-  ;; universal argument put compile buffer in comint mode
-  (let ((universal-argument t)
-	(compile-command (format "python %s" (file-name-nondirectory
-					      buffer-file-name))))
-    (if arg
-	(call-interactively 'compile)
-      (compile compile-command t)
-      (with-current-buffer (get-buffer "*compilation*")
-	(inferior-python-mode)))))
-
-;;====================================================================================
-
-
-;;TODO--------------------------------------------------------------------------------
-;; (require 'smex)
-;; (smex-initialize)
 
 (provide 'init)
 ;;; init.el ends here
