@@ -2,7 +2,6 @@
 # name: for
 # key: for
 # --
-for (${start}; ${condition}; ${step})
-{
+for (${1:start}; ${2:condition}; ${3:step}) ${4:{
     $0
-}
+}}

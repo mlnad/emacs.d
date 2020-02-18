@@ -13,11 +13,14 @@ ac-comphist.dat
 gnupg/
 var/
 .python-enviroment/
+.cache
 custom.el
+jdee-server/
 
 abbrev_defs
 ede-projects.el
 srecode-map.el
+eww-bookmarks
 
 # ecb files
 init.el.before_ecb_2.50
@@ -31,5 +34,15 @@ elpa/
 # vim .log files
 *.log
 
+<<<<<<< HEAD
 # session files
 session.*
+=======
+# projectile files
+projectile*
+#
+# senssion files 
+session.*
+
+tramp
+>>>>>>> single

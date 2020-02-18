@@ -2,4 +2,4 @@
 # name: decline new function
 # key: dcf/
 # --
-${type} ${name}(${});
+${type} ${name}(${args});
