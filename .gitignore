@@ -2,6 +2,7 @@
 *.o
 
 recentf
+recentf~
 eww-bookmarks
 
 url/

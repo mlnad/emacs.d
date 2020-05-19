@@ -185,6 +185,11 @@
    )
   )
 
+(use-package snails
+  :load-path "lisp/snails"
+  :bind (("C-c s s" . snails))
+  )
+
 (use-package window-jump
   :ensure t)
 
