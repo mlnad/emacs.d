@@ -351,11 +351,6 @@
   "w 1" 'delete-other-windows
   ;;youdao dict------------------------------
   "o y" 'youdao-dictionary-search-at-point+
-  ;; todo mode ------------------------------
-  "t p" 'hl-todo-previous
-  "t n" 'hl-todo-next
-  "t o" 'hl-todo-occur
-  "t i" 'hl-todo-insert-keyword
   )
 (evil-mode 1)
 
