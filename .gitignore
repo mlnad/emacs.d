@@ -34,7 +34,6 @@ elpa/
 # vim .log files
 *.log
 
-<<<<<<< HEAD
 # session files
 session.*
 =======
@@ -45,4 +44,4 @@ projectile*
 session.*
 
 tramp
->>>>>>> single
+transient
