@@ -134,6 +134,7 @@
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
 ;;; Packages===============================================================================
+(require 'package)
 (setq package--init-file-ensured t
       package-enable-at-startup nil
       package-archives '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
@@ -144,6 +145,11 @@
 (if (< emacs-major-version 27.0)
     (package-initialize)
   )
+(or (package-installed-p 'use-package)
+    (progn
+;;      (package-refresh-contents)
+      (package-install 'use-package))
+    )
 ;;---------------------------------------------------------------------------------------
 
 ;;; Completion=============================================================================
@@ -315,13 +321,11 @@
   "f s" 'save-buffer
   "SPC" 'counsel-M-x
   "s s" 'swiper
-;;  "s r" 'helm-swoop
   "h i" 'counsel-imenu
-;;  "h f" 'helm-flycheck
   ;; buffer
   "b d" 'kill-current-buffer
   "b k" 'kill-buffer
-;;  "b b" 'helm-mini
+  "b b" 'counsel-switch-buffer
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
