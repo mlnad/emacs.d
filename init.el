@@ -164,6 +164,30 @@
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
+(use-package swiper
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  :bind
+  (("C-s" . 'swiper)
+   )
+  )
+
+(use-package counsel
+  :ensure t
+  :config
+  :bind
+  (("M-x" . 'counsel-M-x)
+   ("C-h f" . 'counsel-describe-function)
+   ("C-h v" . 'counsel-describe-variable)
+   )
+  )
+
+(use-package window-jump
+  :ensure t)
+
 ;; YASnippte
 (use-package yasnippet
   :ensure t
@@ -174,60 +198,25 @@
   :diminish yas-minor-mode
 )
 
+(use-package yasnippet-snippets
+  :ensure t)
+
 ;; Helm------------------------------------------------------------------------------------
 (use-package popwin
   :ensure t)
 
-(use-package helm-xref
-  :ensure t
-  )
-
-(use-package helm-swoop
-  :ensure t
-  :init
-  (progn
-    (setq
-	  helm-swoop-split-window-function 'helm-default-display-buffer
-	  helm-swoop-split-with-multiple-windows t
-	  helm-swoop-split-direction 'split-window-vertically)))
-
-(use-package helm
-  :ensure t
-  :config
-  (helm-mode 1)
-  (popwin-mode 1)
-  :init
-  (setq xref-show-xrefs-function
-	'helm-xref-show-xrefs)
-  (add-to-list 'popwin:special-display-config
-	       '("*.*[Hh]elm.**" :regexp t :position bottom))
-
-  :bind (("M-x" . #'helm-M-x)
-	 ("C-x C-f" . #'helm-find-files)
-	 ("C-c f f" . #'helm-find-files)
-	 ("C-c f r" . 'helm-recentf)
-	 ("C-c s s" . 'helm-swoop-without-pre-input)
-	 ("C-c s r" . 'helm-swoop)
-	 ("C-x b" . 'helm-mini)
-	 ("C-c h i" . 'helm-semantic-or-imenu)
-	 ("C-c h f" . 'helm-flycheck)
-	 )
-  :diminish helm-mode)
 
 ;; Projectile------------------------------------------------------------------------
-(use-package helm-projectile
+(use-package counsel-projectile
   :ensure t)
-
 (use-package projectile
   :ensure t
-  :init
-  (helm-projectile-on)
   :config
   (projectile-mode +1)
   :diminish projectile-mode
-  :bind (("C-c p f" . 'helm-projectile-find-file)
-	 ("C-c p h" . 'helm-projectile)
-	 ("C-c p p" . 'helm-projectile-switch-project))
+  :bind (("C-c p f" . 'counsel-projectile-find-file)
+	 ("C-c p p" . 'counsel-projectile-switch-project)
+	 ("C-c p b" . 'counsel-projectile-switch-to-buffer))
   )
 (use-package recentf
   :defer 1)
@@ -279,9 +268,6 @@
 (use-package flycheck-mode
   :ensure flycheck
   :hook prog-mode)
-(use-package helm-flycheck
-  :ensure t
-  )
 ;; hs-minor-mode
 
 ;;; LSP
@@ -318,19 +304,19 @@
 (global-evil-leader-mode)
 (evil-leader/set-leader "SPC")
 (evil-leader/set-key
-  ;;helm minibuffers-------------------------
-  "f f" 'helm-find-files
-  "f r" 'helm-recentf
+  ;;swiper minibuffers-------------------------
+  "f f" 'counsel-find-file
+  "f r" 'counsel-recentf
   "f s" 'save-buffer
-  "SPC" #'helm-M-x
-  "s s" 'helm-swoop-without-pre-input
-  "s r" 'helm-swoop
-  "h i" 'helm-semantic-or-imenu
-  "h f" 'helm-flycheck
+  "SPC" 'counsel-M-x
+  "s s" 'swiper
+;;  "s r" 'helm-swoop
+  "h i" 'counsel-imenu
+;;  "h f" 'helm-flycheck
   ;; buffer
   "b d" 'kill-current-buffer
   "b k" 'kill-buffer
-  "b b" 'helm-mini
+;;  "b b" 'helm-mini
   ;; magit-----------------------------------
   "g s" 'magit-status
   "g d" 'magit-diff-range
@@ -338,9 +324,10 @@
   "g P" 'magit-pull-branch
   "g c" 'magit-commit
   ;; projectile------------------------------
-  "p f" 'helm-projectile-find-file
-  "p h" 'helm-projectile
-  "p p" 'helm-projectile-switch-project
+  "p f" 'counsel-projectile-find-file
+  "p h" 'counsel-projectile
+  "p p" 'counsel-projectile-switch-project
+  "p b" 'counsel-projectile-switch-to-buffer
   ;; windows options-------------------------
   "w l" 'window-jump-right
   "w h" 'window-jump-left
