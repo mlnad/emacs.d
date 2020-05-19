@@ -147,7 +147,7 @@
   )
 (or (package-installed-p 'use-package)
     (progn
-;;      (package-refresh-contents)
+      (package-refresh-contents)
       (package-install 'use-package))
     )
 ;;---------------------------------------------------------------------------------------
@@ -169,6 +169,10 @@
   :defer company
   :commands company-quickhelp-manual-begin
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
+
+(use-package ivy
+  :ensure t
+  :diminish ivy-mode)
 
 (use-package swiper
   :ensure t
