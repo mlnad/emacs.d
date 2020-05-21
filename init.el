@@ -153,6 +153,18 @@
 ;;---------------------------------------------------------------------------------------
 
 ;;; Completion=============================================================================
+(use-package yasnippet
+  :ensure t
+  :init
+  (add-hook 'prog-mode-hook #'yas-minor-mode)
+  :config
+  (add-hook 'prog-mode-hook 'yas-reload-all)
+  :diminish yas-minor-mode
+)
+
+(use-package yasnippet-snippets
+  :ensure t)
+
 (use-package company
   :ensure t
   :config
@@ -161,7 +173,7 @@
   (setq tab-always-indent 'complete)
   (add-hook 'prog-mode-hook 'company-mode)
   ;; (setq-default company-backends (delete 'company-semantic company-backends))
-  (push '(company-semantic :with company-yasnippet) company-backends)
+  (push 'company-yasnippet company-backends)
   :diminish company-mode
   )
 (use-package company-quickhelp
@@ -201,19 +213,6 @@
   )
 
 (use-package window-jump
-  :ensure t)
-
-;; YASnippte
-(use-package yasnippet
-  :ensure t
-  :init
-  (add-hook 'prog-mode-hook #'yas-minor-mode)
-  :config
-  (add-hook 'prog-mode-hook 'yas-reload-all)
-  :diminish yas-minor-mode
-)
-
-(use-package yasnippet-snippets
   :ensure t)
 
 ;; Helm------------------------------------------------------------------------------------
