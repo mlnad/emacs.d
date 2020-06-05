@@ -1,4 +1,5 @@
 ;; use-org.el --- the org mode file
+;;; Commentary:
 
 ;;; Code:
 
@@ -33,6 +34,11 @@
 
 (defvar org-user-latex-class
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
+
+(defun use-org ()
+  "Manage useage of 'org-mode'."
+  (interactive)
+  (message "Welcome to the world of writting"))
 
 (provide 'use-org)
 ;;; use-org ends here

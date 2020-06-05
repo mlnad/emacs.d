@@ -8,7 +8,13 @@
 
 ;;; Code:
 ;;======================================================================================
-;; (setq debug-on-error t)
+(setq debug-on-error t)
+
+
+(let (
+      ;; adjust garbage collection at startup
+      (gc-cons-threshold most-positive-fixnum)
+      (gc-cons-percentage 0.6))
 
 ;; Use a hook so the messages doesn't get clobbered by other messages.
 (add-hook 'emacs-startup-hook
@@ -20,9 +26,9 @@
 		     gcs-done)))
 
 ;; adjust garbage collection thresholds during startup, and thereafter
-(setq gc-cons-threshold (* 128 1024 1024))
-(add-hook 'emacs-startup-hook
-	  (lambda () (setq gc-cons-threshold (* 20 1024 1024))))
+;; (add-hook 'emacs-startup-hook
+;;	  (lambda () (setq gc-cons-threshold most-positive-fixnum)
+;;	    (setq gc-cons-percentage 0.6)))
 
 ;; extract different file for emacs
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -39,15 +45,6 @@
 (defconst elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
-
-;; variables----------------------------------------------------------------------------
-(defvar helm-display-buffer-regexp
-  `("*.*helm.**"
-    (display-buffer-in-side-window)
-    (inhibit-same-window . t)
-    (side . bottom)
-    (window-width . 0.6)
-    (window-height . 0.4)))
 
 ;;; My Functions=======================================================================
 (defun open-init-file()
@@ -209,13 +206,21 @@
 
 (use-package snails
   :load-path "lisp/snails"
-  :bind (("C-c s s" . snails))
+  :bind (("C-c s s" . 'snails))
   )
 
 (use-package window-jump
-  :ensure t)
+  :ensure t
+  :bind
+  (("C-c w l" . 'window-jump-right)
+   ("C-c w h" . 'window-jump-left)
+   ("C-c w k" . 'window-jump-up)
+   ("C-c w j" . 'window-jump-down)
+   ("C-c w 2" . 'split-window-right)
+   ("C-c w 0" . 'delete-window)
+   ("C-c w 1" . 'delete-other-windows)
+   ))
 
-;; Helm------------------------------------------------------------------------------------
 (use-package popwin
   :ensure t)
 
@@ -230,7 +235,8 @@
   :diminish projectile-mode
   :bind (("C-c p f" . 'counsel-projectile-find-file)
 	 ("C-c p p" . 'counsel-projectile-switch-project)
-	 ("C-c p b" . 'counsel-projectile-switch-to-buffer))
+	 ("C-c p b" . 'counsel-projectile-switch-to-buffer)
+	 ("C-c p k" . 'projectile-kill-buffers))
   )
 (use-package recentf
   :defer 1)
@@ -291,10 +297,16 @@
   :diminish which-key-mode
   )
 (require 'keybindings)
-
+)
 ;;; self-defined packages
 (use-package program
-  :load-path "lisp/program")
+  :load-path "lisp/program"
+  :hook prog-mode
+  )
+
+(use-package use-org
+  :load-path "lisp/use-org"
+  :hook org-mode)
 
 (provide 'init)
 ;;; init.el ends here

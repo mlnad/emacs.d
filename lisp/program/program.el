@@ -15,5 +15,10 @@
 (require 'prog-haskell)
 (require 'prog-lsp)
 
+(defun program ()
+  "Manage programming issues for Emacs."
+  (interactive)
+  )
+
 (provide 'program)
 ;;; program.el ends here

@@ -28,6 +28,7 @@
   "p h" 'counsel-projectile
   "p p" 'counsel-projectile-switch-project
   "p b" 'counsel-projectile-switch-to-buffer
+  "p k" 'projectile-kill-buffers
   ;; windows options-------------------------
   "w l" 'window-jump-right
   "w h" 'window-jump-left
