@@ -24,12 +24,12 @@
 (add-hook 'emacs-startup-hook
 	  (lambda () (setq gc-cons-threshold (* 20 1024 1024))))
 
+;; extract different file for emacs
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 (when (file-exists-p custom-file)
   (load custom-file))
 
-;; (require 'cl)
 (require 'cl-lib)
 ;; Language and coding
 (set-language-environment "utf-8")
@@ -170,10 +170,10 @@
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
-  (setq tab-always-indent 'complete)
+  ;;  (setq tab-always-indent 'complete)
   (add-hook 'prog-mode-hook 'company-mode)
   ;; (setq-default company-backends (delete 'company-semantic company-backends))
-  (push 'company-yasnippet company-backends)
+  (push '(company-semantic :with company-yasnippet) company-backends)
   :diminish company-mode
   )
 (use-package company-quickhelp
@@ -277,28 +277,6 @@
   :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
   )
 
-;;; Program===========================================================================
-;; Flycheck
-(use-package flycheck-mode
-  :ensure flycheck
-  :hook prog-mode)
-;; hs-minor-mode
-
-;;; LSP
-(use-package nox
-  :load-path "lisp/nox"
-  :config
-  (add-to-list 'nox-server-programs
-	       `(python-mode . ("pyls" "-v" "--tcp" "--host"
-				"localhost" "--port" :autoport)))
-  (dolist (hook (list
-		 'python-mode-hook
-		 'c-mode-hook
-		 'c-mode-common-hook
-		 'c++-mode-hook
-		 'haskell-mode-hook))
-    (add-hook hook '(lambda () (nox-ensure)))))
-
 ;;; Keybinding========================================================================
 (use-package evil
   :ensure t)
@@ -312,47 +290,11 @@
   :config
   :diminish which-key-mode
   )
+(require 'keybindings)
 
-;;; Evil
-(require 'evil)
-(global-evil-leader-mode)
-(evil-leader/set-leader "SPC")
-(evil-leader/set-key
-  ;;swiper minibuffers-------------------------
-  "f f" 'counsel-find-file
-  "f r" 'counsel-recentf
-  "f s" 'save-buffer
-  "SPC" 'counsel-M-x
-  "s s" 'swiper
-  "h i" 'counsel-imenu
-  ;; buffer
-  "b d" 'kill-current-buffer
-  "b k" 'kill-buffer
-  "b b" 'counsel-switch-buffer
-  ;; magit-----------------------------------
-  "g s" 'magit-status
-  "g d" 'magit-diff-range
-  "g p" 'magit-push-current
-  "g P" 'magit-pull-branch
-  "g c" 'magit-commit
-  ;; projectile------------------------------
-  "p f" 'counsel-projectile-find-file
-  "p h" 'counsel-projectile
-  "p p" 'counsel-projectile-switch-project
-  "p b" 'counsel-projectile-switch-to-buffer
-  ;; windows options-------------------------
-  "w l" 'window-jump-right
-  "w h" 'window-jump-left
-  "w k" 'window-jump-up
-  "w j" 'window-jump-down
-  "w 2" 'split-window-right
-  "w 0" 'delete-window
-  "w 1" 'delete-other-windows
-  ;;youdao dict------------------------------
-  "o y" 'youdao-dictionary-search-at-point+
-  )
-(evil-mode 1)
-
+;;; self-defined packages
+(use-package program
+  :load-path "lisp/program")
 
 (provide 'init)
 ;;; init.el ends here
