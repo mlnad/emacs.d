@@ -241,6 +241,10 @@
 (use-package recentf
   :defer 1)
 
+(use-package saveplace
+  :hook (after-init . save-place-mode)
+  )
+
 ;; Version Control=========================================================================
 (use-package magit
   :ensure t
@@ -307,6 +311,7 @@
 (use-package use-org
   :load-path "lisp/use-org"
   :hook org-mode)
+
 
 (provide 'init)
 ;;; init.el ends here
