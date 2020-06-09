@@ -149,6 +149,27 @@
     )
 ;;---------------------------------------------------------------------------------------
 
+;;; Built-In packages
+(use-package recentf
+  :defer 1)
+
+;; 
+(use-package saveplace
+  :hook (after-init . save-place-mode)
+  )
+
+(use-package subword
+  :hook (after-init . global-subword-mode)
+  :diminish subword-mode)
+
+(use-package winner-mode
+  :ensure nil
+  :hook (after-init . winner-mode))
+
+(use-package autorevert
+  :ensure nil
+  :hook (after-init . global-auto-revert-mode))
+
 ;;; Completion=============================================================================
 (use-package yasnippet
   :ensure t
@@ -237,12 +258,6 @@
 	 ("C-c p p" . 'counsel-projectile-switch-project)
 	 ("C-c p b" . 'counsel-projectile-switch-to-buffer)
 	 ("C-c p k" . 'projectile-kill-buffers))
-  )
-(use-package recentf
-  :defer 1)
-
-(use-package saveplace
-  :hook (after-init . save-place-mode)
   )
 
 ;; Version Control=========================================================================
