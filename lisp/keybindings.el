@@ -37,8 +37,12 @@
   "w 2" 'split-window-right
   "w 0" 'delete-window
   "w 1" 'delete-other-windows
-  ;;youdao dict------------------------------
+  ;; youdao dict------------------------------
   "o y" 'youdao-dictionary-search-at-point+
+  ;; flycheck mode
+  "e n" 'flycheck-next-error
+  "e p" 'flycheck-previous-error
+  "e l" 'flycheck-list-errors
   )
 (evil-mode 1)
 

@@ -35,10 +35,32 @@
 (defvar org-user-latex-class
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
 
+(use-package org
+  :ensure org
+  :defer t
+  :commands (orgtbl-mode)
+  :init
+  (progn
+    (require 'org))
+  )
+
+(use-package evil-org
+  :ensure evil-org
+  :defer t
+  :hook org-mode
+  :init
+  ;;  (progn
+  ;;    (add-hook 'org-mode-hook `(lambda () ((evil-org-mode)))))
+  )
+
+(use-package gnuplot
+  :ensure gnuplot
+  :defer t)
+
 (defun use-org ()
   "Manage useage of 'org-mode'."
   (interactive)
   (message "Welcome to the world of writting"))
 
-(provide 'use-org)
-;;; use-org ends here
+(provide 'init-org)
+;;; init-org.el ends here

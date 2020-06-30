@@ -4,6 +4,8 @@
 
 ;;; Code:
 ;;;
+
+;;; Language server protocol
 (use-package nox
   :load-path "lisp/nox"
   :config
@@ -58,5 +60,10 @@
 (use-package dap-mode
   :ensure t)
 
-(provide 'prog-lsp)
-;;; prog-lsp.el ends here
+;;; Flycheck
+(use-package flycheck-mode
+  :ensure flycheck
+  :hook prog-mode)
+
+(provide 'prog-common)
+;;; prog-common.el ends here

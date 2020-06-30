@@ -7,8 +7,7 @@
 ;; This file is
 
 ;;; Code:
-;;======================================================================================
-(setq debug-on-error t)
+;; (setq debug-on-error t)
 
 
 (let (
@@ -46,7 +45,7 @@
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
-;;; My Functions=======================================================================
+;;; My Functions
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
@@ -67,7 +66,6 @@
     `(eval-after-load ,feature
        '(progn ,@body))))
 
-;;-----------------------------------------------------------------------
 
 (defun add-to-hook (fun hooks)
   "Add FUN to HOOKS."
@@ -80,7 +78,7 @@
     (add-to-list usr-list list))
   )
 
-;;; Basic=============================================================================
+;;; Basic
 (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
               visible-bell t ;; Flash the frame to represent a bell
               auto-image-file-mode t
@@ -94,9 +92,8 @@
 
 ;; Set font
 (set-frame-font "Source Code Pro 11" t t)
-;; ===================================================================================
 
-;;; Interface=========================================================================
+;;; Interface
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 (when (fboundp 'set-scroll-bar-mode)
@@ -111,7 +108,7 @@
 ;; use y-n to replace yes-no
 (fset 'yes-or-no-p 'y-or-n-p)
 
-;; Set the mode line.---------------------------------------------------------------
+;; Set the mode line.
 (setq-default mode-line-format ;; set mode line
 	      (list
 	       "%e" ;; print error message
@@ -130,7 +127,7 @@
 (add-hook 'prog-mode-hook 'linum-mode)
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
-;;; Packages===============================================================================
+;;; Packages
 (require 'package)
 (setq package--init-file-ensured t
       package-enable-at-startup nil
@@ -147,7 +144,6 @@
       (package-refresh-contents)
       (package-install 'use-package))
     )
-;;---------------------------------------------------------------------------------------
 
 ;;; Built-In packages
 (use-package recentf
@@ -170,7 +166,7 @@
   :ensure nil
   :hook (after-init . global-auto-revert-mode))
 
-;;; Completion=============================================================================
+;;; Completion
 (use-package yasnippet
   :ensure t
   :init
@@ -183,17 +179,19 @@
 (use-package yasnippet-snippets
   :ensure t)
 
-(use-package company
-  :ensure t
+(use-package company-mode
+  :ensure company
+  :hook prog-mode
   :config
   (setq company-idle-delay 0.2)
   (setq company-minimum-prefix-length 2)
-  ;;  (setq tab-always-indent 'complete)
-  (add-hook 'prog-mode-hook 'company-mode)
-  ;; (setq-default company-backends (delete 'company-semantic company-backends))
+  (setq tab-always-indent 'complete)
+  ;; (add-hook 'prog-mode-hook 'company-mode)
+  (setq-default company-backends (delete 'company-semantic company-backends))
   (push '(company-semantic :with company-yasnippet) company-backends)
   :diminish company-mode
   )
+
 (use-package company-quickhelp
   :ensure t
   :defer company
@@ -287,7 +285,7 @@
 (add-hook 'after-init-hook 'hide-minor-mode)
 (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
-;;; Deft==============================================================================
+;;; Deft
 (use-package deft
   :ensure t
   :config
@@ -296,13 +294,13 @@
 		deft-recursive t
 	       ))
 
-;;; youdao-dict-----------------------------------------------------------------------
+;;; youdao-dict
 (use-package youdao-dictionary
   :ensure t
   :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
   )
 
-;;; Keybinding========================================================================
+;;; Keybinding
 (use-package evil
   :ensure t)
 (use-package evil-leader
@@ -316,17 +314,12 @@
   :diminish which-key-mode
   )
 (require 'keybindings)
+(require 'prog-common)
+(require 'prog-c-cpp)
+(require 'prog-python)
+(require 'prog-haskell)
+(require 'init-org)
 )
-;;; self-defined packages
-(use-package program
-  :load-path "lisp/program"
-  :hook prog-mode
-  )
-
-(use-package use-org
-  :load-path "lisp/use-org"
-  :hook org-mode)
-
 
 (provide 'init)
 ;;; init.el ends here
