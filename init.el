@@ -147,7 +147,10 @@
 
 ;;; Built-In packages
 (use-package recentf
-  :defer 1)
+  :defer 1
+  :config
+  (setq recentf-save-file (expand-file-name "catch/recentf" user-emacs-directory))
+  )
 
 ;; 
 (use-package saveplace
