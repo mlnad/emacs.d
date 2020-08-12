@@ -1,8 +1,8 @@
 # Object file
 *.o
 
-recentf
-recentf~
+*recentf
+*recentf~
 eww-bookmarks
 
 url/
