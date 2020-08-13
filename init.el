@@ -24,11 +24,6 @@
 			                          (time-subtract after-init-time before-init-time)))
 		                   gcs-done)))
 
-  ;; adjust garbage collection thresholds during startup, and thereafter
-  ;; (add-hook 'emacs-startup-hook
-  ;;	  (lambda () (setq gc-cons-threshold most-positive-fixnum)
-  ;;	    (setq gc-cons-percentage 0.6)))
-
   ;; extract different file for emacs
   (let (config-file (expand-file-name "cache/userconfig" user-emacs-directory))
     (when (file-exists-p config-file)
