@@ -16,6 +16,7 @@ var/
 .python-enviroment/
 .cache
 custom.el
+userconfig
 jdee-server/
 
 abbrev_defs
