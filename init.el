@@ -90,19 +90,7 @@
                 line-number-mode nil
                 initial-major-mode 'text-mode
                 frame-title-format "%b"
-                mode-line-format (list
-                                  "%e" ;; print error message
-                                  mode-line-front-space
-                                  '(:eval evil-mode-line-tag) ;; Show evil mode.
-                                  mode-line-mule-info mode-line-client mode-line-modified
-                                  mode-line-remote
-                                  mode-line-frame-identification mode-line-buffer-identification ;; buffer files
-                                  mode-line-modes ;; Major mode and some important minor modes.
-                                  " "
-                                  mode-line-position ;; position of this buffer
-                                  ;; "   "
-                                  '(vc-mode vc-mode) ;; version control messages.
-                                  mode-line-misc-info mode-line-end-spaces))
+                mode-line-format user/mode-line-format)
 
   ;; Set font
   (set-frame-font "Source Code Pro 11" t t)
@@ -121,9 +109,6 @@
   (size-indication-mode t)
   ;; use y-n to replace yes-no
   (fset 'yes-or-no-p 'y-or-n-p)
-
-  ;; Set the mode line.
-  (setq-default )
 
   (add-hook 'prog-mode-hook 'linum-mode)
   (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
@@ -148,7 +133,7 @@
   (use-package recentf
     :defer 1
     :config
-    (setq recentf-save-file (expand-file-name "catch/recentf" user-emacs-directory))
+    (setq recentf-save-file user/recentf-save-file)
     )
 
   ;;
@@ -291,7 +276,7 @@
   (use-package deft
     :ensure t
     :config
-    (setq-default deft-extensions '("org")
+    (setq-default deft-extensions 'user/notes-extensions
                   deft-directory user/notes-dir
                   deft-recursive t
 	                ))
