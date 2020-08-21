@@ -25,11 +25,15 @@
 		                   gcs-done)))
 
   ;; extract different file for emacs
-  (let (config-file (expand-file-name "cache/userconfig" user-emacs-directory))
-    (when (file-exists-p config-file)
-      (load config-file)))
+  (let ((config-file (expand-file-name "cache/userconfig" user-emacs-directory)))
+    (or (file-exists-p config-file)
+       (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
+		     config-file)
+       )
+       (load config-file)
+      )
 
-  (setq custom-file user/costom-file)
+  (setq custom-file user/custom-file)
   (when (file-exists-p custom-file)
     (load custom-file))
 
@@ -112,7 +116,7 @@
   (require 'package)
   (setq package--init-file-ensured t
         package-enable-at-startup nil
-        package-archives 'emacs-china-package-mirror
+        package-archives emacs-china-package-mirror
         )
 
   (if (< emacs-major-version 27.0)
@@ -257,7 +261,7 @@
     "This function hide HIDED-LIST from the modeline to save the space of modeline."
     (let ((dim-list
            ;; minor modes list followed will not show in the mode line.
-           '(abbrev-mode org-autolist-mode hs-minor-mode auto-revert-mode
+           '(abbrev-mode hs-minor-mode auto-revert-mode
 		                     hs-minor-mode image-mode iimage-mode visual-line-mode
 		                     eldoc-mode undo-tree-mode))
           )
@@ -271,7 +275,7 @@
   (use-package deft
     :ensure t
     :config
-    (setq-default deft-extensions 'user/notes-extensions
+    (setq-default deft-extensions user/notes-extensions
                   deft-directory user/notes-dir
                   deft-recursive t
 	                ))
@@ -300,7 +304,8 @@
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
-  (require 'init-org))
+  (require 'init-org)
+  )
 
 (provide 'init)
 ;;; init.el ends here

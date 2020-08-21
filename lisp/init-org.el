@@ -35,13 +35,10 @@
 (defvar org-user-latex-class
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
 
-(use-package org
+(use-package org-mode
   :ensure org
   :defer t
   :commands (orgtbl-mode)
-  :init
-  (progn
-    (require 'org))
   )
 
 (use-package evil-org
