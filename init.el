@@ -131,13 +131,24 @@
 ;;; Built-In packages
   (use-package recentf
     :defer 1
-    :config
-    (setq recentf-save-file user/recentf-save-file)
+    :commands (recentf-save-list)
+    :init
+    (progn
+      (add-hook 'find-file-hook (lambda () (unless recentf-mode
+					     (recentf-mode)
+					     (recentf-track-opened-file))))
+      (setq recentf-save-file user/recentf-save-file
+	    recentf-max-saved-items 1000
+	    recentf-auto-cleanup 'never
+	    recentf-auto-save-timer (run-with-idle-timer 600 t
+							 'recentf-save-list)))
     )
 
   ;;
   (use-package saveplace
     :hook (after-init . save-place-mode)
+    :init
+    (setq save-place-file user/save-place-file)
     )
 
   (use-package subword

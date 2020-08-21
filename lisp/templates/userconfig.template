@@ -6,6 +6,9 @@
 (defvar user/recentf-save-file
   (expand-file-name "cache/recentf" user-emacs-directory))
 
+(defvar user/save-place-file
+  (expand-file-name "cache/places" user-emacs-directory))
+
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
 
