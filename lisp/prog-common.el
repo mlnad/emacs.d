@@ -20,19 +20,6 @@
 		 'haskell-mode-hook))
     (add-hook hook '(lambda () (nox-ensure)))))
 
-;; (use-package eglot
-;;   :ensure t
-;;   :config
-;;   (dolist (hook (list
-;; 		 'python-mode-hook
-;; 		 'c-mode-hook
-;; 		 'c-mode-common-hook
-;; 		 'c++-mode-hook
-;; 		 'haskell-mode-hook))
-;;     (add-hook hook '(lambda () (eglot-ensure)))
-;;     )
-;;   )
-
 ;; (use-package lsp-mode
 ;;   :ensure t
 ;;   :init
@@ -58,11 +45,23 @@
   :commands lsp-ivy-workspace-symbol)
 
 (use-package dap-mode
+  :after (lsp-mode)
   :ensure t)
 
 ;;; Flycheck
 (use-package flycheck-mode
   :ensure flycheck
+  :defer t
+  :init
+  (progn
+    (setq flycheck-standard-error-navigation nil
+	  flycheck-global-modes nil))
+  :bind
+  (("C-c e b" . 'flycheck-buffer)
+   ("C-c e c" . 'flycheck-clear)
+   ("C-c e h" . 'flycheck-describe-checker)
+   ("C-c e s" . 'flycheck-select-checker)
+   ("C-c e x" . 'flycheck-explain-error-at-point))
   :hook prog-mode)
 
 (provide 'prog-common)

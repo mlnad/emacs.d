@@ -166,6 +166,7 @@
   (use-package imenu
     :defer t
     :bind (("C-c j i" . 'imenu))
+    )
 
 ;;; Completion
   (use-package yasnippet
@@ -184,12 +185,13 @@
     :ensure company
     :hook prog-mode
     :config
-    (setq company-idle-delay 0.2)
-    (setq company-minimum-prefix-length 2)
-    (setq tab-always-indent 'complete)
-    ;; (add-hook 'prog-mode-hook 'company-mode)
-    (setq-default company-backends (delete 'company-semantic company-backends))
-    (push '(company-semantic :with company-yasnippet) company-backends)
+    (progn
+      (setq company-idle-delay 0.2)
+      (setq company-minimum-prefix-length 2)
+      (setq tab-always-indent 'complete)
+      ;; (add-hook 'prog-mode-hook 'company-mode)
+      (setq-default company-backends (delete 'company-semantic company-backends))
+      (push '(company-semantic :with company-yasnippet) company-backends))
     :diminish company-mode
     )
 
@@ -285,8 +287,8 @@
     (let ((dim-list
            ;; minor modes list followed will not show in the mode line.
            '(abbrev-mode hs-minor-mode auto-revert-mode
-		                     hs-minor-mode image-mode iimage-mode visual-line-mode
-		                     eldoc-mode undo-tree-mode))
+			 hs-minor-mode image-mode iimage-mode visual-line-mode
+			 eldoc-mode undo-tree-mode company-mode))
           )
       (dolist (list dim-list)
         (diminish list)))
