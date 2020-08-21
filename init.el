@@ -163,6 +163,10 @@
     :ensure nil
     :hook (after-init . global-auto-revert-mode))
 
+  (use-package imenu
+    :defer t
+    :bind (("C-c j i" . 'imenu))
+
 ;;; Completion
   (use-package yasnippet
     :ensure t

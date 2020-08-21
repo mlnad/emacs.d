@@ -43,6 +43,8 @@
   "e n" 'flycheck-next-error
   "e p" 'flycheck-previous-error
   "e l" 'flycheck-list-errors
+  ;; jump mode
+  "j i" 'imenu
   )
 (evil-mode 1)
 
