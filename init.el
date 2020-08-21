@@ -246,20 +246,28 @@
     :ensure t)
   (use-package projectile
     :ensure t
+    :init
+    (progn
+      (setq projectile-indexing-method 'alien
+	    projectile-generic-command "find . -type f")
+      (setq projectile-sort-order 'recentf
+	    projectile-cache-file user/projectile-cache-file
+	    projectile-known-projects-file user/projectile-known-projects-file)
+      )
     :config
     (projectile-mode +1)
     :diminish projectile-mode
     :bind (("C-c p f" . 'counsel-projectile-find-file)
-	         ("C-c p p" . 'counsel-projectile-switch-project)
-	         ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-	         ("C-c p k" . 'projectile-kill-buffers))
+	   ("C-c p p" . 'counsel-projectile-switch-project)
+	   ("C-c p b" . 'counsel-projectile-switch-to-buffer)
+	   ("C-c p k" . 'projectile-kill-buffers))
     )
 
   ;; Version Control=========================================================================
   (use-package magit
     :ensure t
     :bind (("C-c g s" . 'magit-status)
-	         ("C-c g d" . 'magit-diff-range)
+	   ("C-c g d" . 'magit-diff-range)
 	         )
     )
   ;;=========================================================================================
