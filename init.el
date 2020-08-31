@@ -116,7 +116,7 @@
   (require 'package)
   (setq package--init-file-ensured t
         package-enable-at-startup nil
-        package-archives emacs-china-package-mirror
+        package-archives user/package-mirror
         )
 
   (if (< emacs-major-version 27.0)

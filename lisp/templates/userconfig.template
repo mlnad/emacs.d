@@ -39,7 +39,13 @@
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
+(defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
+                                 ("org" . "https://orgmode.org/elpa/")
+                                 ("gnu" . "https://elpa.gnu.org/packages/")))
+
 (defvar emacs-china-package-mirror '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
                                       ("melpa" . "http://elpa.emacs-china.org/melpa/")
                                       ("org"   . "http://elpa.emacs-china.org/org/"))
   )
+
+(defvar user/package-mirror default-package-mirror)
