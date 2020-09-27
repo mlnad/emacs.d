@@ -109,9 +109,8 @@
   ;; use y-n to replace yes-no
   (fset 'yes-or-no-p 'y-or-n-p)
 
-  (add-hook 'prog-mode-hook 'linum-mode)
   (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
-
+  
 ;;; Packages
   (require 'package)
   (setq package--init-file-ensured t
@@ -142,6 +141,11 @@
 	    recentf-auto-cleanup 'never
 	    recentf-auto-save-timer (run-with-idle-timer 600 t
 							 'recentf-save-list)))
+    )
+
+  (use-package display-line-numbers
+    :hook
+    (prog-mode . display-line-numbers-mode)
     )
 
   ;;
@@ -331,6 +335,7 @@
   (require 'prog-haskell)
   (require 'init-org)
   )
+
 
 (provide 'init)
 ;;; init.el ends here
