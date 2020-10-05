@@ -193,7 +193,6 @@
       (setq company-idle-delay 0.2)
       (setq company-minimum-prefix-length 2)
       (setq tab-always-indent 'complete)
-      ;; (add-hook 'prog-mode-hook 'company-mode)
       (setq-default company-backends (delete 'company-semantic company-backends))
       (push '(company-semantic :with company-yasnippet) company-backends))
     :diminish company-mode

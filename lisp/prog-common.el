@@ -7,6 +7,7 @@
 
 ;;; Language server protocol
 (cond
+ ;; Use nox as client.
  ((eq 'nox user/lsp-client)
   (use-package nox
     :load-path "lisp/nox"
@@ -14,6 +15,8 @@
     (add-to-list 'nox-server-programs
 		 `(python-mode . ("pyls" "-v" "--tcp" "--host"
 				  "localhost" "--port" :autoport)))
+    (add-to-list 'nox-server-programs
+		 `((c++-mode c-mode) . ("clangd")))
     (dolist (hook (list
 		   'python-mode-hook
 		   'c-mode-hook
@@ -22,6 +25,8 @@
 		   'haskell-mode-hook))
       (add-hook hook '(lambda () (nox-ensure)))))
   )
+
+ ;; Use lsp-mode as client
  ((eq 'lsp-mode user/lsp-client)
   (use-package lsp-mode
     :ensure t
@@ -35,6 +40,7 @@
 	   )
     :config
     (setq lsp-enable-snippet nil)
+    (setq lsp-modeline-diagnostics-enable nil)
     :commands (lsp lsp-deferred)
     )
   ))
@@ -44,6 +50,7 @@
   :config
   (setq lsp-ui-doc-enable nil)
   :commands lsp-ui-mode)
+
 (use-package lsp-ivy
   :ensure t
   :commands lsp-ivy-workspace-symbol)
