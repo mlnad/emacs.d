@@ -6,4 +6,4 @@
 	url = https://github.com/manateelazycat/snails.git
 [submodule "lisp/valign"]
 	path = lisp/valign
-	url = git@github.com:casouri/valign.git
+	url = https://github.com/casouri/valign.git

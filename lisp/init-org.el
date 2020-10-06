@@ -44,15 +44,19 @@
 (use-package evil-org
   :ensure evil-org
   :defer t
-  :hook org-mode
-  :init
-  ;;  (progn
-  ;;    (add-hook 'org-mode-hook `(lambda () ((evil-org-mode)))))
+  :hook (org-mode . evil-org-mode)
+  :diminish evil-org-mode
   )
 
 (use-package gnuplot
   :ensure gnuplot
   :defer t)
+
+(use-package valign
+  :load-path "lisp/valign"
+  :config
+  (add-hook 'org-mode-hook #'valign-mode)
+  :diminish valign-mode)
 
 (defun use-org ()
   "Manage useage of 'org-mode'."
