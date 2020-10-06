@@ -39,6 +39,13 @@
   :ensure org
   :defer t
   :commands (orgtbl-mode)
+  :config
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   `((emacs-lisp . t)
+     (gnuplot . t)
+     (latex . t)
+     (python . t)))
   )
 
 (use-package evil-org
