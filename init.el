@@ -172,38 +172,7 @@
     :bind (("C-c j i" . 'imenu))
     )
 
-;;; Completion
-  (use-package yasnippet
-    :ensure t
-    :init
-    (add-hook 'prog-mode-hook #'yas-minor-mode)
-    :config
-    (add-hook 'prog-mode-hook 'yas-reload-all)
-    :diminish yas-minor-mode
-    )
-
-  (use-package yasnippet-snippets
-    :ensure t)
-
-  (use-package company-mode
-    :ensure company
-    :hook prog-mode
-    :config
-    (progn
-      (setq company-idle-delay 0.2)
-      (setq company-minimum-prefix-length 2)
-      (setq tab-always-indent 'complete)
-      (setq-default company-backends (delete 'company-semantic company-backends))
-      (push '(company-semantic :with company-yasnippet) company-backends))
-    :diminish company-mode
-    )
-
-  (use-package company-quickhelp
-    :ensure t
-    :defer company
-    :commands company-quickhelp-manual-begin
-    :bind (("C-c d" . 'company-quickhelp-manual-begin)))
-
+;;; Navigation
   (use-package ivy
     :ensure t
     :diminish ivy-mode)
