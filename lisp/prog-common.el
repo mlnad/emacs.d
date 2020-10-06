@@ -12,17 +12,8 @@
   (use-package nox
     :load-path "lisp/nox"
     :config
-    (add-to-list 'nox-server-programs
-		 `(python-mode . ("pyls" "-v" "--tcp" "--host"
-				  "localhost" "--port" :autoport)))
-    (add-to-list 'nox-server-programs
-		 `((c++-mode c-mode) . ("clangd")))
-    (dolist (hook (list
-		   'python-mode-hook
-		   'c-mode-hook
-		   'c-mode-common-hook
-		   'c++-mode-hook
-		   'haskell-mode-hook))
+    (setq nox-server-programs user/nox-server-programs)
+    (dolist (hook user/nox-list)
       (add-hook hook '(lambda () (nox-ensure)))))
   )
 
@@ -43,9 +34,8 @@
     (setq lsp-modeline-diagnostics-enable nil)
     :commands (lsp lsp-deferred)
     )
-  ))
 
-(use-package lsp-ui
+ (use-package lsp-ui
   :ensure t
   :config
   (setq lsp-ui-doc-enable nil)
@@ -58,6 +48,7 @@
 (use-package dap-mode
   :after (lsp-mode)
   :ensure t)
+ ))
 
 ;;; Flycheck
 (use-package flycheck-mode

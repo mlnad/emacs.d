@@ -50,6 +50,21 @@
 
 (defvar user/package-mirror default-package-mirror)
 
+(defvar user/nox-server-programs
+  '((rust-mode . (nox-rls "rls"))
+    ((c++-mode c-mode) . ("clangd"))
+    (python-mode . ("pyls" "-v" "--tcp" "--host" "localhost" "--port" :autoport))
+    (haskell-mode . (nox-hie "hie-wrapper" "--lsp"))
+    ))
+
+(defvar user/nox-list
+  (list
+    'python-mode-hook
+    'c-mode-hook
+    'c-mode-common-hook
+    'c++-mode-hook
+    'haskell-mode-hook))
+
 (defvar user/lsp-client 'nox
   "If `nox' use nox as lsp client
 If `lsp-mode' use lsp-mode as lsp client.")
