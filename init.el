@@ -36,6 +36,9 @@
       )
   (load user/userconfig-file)
 
+  ;;
+  (setq auto-save-list-file-prefix user/auto-save-list-prefix)
+
   ;; load `custom-file'
   (setq custom-file user/custom-file)
   (when (file-exists-p custom-file)

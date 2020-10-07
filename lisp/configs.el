@@ -21,6 +21,9 @@
 (defvar user/projectile-cache-file
   (expand-file-name "cache/projectile.cache" user-emacs-directory))
 
+(defvar user/auto-save-list-prefix
+  (expand-file-name "cache/auto-save-list/.saves-" user-emacs-directory))
+
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
 
