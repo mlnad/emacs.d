@@ -192,9 +192,9 @@
     :ensure t
     :config
     :bind
-    (("M-x" . 'counsel-M-x)
-     ("C-h f" . 'counsel-describe-function)
-     ("C-h v" . 'counsel-describe-variable)
+    (;;("M-x" . 'counsel-M-x)
+     ;;("C-h f" . 'counsel-describe-function)
+     ;;("C-h v" . 'counsel-describe-variable)
      )
     )
 

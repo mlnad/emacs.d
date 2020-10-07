@@ -10,7 +10,8 @@
   "f f" 'counsel-find-file
   "f r" 'counsel-recentf
   "f s" 'save-buffer
-  "SPC" 'counsel-M-x
+  ;; "SPC" 'counsel-M-x
+  "SPC" 'execute-extended-command
   "s s" 'swiper
   "h i" 'counsel-imenu
   ;; buffer
