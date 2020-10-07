@@ -24,39 +24,28 @@
 			                          (time-subtract after-init-time before-init-time)))
 		                   gcs-done)))
 
-  ;; extract different file for emacs
-  (let ((config-file (expand-file-name "cache/userconfig" user-emacs-directory)))
-    (or (file-exists-p config-file)
-       (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
-		     config-file)
-       )
-       (load config-file)
-      )
+  ;; add `lisp' to `load-path'.
+  (add-to-list 'load-path
+               (expand-file-name "lisp" user-emacs-directory))
 
+  ;; load user configs.
+  (require 'configs)
+  (or (file-exists-p user/userconfig-file)
+      (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
+		 user/userconfig-file)
+      )
+  (load user/userconfig-file)
+
+  ;; load `custom-file'
   (setq custom-file user/custom-file)
   (when (file-exists-p custom-file)
     (load custom-file))
 
-  (add-to-list 'load-path
-               (expand-file-name "lisp" user-emacs-directory))
-
-  (require 'cl-lib)
+ (require 'cl-lib)
   ;; Language and coding
   (set-language-environment "utf-8")
   (set-keyboard-coding-system 'utf-8)
   (set-default-coding-systems 'utf-8)
-
-;;; My Functions
-  (defun open-init-file()
-    "Find and open the init.el."
-    (interactive)
-    (find-file (concat user-emacs-directory "init.el")))
-
-  (defun load-init-file()
-    "Load init.el."
-    (interactive)
-    (load-file (concat user-emacs-directory "init.el"))
-    )
 
 
   (if (fboundp 'with-eval-after-load)
@@ -105,7 +94,6 @@
   (show-paren-mode 1)
   (delete-selection-mode 1)
   (electric-pair-mode 1)
-  ;; (popwin-mode 1)
   (size-indication-mode t)
   ;; use y-n to replace yes-no
   (fset 'yes-or-no-p 'y-or-n-p)
@@ -297,6 +285,7 @@
     :config
     :diminish which-key-mode
     )
+  (require 'functions)
   (require 'keybindings)
   (require 'prog-common)
   (require 'prog-c-cpp)

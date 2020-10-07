@@ -46,6 +46,9 @@
   "e l" 'flycheck-list-errors
   ;; jump mode
   "j i" 'imenu
+  ;; global
+  "o c" 'open-userconfig-file
+  "o i" 'open-init-file
   )
 (evil-mode 1)
 
