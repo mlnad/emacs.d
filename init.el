@@ -73,7 +73,8 @@
 
 ;;; Basic
   (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
-                visible-bell t        ;; Flash the frame to represent a bell
+                ;; visible-bell t        ;; Flash the frame to represent a bell
+		ring-bell-function 'ignore
 		scroll-step 1 ;; smooth scroll
                 auto-image-file-mode t
                 initial-scratch-message nil
