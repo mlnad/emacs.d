@@ -19,5 +19,16 @@
   (interactive)
   (find-file user/userconfig-file))
 
+(defun user/counsel-search-rg (&optional initial-directory)
+  "Searching with rg in Emacs.  If INITIAL-DIRECTORY is non nil
+start in that directory."
+  (interactive)
+  (require 'counsel)
+  (let* ((default-directory
+	   (or initial-directory (read-directory-name "Start from directory: ")))
+	 )
+    (counsel-rg "" default-directory nil "Searching with rg: "))
+  )
+
 (provide 'functions)
 ;;; functions.el ends here
