@@ -36,6 +36,7 @@
   "w k" 'window-jump-up
   "w j" 'window-jump-down
   "w 2" 'split-window-right
+  "w -" 'split-window-vertically
   "w 0" 'delete-window
   "w 1" 'delete-other-windows
   ;; youdao dict------------------------------

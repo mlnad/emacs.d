@@ -204,6 +204,7 @@
      ("C-c w k" . 'window-jump-up)
      ("C-c w j" . 'window-jump-down)
      ("C-c w 2" . 'split-window-right)
+     ("C-c w -" . 'split-window-vertically)
      ("C-c w 0" . 'delete-window)
      ("C-c w 1" . 'delete-other-windows)
      ))
