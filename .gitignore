@@ -42,6 +42,11 @@ projectile*
 #
 # senssion files 
 session.*
+*lsp-session*
 
 tramp
 transient
+
+gmon.out
+
+
