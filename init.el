@@ -111,9 +111,22 @@
         package-archives user/package-mirror
         )
 
-  (if (< emacs-major-version 27.0)
-      (package-initialize)
-    )
+  ;; Evaluate the correct package subdirectory of packages.
+  (setq package-user-dir
+	(file-name-as-directory
+	 (if (not elpa-subdirectory)
+	     elpa-pack-dir
+	   (let ((subdir (format "%d%s%d"
+				 emacs-major-version
+				 version-separator
+				 emacs-minor-version)))
+	     (expand-file-name subdir elpa-pack-dir))
+	     )
+	 ))
+
+  ;; Load Emacs packages and initialize them.
+  (package-initialize)
+
   (or (package-installed-p 'use-package)
       (progn
         (package-refresh-contents)

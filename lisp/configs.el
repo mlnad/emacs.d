@@ -48,6 +48,9 @@
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
+(defvar elpa-subdirectory 'emacs-version
+  )
+
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
                                  ("org" . "https://orgmode.org/elpa/")
                                  ("gnu" . "https://elpa.gnu.org/packages/"))
