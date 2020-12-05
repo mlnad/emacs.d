@@ -1,9 +1,9 @@
 
 ;;; Code:
 
-(use-package ccls
-  :ensure t
-  :defer t)
+;; (use-package ccls
+;;   :ensure t
+;;   :defer t)
 
 (use-package clang-format
   :ensure t
