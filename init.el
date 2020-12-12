@@ -110,24 +110,6 @@
      )
     )
 
-  (use-package snails
-    :load-path "lisp/snails"
-    :bind (("C-c s s" . 'snails))
-    )
-
-  (use-package window-jump
-    :ensure t
-    :bind
-    (("C-c w l" . 'window-jump-right)
-     ("C-c w h" . 'window-jump-left)
-     ("C-c w k" . 'window-jump-up)
-     ("C-c w j" . 'window-jump-down)
-     ("C-c w 2" . 'split-window-right)
-     ("C-c w -" . 'split-window-vertically)
-     ("C-c w 0" . 'delete-window)
-     ("C-c w 1" . 'delete-other-windows)
-     ))
-
   (use-package popwin
     :ensure t)
 
@@ -163,23 +145,6 @@
     )
   ;;=========================================================================================
 
-
-  ;;-------------------------------------------------------------------------------------
-  (use-package diminish
-    :ensure t)
-  (defun hide-minor-mode ()
-    "This function hide HIDED-LIST from the modeline to save the space of modeline."
-    (let ((dim-list
-           ;; minor modes list followed will not show in the mode line.
-           '(abbrev-mode hs-minor-mode auto-revert-mode
-			 hs-minor-mode image-mode iimage-mode visual-line-mode
-			 eldoc-mode undo-tree-mode company-mode))
-          )
-      (dolist (list dim-list)
-        (diminish list)))
-    )
-  (add-hook 'after-init-hook 'hide-minor-mode)
-  (add-hook 'find-file-hook (lambda () (hide-minor-mode)))
 
 ;;; Deft
   (use-package deft

@@ -151,5 +151,31 @@
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 
+;;; Modeline
+(use-package doom-modeline
+  :ensure t
+  :hook (after-init . doom-modeline-mode)
+  :init
+  (unless after-init-time
+    (setq-default mode-line-format nil))
+
+  (setq projectile-dynamic-mode-line nil)
+
+  (setq doom-modeline-bar-width 3
+        doom-modeline-github nil
+        doom-modeline-mu4e nil
+        doom-modeline-persp-name nil
+        doom-modeline-minor-modes nil
+        doom-modeline-major-mode-icon t
+        doom-modeline-buffer-file-name-style 'relative-from-project)
+
+
+  (use-package anzu
+    :hook isearch-mode)
+
+  (use-package evil-anzu
+    :config
+    (global-anzu-mode 1)))
+
 (provide 'editor)
 ;;; editor.el ends here

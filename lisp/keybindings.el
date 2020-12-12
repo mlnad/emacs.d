@@ -31,10 +31,10 @@
   "p b" 'counsel-projectile-switch-to-buffer
   "p k" 'projectile-kill-buffers
   ;; windows options-------------------------
-  "w l" 'window-jump-right
-  "w h" 'window-jump-left
-  "w k" 'window-jump-up
-  "w j" 'window-jump-down
+  "w l" 'evil-window-right
+  "w h" 'evil-window-left
+  "w k" 'evil-window-up
+  "w j" 'evil-window-down
   "w 2" 'split-window-right
   "w -" 'split-window-vertically
   "w 0" 'delete-window
