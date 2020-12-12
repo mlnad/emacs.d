@@ -38,15 +38,17 @@
   :init
   (let ((standard-seaarch-fn #'ivy--regex-plus)
         (alt-search-fn #'ivy--regex-ignore-order))
+    (setq ivy-more-chars-alist
+          `((counsel-rg . 1)
+            (counsel-search . 2)
+            (t . 3))
+          )
     (setq ivy-re-builders-alist
           `((counsel-rg . ,standard-seaarch-fn)
             (swiper . ,standard-seaarch-fn)
-            (swiper-isearch . ,standard-seaarch-fn)
-            (t . ,alt-search-fn))
-          ivy-more-chars-alist
-          '((counsel-rg . 1)
-            (counsel-search . 2)
-            (t . 3))))
+            (swiper-isearch . ,standard-seaarch-fn)))
+;;            (t . ,alt-search-fn)) ;; Error when use this line
+    )
   :config
   (setq ivy-sort-max-size 7500)
 
@@ -59,7 +61,8 @@
         ivy-use-virtual-buffers nil
         ivy-virtual-abbreviate 'full
         ivy-on-del-error-function #'ignore
-        ivy-use-selectable-prompt t)
+        ivy-use-selectable-prompt t
+        )
   )
 
 (use-package counsel
@@ -118,7 +121,8 @@
   :init
   (progn
     (setq ivy-rich-path-stytle 'abbrev
-          ivy-virtual-abbreviate 'full))
+          ivy-virtual-abbreviate 'full
+          ))
   :config
   (progn
     (setq ivy-rich-parse-remote-buffer nil)
@@ -126,16 +130,16 @@
     )
   )
 
-(use-package ivy-posframe
-  :ensure t
-  :hook (ivy-mode . ivy-posframe-mode)
-  :config
-  (setq ivy-fixed-height-minibuffer nil
-        ivy-postframe-border-width 10
-        ivy-postframe-parameters
-        `((min-width . 90)
-          (min-height . ,ivy-height)))
-  )
+;; (use-package ivy-posframe
+;;   :ensure t
+;;   :hook (ivy-mode . ivy-posframe-mode)
+;;   :config
+;;   (setq ivy-fixed-height-minibuffer nil
+;;         ivy-postframe-border-width 10
+;;         ivy-postframe-parameters
+;;         `((min-width . 90)
+;;           (min-height . ,ivy-height)))
+;;   )
 
 (provide 'completion)
 ;;; completion.el ends here
