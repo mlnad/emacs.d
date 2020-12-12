@@ -17,90 +17,38 @@
 
   ;; Use a hook so the messages doesn't get clobbered by other messages.
   (add-hook 'emacs-startup-hook
-	          (lambda ()
-	            (message "Emacs ready in %s with %d garbage collections."
-		                   (format "%.2f seconds"
-			                         (float-time
-			                          (time-subtract after-init-time before-init-time)))
-		                   gcs-done)))
-
+            (lambda ()
+              (message "Emacs ready in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
+  
   ;; add `lisp' to `load-path'.
   (add-to-list 'load-path
                (expand-file-name "lisp" user-emacs-directory))
-
+  
   ;; load user configs.
   (require 'configs)
   (or (file-exists-p user/userconfig-file)
       (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
-		 user/userconfig-file)
+                 user/userconfig-file)
       )
   (load user/userconfig-file)
-
-  ;;
-  (setq auto-save-list-file-prefix user/auto-save-list-prefix)
 
   ;; load `custom-file'
   (setq custom-file user/custom-file)
   (when (file-exists-p custom-file)
     (load custom-file))
 
- (require 'cl-lib)
+  (require 'cl-lib)
   ;; Language and coding
   (set-language-environment "utf-8")
   (set-keyboard-coding-system 'utf-8)
   (set-default-coding-systems 'utf-8)
 
-
-  (if (fboundp 'with-eval-after-load)
-      (defalias 'after-load 'with-eval-after-load)
-    (defmacro after-load (feature &rest body)
-      "After FEATURE is loaded, evaluate BODY."
-      (declare (indent defun))
-      `(eval-after-load ,feature
-         '(progn ,@body))))
-
-
-  (defun add-to-hook (fun hooks)
-    "Add FUN to HOOKS."
-    (dolist (hook hooks)
-      (add-hook hook fun)))
-
-  (defun add-all-to-list (usr-list vars)
-    "USR-LIST get th VARS in."
-    (dolist (list vars)
-      (add-to-list usr-list list))
-    )
-
-;;; Basic
-  (setq-default make-backup-files nil ;; Don't make a backup file which end with "~"
-                ;; visible-bell t        ;; Flash the frame to represent a bell
-		ring-bell-function 'ignore
-		scroll-step 1 ;; smooth scroll
-                auto-image-file-mode t
-                initial-scratch-message nil
-                inhibit-splash-screen t
-                column-number-mode nil
-                line-number-mode nil
-                initial-major-mode 'text-mode
-                frame-title-format "%b"
-                mode-line-format user/mode-line-format)
-
   ;; Set font
   (set-frame-font "Source Code Pro 11" t t)
-
-;;; Interface
-  (when (fboundp 'tool-bar-mode)
-    (tool-bar-mode -1))
-  (when (fboundp 'set-scroll-bar-mode)
-    (set-scroll-bar-mode nil))
-  (when (fboundp 'menu-bar-mode)
-    (menu-bar-mode -1))
-  (show-paren-mode 1)
-  (delete-selection-mode 1)
-  (electric-pair-mode 1)
-  (size-indication-mode t)
-  ;; use y-n to replace yes-no
-  (fset 'yes-or-no-p 'y-or-n-p)
 
   (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
   
@@ -127,56 +75,14 @@
   ;; Load Emacs packages and initialize them.
   (package-initialize)
 
+  ;; Install use-package from melpa
   (or (package-installed-p 'use-package)
       (progn
         (package-refresh-contents)
         (package-install 'use-package))
       )
 
-;;; Built-In packages
-  (use-package recentf
-    :defer 1
-    :commands (recentf-save-list)
-    :init
-    (progn
-      (add-hook 'find-file-hook (lambda () (unless recentf-mode
-					     (recentf-mode)
-					     (recentf-track-opened-file))))
-      (setq recentf-save-file user/recentf-save-file
-	    recentf-max-saved-items 1000
-	    recentf-auto-cleanup 'never
-	    recentf-auto-save-timer (run-with-idle-timer 600 t
-							 'recentf-save-list)))
-    )
-
-  (use-package display-line-numbers
-    :hook
-    (prog-mode . display-line-numbers-mode)
-    )
-
-  ;;
-  (use-package saveplace
-    :hook (after-init . save-place-mode)
-    :init
-    (setq save-place-file user/save-place-file)
-    )
-
-  (use-package subword
-    :hook (after-init . global-subword-mode)
-    :diminish subword-mode)
-
-  (use-package winner-mode
-    :ensure nil
-    :hook (after-init . winner-mode))
-
-  (use-package autorevert
-    :ensure nil
-    :hook (after-init . global-auto-revert-mode))
-
-  (use-package imenu
-    :defer t
-    :bind (("C-c j i" . 'imenu))
-    )
+  (require 'editor)
 
 ;;; Navigation
   (use-package ivy
