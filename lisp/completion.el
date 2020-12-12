@@ -92,10 +92,25 @@
   :config
   ;; Don't use ^
   (setq ivy-initial-inputs-alist nil)
+
+  
   )
 
 (use-package counsel-projectile
-  :ensure t)
+  :ensure t
+  :defer t
+  :init
+  (define-key!
+    [remap projectile-find-file]        #'+ivy/projectile-find-file
+    [remap projectile-find-dir]         #'counsel-projectile-find-dir
+    [remap projectile-switch-to-buffer] #'counsel-projectile-switch-to-buffer
+    [remap projectile-grep]             #'counsel-projectile-grep
+    [remap projectile-ag]               #'counsel-projectile-ag
+    [remap projectile-switch-project]   #'counsel-projectile-switch-project)
+
+  :config
+  (ivy-set-display-transformer #'counsel-projectile-find-file nil)
+  )
 
 (use-package ivy-rich
   :ensure t
@@ -105,12 +120,22 @@
     (setq ivy-rich-path-stytle 'abbrev
           ivy-virtual-abbreviate 'full))
   :config
-  (progn 
+  (progn
     (setq ivy-rich-parse-remote-buffer nil)
     (ivy-rich-mode)
     )
   )
 
+(use-package ivy-posframe
+  :ensure t
+  :hook (ivy-mode . ivy-posframe-mode)
+  :config
+  (setq ivy-fixed-height-minibuffer nil
+        ivy-postframe-border-width 10
+        ivy-postframe-parameters
+        `((min-width . 90)
+          (min-height . ,ivy-height)))
+  )
 
 (provide 'completion)
 ;;; completion.el ends here
