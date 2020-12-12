@@ -83,6 +83,7 @@
       )
 
   (require 'editor)
+  (require 'completion)
 
 ;;; Navigation
   (use-package ivy
@@ -136,44 +137,12 @@
 	   ("C-c p k" . 'projectile-kill-buffers))
     )
 
-  ;; Version Control=========================================================================
-  (use-package magit
-    :ensure t
-    :bind (("C-c g s" . 'magit-status)
-	   ("C-c g d" . 'magit-diff-range)
-	         )
-    )
-  ;;=========================================================================================
-
-
-;;; Deft
-  (use-package deft
-    :ensure t
-    :config
-    (setq-default deft-extensions user/notes-extensions
-                  deft-directory user/notes-dir
-                  deft-recursive t
-	                ))
-
-;;; youdao-dict
-  (use-package youdao-dictionary
-    :ensure t
-    :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
-    )
-
 ;;; Keybinding
   (use-package evil
     :ensure t)
   (use-package evil-leader
     :ensure t)
 
-  (use-package which-key
-    :ensure t
-    :init
-    (which-key-mode)
-    :config
-    :diminish which-key-mode
-    )
   (require 'functions)
   (require 'keybindings)
   (require 'prog-common)
@@ -181,6 +150,7 @@
   (require 'prog-python)
   (require 'prog-haskell)
   (require 'init-org)
+  (require 'apps)
   )
 
 
