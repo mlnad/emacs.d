@@ -15,6 +15,9 @@
 (defvar user/save-place-file
   (expand-file-name "cache/places" user-emacs-directory))
 
+(defvar user/backup-directory-alist
+  (expand-file-name "cache/backup/" user-emacs-directory))
+
 (defvar user/projectile-known-projects-file
   (expand-file-name "cache/projectile-bookmarks.eld" user-emacs-directory))
 
