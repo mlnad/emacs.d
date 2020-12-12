@@ -85,58 +85,6 @@
   (require 'editor)
   (require 'completion)
 
-;;; Navigation
-  (use-package ivy
-    :ensure t
-    :diminish ivy-mode)
-
-  (use-package swiper
-    :ensure t
-    :config
-    (ivy-mode 1)
-    (setq ivy-use-virtual-buffers t)
-    (setq enable-recursive-minibuffers t)
-    :bind
-    (("C-s" . 'swiper)
-     )
-    )
-
-  (use-package counsel
-    :ensure t
-    :config
-    :bind
-    (;;("M-x" . 'counsel-M-x)
-     ;;("C-h f" . 'counsel-describe-function)
-     ;;("C-h v" . 'counsel-describe-variable)
-     )
-    )
-
-  (use-package popwin
-    :ensure t)
-
-
-  ;; Projectile------------------------------------------------------------------------
-  (use-package counsel-projectile
-    :ensure t)
-  (use-package projectile
-    :ensure t
-    :init
-    (progn
-      (setq projectile-indexing-method 'alien
-	    projectile-generic-command "find . -type f")
-      (setq projectile-sort-order 'recentf
-	    projectile-cache-file user/projectile-cache-file
-	    projectile-known-projects-file user/projectile-known-projects-file)
-      )
-    :config
-    (projectile-mode +1)
-    :diminish projectile-mode
-    :bind (("C-c p f" . 'counsel-projectile-find-file)
-	   ("C-c p p" . 'counsel-projectile-switch-project)
-	   ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-	   ("C-c p k" . 'projectile-kill-buffers))
-    )
-
 ;;; Keybinding
   (use-package evil
     :ensure t)
