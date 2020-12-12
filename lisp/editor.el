@@ -65,9 +65,6 @@
   (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
   (add-to-list 'default-frame-alist '(vertical-scroll-bars)))
 
-(setq menu-bar-mode nil
-      tool-bar-mode nil
-      scroll-bar-mode nil)
 (delete-selection-mode 1)
 (electric-pair-mode 1)
 (size-indication-mode t)
