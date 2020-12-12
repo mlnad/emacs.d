@@ -191,5 +191,13 @@
   )
 
 
+;;; General - for keybindings
+(use-package general
+  :ensure t
+  :init
+  (defalias 'define-key! #'general-def)
+  (defalias 'undefine-key! #'general-unbind)
+  )
+
 (provide 'editor)
 ;;; editor.el ends here
