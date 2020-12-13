@@ -92,13 +92,13 @@
     :ensure t)
 
   (require 'functions)
-  (require 'keybindings)
   (require 'prog-common)
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
   (require 'init-org)
   (require 'apps)
+  (require 'keybindings)
   )
 
 
