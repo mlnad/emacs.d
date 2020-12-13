@@ -65,10 +65,14 @@
   (add-hook 'org-mode-hook #'valign-mode)
   :diminish valign-mode)
 
-(defun use-org ()
-  "Manage useage of 'org-mode'."
-  (interactive)
-  (message "Welcome to the world of writting"))
+(with-eval-after-load 'org
+  (add-hook 'org-mode-hook
+            '(lambda ()
+               (make-face 'width-font-face)
+               (set-face-attribute 'width-font-face nil :font "Sarasa Mono SC 12") ;; 13, 14, 16等会出现不等宽
+               (setq buffer-face-mode-face 'width-font-face)
+               (buffer-face-mode))
+            ))
 
 (provide 'init-org)
 ;;; init-org.el ends here
