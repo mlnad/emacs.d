@@ -86,7 +86,6 @@
   :defer t
   :init
   (define-key!
-    [remap projectile-find-file]        #'+ivy/projectile-find-file
     [remap projectile-find-dir]         #'counsel-projectile-find-dir
     [remap projectile-switch-to-buffer] #'counsel-projectile-switch-to-buffer
     [remap projectile-grep]             #'counsel-projectile-grep
