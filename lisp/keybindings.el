@@ -10,9 +10,11 @@
   "f f" 'counsel-find-file
   "f r" 'counsel-recentf
   "f s" 'save-buffer
-  ;; "SPC" 'counsel-M-x
-  "SPC" 'execute-extended-command
+  "SPC" 'counsel-M-x
+  ;; "SPC" 'execute-extended-command
   "s s" 'swiper
+  "s d" 'user/search-dir
+  "s p" 'user/search-project
   "h i" 'counsel-imenu
   ;; buffer
   "b d" 'kill-current-buffer

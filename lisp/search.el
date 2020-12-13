@@ -75,5 +75,16 @@ If prefix ARG is set, include ignored/hidden files."
      #'ivy/project-search)
     ))
 
+(defun user/search-dir (&optional arg)
+  "Conduct a text search in files under the current folder."
+  (interactive "P")
+  (let ((default-directory
+          (if arg
+              (read-directory-name "Search directory: ")
+            default-directory)))
+    (call-interactively
+     #'ivy/project-search-from-cwd))
+  )
+
 (provide 'search)
 ;;; search.el ends here

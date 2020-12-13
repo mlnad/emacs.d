@@ -138,7 +138,7 @@
     (user-error "Couldn't find ripgrep in your PATH"))
   (require 'counsel)
   (let* ((this-command 'counsel-rg)
-         (project-root (or (doom-project-root) default-directory))
+         (project-root default-directory)
          (directory (or in project-root))
          (args (concat (if all-files " -uu")
                        (unless recursive " --maxdepth 1")
@@ -176,6 +176,14 @@ If ARG (universal argument), include all files, even hidden or compressed ones,
 in the search."
   (interactive "P")
   (ivy-file-search :query initial-query :in directory :all-files arg))
+
+(defun ivy/project-search-from-cwd (&optional arg initial-query)
+  "Performs a project search recursively from the current directory.
+
+If ARG, include all files."
+  (interactive "P")
+  (ivy/project-search arg initial-query default-directory)
+  )
 
 (provide 'completion)
 ;;; completion.el ends here
