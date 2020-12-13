@@ -13,24 +13,6 @@
 ;;
 ;;
 ;;; Code:
-(use-package projectile
-  :ensure t
-  :init
-  (progn
-    (setq projectile-indexing-method 'alien
-    projectile-generic-command "find . -type f")
-    (setq projectile-sort-order 'recentf
-    projectile-cache-file user/projectile-cache-file
-    projectile-known-projects-file user/projectile-known-projects-file)
-    )
-  :config
-  (projectile-mode +1)
-  :diminish projectile-mode
-  :bind (("C-c p f" . 'counsel-projectile-find-file)
-   ("C-c p p" . 'counsel-projectile-switch-project)
-   ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-   ("C-c p k" . 'projectile-kill-buffers))
-  )
 
 (use-package ivy
   :ensure t
@@ -140,6 +122,59 @@
 ;;         `((min-width . 90)
 ;;           (min-height . ,ivy-height)))
 ;;   )
+
+(cl-defun ivy-file-search (&key query in all-files (recursive t) prompt args)
+  "Conduct a file search using ripgrep.
+
+:query STRING
+  Determines the initial input to search for.
+:in PATH
+  Sets what directory to base the search out of. Defaults to the current
+  project's root.
+:recursive BOOL
+  Whether or not to search files recursively from the base directory."
+  (declare (indent defun))
+  (unless (executable-find "rg")
+    (user-error "Couldn't find ripgrep in your PATH"))
+  (require 'counsel)
+  (let* ((this-command 'counsel-rg)
+         (project-root (or (doom-project-root) default-directory))
+         (directory (or in project-root))
+         (args (concat (if all-files " -uu")
+                       (unless recursive " --maxdepth 1")
+                       " --hidden -g!.git "
+                       (mapconcat #'shell-quote-argument args " "))))
+    (setq deactivate-mark t)
+    (counsel-rg
+     (or query
+         (when (doom-region-active-p)
+           (replace-regexp-in-string
+            "[! |]" (lambda (substr)
+                      (cond ((and (string= substr " ")
+                                  (not (featurep! +fuzzy)))
+                             "  ")
+                            ((string= substr "|")
+                             "\\\\\\\\|")
+                            ((concat "\\\\" substr))))
+            (rxt-quote-pcre (doom-thing-at-point-or-region)))))
+     directory args
+     (or prompt
+         (format "rg%s [%s]: "
+                 args
+                 (cond ((equal directory default-directory)
+                        "./")
+                       ((equal directory project-root)
+                        (projectile-project-name))
+                       ((file-relative-name directory project-root))))))))
+
+
+(defun ivy/project-search (&optional arg initial-query directory)
+  "Performs a live project search from the project root using ripgrep.
+
+If ARG (universal argument), include all files, even hidden or compressed ones,
+in the search."
+  (interactive "P")
+  (ivy-file-search :query initial-query :in directory :all-files arg))
 
 (provide 'completion)
 ;;; completion.el ends here
