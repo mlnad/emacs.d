@@ -1,10 +1,12 @@
-;;; init-ivy.el --- -*- lexical-binding: t; -*-
+;;; completion.el --- Completion configs -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2020 John Doe
+;; Copyright (C) 2020 Liu Miao
 ;;
-;; Author: John Doe <http://github/L>
+;; Author: John Doe <http://github/l>
 ;; Maintainer: John Doe <john@doe.com>
+;; Version: 0.0.1
 ;; Keywords:
+;; Package-Requires: ((emacs 27.1) (cl-lib "0.5"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -13,6 +15,48 @@
 ;;
 ;;
 ;;; Code:
+(use-package projectile
+  :ensure t
+  :defer t
+  :commands (projectile-project-root
+             projectile-project-name
+             projectile-project-p
+             )
+  :init
+  (progn
+    (setq projectile-indexing-method 'alien
+          projectile-generic-command "find . -type f"
+          projectile-ignored-projects '("~/" "/tmp")
+          projectile-globally-ignored-files '(".DS_Store" "TAGS")
+          projectile-globally-ignored-directories '(".ccls-cache")
+          projectile-kill-buffers-filter 'kill-only-files)
+
+    (setq projectile-sort-order 'recentf
+          projectile-cache-file user/projectile-cache-file
+          projectile-known-projects-file user/projectile-known-projects-file)
+    )
+  :config
+  (projectile-mode +1)
+
+  (setq projectile-project-root-files-bottom-up
+        (append '(".projectile"         ; projctiles's root marker
+                  ".project"            ; doom project marker
+                  ".git")               ; Git
+                )
+        ;; This will be filled by other pakages
+        projectile-project-root-files '()
+        projectile-project-root-files-top-down-recurring '("Makefile"))
+
+  ;; Per-project compilation buffers
+  (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
+        compilation-save-buffers-predicate #'projectile-current-project-buffer-p)
+
+  :diminish projectile-mode
+  :bind (("C-c p f" . 'counsel-projectile-find-file)
+         ("C-c p p" . 'counsel-projectile-switch-project)
+         ("C-c p b" . 'counsel-projectile-switch-to-buffer)
+         ("C-c p k" . 'projectile-kill-buffers))
+  )
 
 (use-package ivy
   :ensure t
@@ -109,79 +153,6 @@
     (setq ivy-rich-parse-remote-buffer nil)
     (ivy-rich-mode)
     )
-  )
-
-;; (use-package ivy-posframe
-;;   :ensure t
-;;   :hook (ivy-mode . ivy-posframe-mode)
-;;   :config
-;;   (setq ivy-fixed-height-minibuffer nil
-;;         ivy-postframe-border-width 10
-;;         ivy-postframe-parameters
-;;         `((min-width . 90)
-;;           (min-height . ,ivy-height)))
-;;   )
-
-(cl-defun ivy-file-search (&key query in all-files (recursive t) prompt args)
-  "Conduct a file search using ripgrep.
-
-:query STRING
-  Determines the initial input to search for.
-:in PATH
-  Sets what directory to base the search out of. Defaults to the current
-  project's root.
-:recursive BOOL
-  Whether or not to search files recursively from the base directory."
-  (declare (indent defun))
-  (unless (executable-find "rg")
-    (user-error "Couldn't find ripgrep in your PATH"))
-  (require 'counsel)
-  (let* ((this-command 'counsel-rg)
-         (project-root default-directory)
-         (directory (or in project-root))
-         (args (concat (if all-files " -uu")
-                       (unless recursive " --maxdepth 1")
-                       " --hidden -g!.git "
-                       (mapconcat #'shell-quote-argument args " "))))
-    (setq deactivate-mark t)
-    (counsel-rg
-     ;; (or query
-     ;;     (when (doom-region-active-p)
-     ;;       (replace-regexp-in-string
-     ;;        "[! |]" (lambda (substr)
-     ;;                  (cond ((and (string= substr " ")
-     ;;                              (not (featurep! +fuzzy)))
-     ;;                         "  ")
-     ;;                        ((string= substr "|")
-     ;;                         "\\\\\\\\|")
-     ;;                        ((concat "\\\\" substr))))
-     ;;        (rxt-quote-pcre (doom-thing-at-point-or-region)))))
-     query
-     directory args
-     (or prompt
-         (format "rg%s [%s]: "
-                 args
-                 (cond ((equal directory default-directory)
-                        "./")
-                       ((equal directory project-root)
-                        (projectile-project-name))
-                       ((file-relative-name directory project-root))))))))
-
-
-(defun ivy/project-search (&optional arg initial-query directory)
-  "Performs a live project search from the project root using ripgrep.
-
-If ARG (universal argument), include all files, even hidden or compressed ones,
-in the search."
-  (interactive "P")
-  (ivy-file-search :query initial-query :in directory :all-files arg))
-
-(defun ivy/project-search-from-cwd (&optional arg initial-query)
-  "Performs a project search recursively from the current directory.
-
-If ARG, include all files."
-  (interactive "P")
-  (ivy/project-search arg initial-query default-directory)
   )
 
 (provide 'completion)

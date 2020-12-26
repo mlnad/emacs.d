@@ -84,7 +84,6 @@
 
   (require 'editor)
   (require 'completion)
-  (require 'search)
 
 ;;; Keybinding
   (use-package evil

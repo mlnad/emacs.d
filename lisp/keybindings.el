@@ -13,8 +13,8 @@
   "SPC" 'counsel-M-x
   ;; "SPC" 'execute-extended-command
   "s s" 'swiper
-  "s d" 'user/search-dir
-  "s p" 'user/search-project
+  "s d" 'user/counsel-search-dir
+  "s p" 'user/counsel-search-project
   "h i" 'counsel-imenu
   ;; buffer
   "b d" 'kill-current-buffer
