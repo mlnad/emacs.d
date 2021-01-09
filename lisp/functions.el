@@ -3,6 +3,9 @@
 ;;; Commentary:
 
 ;;; Code:
+(defvar emacs-default-map (make-sparse-keymap)
+  "Base keymap for all Emacs leader key commands.")
+
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)

@@ -1,9 +1,0 @@
-[submodule "lisp/nox"]
-	path = lisp/nox
-	url = https://github.com/manateelazycat/nox.git
-[submodule "lisp/snails"]
-	path = lisp/snails
-	url = https://github.com/manateelazycat/snails.git
-[submodule "lisp/valign"]
-	path = lisp/valign
-	url = https://github.com/casouri/valign.git
