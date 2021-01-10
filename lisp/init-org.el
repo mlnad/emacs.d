@@ -73,7 +73,7 @@
   :defer t)
 
 (use-package valign
-  :load-path "lisp/valign"
+  :ensure t
   :config
   (add-hook 'org-mode-hook #'valign-mode)
   :diminish valign-mode)

@@ -89,6 +89,11 @@
         ivy-on-del-error-function #'ignore
         ivy-use-selectable-prompt t
         )
+  :bind
+  (("C-c s s" . 'swiper)
+   ("C-c s p" . 'user/counsel-search-project)
+   ("C-c s d" . 'user/counsel-search-dir)
+   )
   )
 
 (use-package counsel

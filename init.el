@@ -87,18 +87,19 @@
 
 ;;; Keybinding
   (use-package evil
-    :ensure t)
-  (use-package evil-leader
-    :ensure t)
+    :ensure t
+    :config
+    (evil-mode 1))
 
-  (require 'functions)
+  (require 'core-libs)
+  (require 'keybindings)
+  (require 'init-git)
   (require 'prog-common)
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
   (require 'init-org)
   (require 'apps)
-  (require 'keybindings)
   )
 
 

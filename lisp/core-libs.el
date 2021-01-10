@@ -1,11 +1,8 @@
-;;; functions.el -- my functions & macros
+;;; core-libs.el -- my functions & macros
 
 ;;; Commentary:
 
 ;;; Code:
-(defvar emacs-default-map (make-sparse-keymap)
-  "Base keymap for all Emacs leader key commands.")
-
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
@@ -43,5 +40,5 @@ If INITIAL-DIRECTORY is non nil start in that directory."
   (interactive)
   (user/counsel-search-rg default-directory))
 
-(provide 'functions)
+(provide 'core-libs)
 ;;; functions.el ends here

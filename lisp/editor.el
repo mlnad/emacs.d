@@ -192,13 +192,13 @@
   (use-package anzu
     :ensure t
     :defer t
-    :hook isearch-mode)
+    )
 
   (use-package evil-anzu
     :ensure t
     :defer t
     :config
-    (global-anzu-mode 1)))
+    (anzu-mode 1)))
 
 ;;; Whichkey
 (use-package which-key
