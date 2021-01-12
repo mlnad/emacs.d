@@ -99,6 +99,8 @@
 	    recentf-auto-cleanup 'never
 	    recentf-auto-save-timer (run-with-idle-timer 600 t
 							 'recentf-save-list)))
+    :bind
+    (("C-c f r" . recentf))
     )
 
 (use-package display-line-numbers

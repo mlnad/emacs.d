@@ -89,6 +89,8 @@
         ivy-on-del-error-function #'ignore
         ivy-use-selectable-prompt t
         )
+
+  (global-set-key "\C-s" 'swiper)
   :bind
   (("C-c s s" . 'swiper)
    ("C-c s p" . 'user/counsel-search-project)
