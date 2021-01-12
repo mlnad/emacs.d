@@ -216,6 +216,21 @@
   :diminish which-key-mode
   )
 
+(use-package writeroom-mode
+  :ensure t
+  :config
+  (setq writeroom-width 100)
+  (setq writeroom-global-effects
+        '(;; writeroom-set-fullscreen
+          writeroom-set-alpha
+          writeroom-set-menu-bar-lines
+          writeroom-set-tool-bar-lines
+          writeroom-set-vertical-scroll-bars
+          writeroom-set-bottom-divider-width))
+  :bind
+  (("C-c w c" . writeroom-mode))
+  )
+
 
 ;;; General - for keybindings
 (use-package general
