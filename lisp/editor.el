@@ -201,6 +201,12 @@
     :config
     (global-anzu-mode +1)))
 
+;;; doom themes
+(use-package doom-themes
+  :ensure t
+  :config
+  (load-theme 'doom-one))
+
 ;;; Whichkey
 (use-package which-key
   :ensure t
