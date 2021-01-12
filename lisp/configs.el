@@ -30,6 +30,9 @@
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
 
+(defvar user/org-roam-dir "~/org/roam"
+  "User defined org roam directory.")
+
 (defvar user/notes-extensions '("org" "md" "markdown"))
 
 (defvar user/mode-line-format
