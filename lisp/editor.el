@@ -86,21 +86,22 @@
         show-paren-highlight-openparen t
         show-paren-when-point-inside-paren t
         show-paren-when-point-in-periphery t))
-  (use-package recentf
-    :defer 1
-    :commands (recentf-save-list)
-    :init
-    (progn
-      (add-hook 'find-file-hook (lambda () (unless recentf-mode
-					     (recentf-mode)
-					     (recentf-track-opened-file))))
-      (setq recentf-save-file user/recentf-save-file
-	    recentf-max-saved-items 1000
-	    recentf-auto-cleanup 'never
-	    recentf-auto-save-timer (run-with-idle-timer 600 t
-							 'recentf-save-list)))
+
+(use-package recentf
+  :defer 1
+  :commands (recentf-save-list)
+  :init
+  (progn
+    (add-hook 'find-file-hook (lambda () (unless recentf-mode
+					                       (recentf-mode)
+					                       (recentf-track-opened-file))))
+    (setq recentf-save-file user/recentf-save-file
+	      recentf-max-saved-items 1000
+	      recentf-auto-cleanup 'never
+	      recentf-auto-save-timer (run-with-idle-timer 600 t
+							                           'recentf-save-list)))
     :bind
-    (("C-c f r" . recentf))
+    (("C-c f r" . recentf-open-files)) 
     )
 
 (use-package display-line-numbers
