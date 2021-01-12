@@ -85,12 +85,6 @@
   (require 'editor)
   (require 'completion)
 
-;;; Keybinding
-  (use-package evil
-    :ensure t
-    :config
-    (evil-mode 1))
-
   (require 'core-libs)
   (require 'keybindings)
   (require 'init-git)

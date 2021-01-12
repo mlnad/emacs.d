@@ -218,6 +218,21 @@
   :diminish which-key-mode
   )
 
+;;; Undo tree mode
+(use-package undo-tree
+  :ensure t
+  :defer t
+  :init
+  (progn
+    (setq undo-tree-visualizer-timestamps t
+          undo-tree-visualizer-diff t
+          ;; 10X bump of the undo limits to avoid issues with premature
+          ;; Emacs GC which truncages the undo history very aggresively
+          undo-limit 800000
+          undo-strong-limit 12000000
+          undo-outer-limit 120000000)
+    (global-undo-tree-mode)))
+
 (use-package writeroom-mode
   :ensure t
   :config
@@ -241,6 +256,13 @@
   (defalias 'define-key! #'general-def)
   (defalias 'undefine-key! #'general-unbind)
   )
+
+;;; Keybinding
+  (use-package evil
+    :ensure t
+    :config
+    (evil-mode 1)
+    (evil-set-undo-system 'undo-tree))
 
 (provide 'editor)
 ;;; editor.el ends here
