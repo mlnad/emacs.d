@@ -131,6 +131,7 @@
     [remap set-variable]             #'counsel-set-variable
     [remap swiper]                   #'counsel-grep-or-swiper
     [remap unicode-chars-list-chars] #'counsel-unicode-char
+    [remap switch-to-buffer]         #'counsel-switch-buffer
     [remap yank-pop]                 #'counsel-yank-pop)
   :config
   ;; Don't use ^
