@@ -91,6 +91,13 @@
         )
 
   (global-set-key "\C-s" 'swiper)
+
+  (dolist (map (list ivy-minibuffer-map
+                     ivy-switch-buffer-map
+                     ivy-reverse-i-search-map))
+    (define-key map (kbd "C-j" 'ivy-next-line))
+    (define-key map (kbd "C-k" 'ivy-previous-line)))
+
   :bind
   (("C-c s s" . 'swiper)
    ("C-c s p" . 'user/counsel-search-project)
