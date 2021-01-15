@@ -177,7 +177,7 @@
 ;;; Modeline
 (use-package doom-modeline
   :ensure t
-  :hook (after-init . doom-modeline-mode)
+  :hook (window-setup . doom-modeline-mode)
   :init
   (unless after-init-time
     (setq-default mode-line-format nil))
@@ -208,7 +208,7 @@
 (use-package doom-themes
   :ensure t
   :config
-  (load-theme 'doom-one))
+  (load-theme 'doom-one t t))
 
 ;;; Whichkey
 (use-package which-key
