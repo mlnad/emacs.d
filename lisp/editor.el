@@ -208,7 +208,7 @@
 (use-package doom-themes
   :ensure t
   :config
-  (load-theme 'doom-one t t))
+  (load-theme 'doom-one t))
 
 ;;; Whichkey
 (use-package which-key
