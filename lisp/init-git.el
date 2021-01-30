@@ -20,10 +20,5 @@
   :hook (magit-mode . turn-on-magit-gitflow)
   )
 
-(use-package evil-magit
-  :ensure t
-  :init
-  (setq evil-magit-state 'motion))
-
 (provide 'init-git)
 ;;; init-git.el ends here
