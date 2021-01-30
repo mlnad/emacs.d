@@ -8,7 +8,7 @@
  ;; user/save-place-file
 
  ;; user/notes-dir
- ;; user/package-mirror
+ user/package-mirror emacs-china-package-mirror
 
  ;; user/lsp-client
  )
