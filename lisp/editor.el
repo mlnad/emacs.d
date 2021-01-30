@@ -259,11 +259,19 @@
   )
 
 ;;; Keybinding
-  (use-package evil
-    :ensure t
-    :config
-    (evil-mode 1)
-    (evil-set-undo-system 'undo-tree))
+(use-package evil
+  :ensure t
+  :init
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil)
+  :config
+  (evil-mode 1)
+  (evil-set-undo-system 'undo-tree))
+
+(use-package evil-collection
+  :ensure t
+  :config
+  (evil-collection-init))
 
 (provide 'editor)
 ;;; editor.el ends here
