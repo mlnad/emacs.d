@@ -76,6 +76,31 @@
   (tooltip-mode -1))
 
 
+;;; General - for keybindings
+(use-package general
+  :ensure t
+  :init
+  (defalias 'define-key! #'general-def)
+  (defalias 'undefine-key! #'general-unbind)
+  )
+
+;;; Keybinding
+(use-package evil
+  :ensure t
+  :init
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil)
+  :config
+  (evil-mode 1)
+  (evil-set-undo-system 'undo-tree)
+  (evil-set-leader '(normal motion) (kbd "SPC"))
+  (evil-set-leader '(insert replace visual) (kbd "C-c")))
+
+(use-package evil-collection
+  :ensure t
+  :config
+  (evil-collection-init))
+
 
 ;;; Build-in packages
 
@@ -100,9 +125,10 @@
 	      recentf-auto-cleanup 'never
 	      recentf-auto-save-timer (run-with-idle-timer 600 t
 							                           'recentf-save-list)))
-    :bind
-    (("C-c f r" . recentf-open-files)) 
-    )
+  :bind
+  :config
+  (evil-define-key '(normal insert emacs) 'global (kbd "<leader>fr") 'recentf-open-files)
+  )
 
 (use-package display-line-numbers
   :hook
@@ -249,29 +275,6 @@
   (("C-c w c" . writeroom-mode))
   )
 
-
-;;; General - for keybindings
-(use-package general
-  :ensure t
-  :init
-  (defalias 'define-key! #'general-def)
-  (defalias 'undefine-key! #'general-unbind)
-  )
-
-;;; Keybinding
-(use-package evil
-  :ensure t
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  :config
-  (evil-mode 1)
-  (evil-set-undo-system 'undo-tree))
-
-(use-package evil-collection
-  :ensure t
-  :config
-  (evil-collection-init))
 
 (provide 'editor)
 ;;; editor.el ends here
