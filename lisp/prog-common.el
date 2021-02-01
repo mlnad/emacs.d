@@ -73,6 +73,8 @@
     (setq tab-always-indent 'complete)
     (setq-default company-backends (delete 'company-semantic company-backends))
     (push '(company-semantic :with company-yasnippet) company-backends))
+
+  (add-to-list 'user/evil-collection-mode-list 'company)
   :diminish company-mode
   )
 

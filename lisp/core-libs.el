@@ -40,5 +40,10 @@ If INITIAL-DIRECTORY is non nil start in that directory."
   (interactive)
   (user/counsel-search-rg default-directory))
 
+(defun user/lazy-load ()
+  "Load after everything."
+  (evil-collection-init 'user/evil-collection-mode-list)
+  )
+
 (provide 'core-libs)
-;;; functions.el ends here
+;;; core-libs.el ends here

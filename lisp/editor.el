@@ -76,14 +76,6 @@
   (tooltip-mode -1))
 
 
-;;; General - for keybindings
-(use-package general
-  :ensure t
-  :init
-  (defalias 'define-key! #'general-def)
-  (defalias 'undefine-key! #'general-unbind)
-  )
-
 ;;; Keybinding
 (use-package evil
   :ensure t
@@ -94,12 +86,21 @@
   (evil-mode 1)
   (evil-set-undo-system 'undo-tree)
   (evil-set-leader '(normal motion) (kbd "SPC"))
-  (evil-set-leader '(insert replace visual) (kbd "C-c")))
+  (evil-set-leader '(insert replace visual) (kbd "C-c"))
+  )
 
 (use-package evil-collection
+  :after evil
   :ensure t
-  :config
-  (evil-collection-init))
+  )
+
+;;; General - for keybindings
+(use-package general
+  :ensure t
+  :init
+  (defalias 'define-key! #'general-def)
+  (defalias 'undefine-key! #'general-unbind)
+  )
 
 
 ;;; Build-in packages
@@ -125,7 +126,6 @@
 	      recentf-auto-cleanup 'never
 	      recentf-auto-save-timer (run-with-idle-timer 600 t
 							                           'recentf-save-list)))
-  :bind
   :config
   (evil-define-key '(normal insert emacs) 'global (kbd "<leader>fr") 'recentf-open-files)
   )
@@ -157,6 +157,8 @@
 (use-package imenu
   :defer t
   :bind (("C-c j i" . 'imenu))
+  :config
+  (add-to-list 'user/evil-collection-mode-list 'imenu)
   )
 
 ;;; Minibuffers
@@ -175,7 +177,8 @@
       '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-;;; Popwin
+
+;;; Pop windows
 (use-package popwin
   :ensure t
   :config
@@ -198,6 +201,12 @@
     (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
     (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
     ))
+
+(use-package popup
+  :ensure t
+  :config
+  (add-to-list 'user/evil-collection-mode-list 'popup)
+  )
 
 
 ;;; Modeline

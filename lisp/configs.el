@@ -73,5 +73,15 @@
   "If `nox' use nox as lsp client.
 If `lsp-mode' use lsp-mode as lsp client.")
 
+(defvar user/evil-collection-mode-list
+  '(bookmark
+    calc calendar
+    diff-mode dired doc-view edebug ediff elisp-mode eww finder grep help ibuffer
+    (package-menu package)
+    popup proced
+    xwidget)
+  )
+
+
 (provide 'configs)
 ;;; configs.el ends here

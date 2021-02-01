@@ -94,6 +94,8 @@
   (require 'prog-haskell)
   (require 'init-org)
   (require 'apps)
+
+  (user/lazy-load)
   )
 
 

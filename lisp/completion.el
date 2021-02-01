@@ -92,11 +92,13 @@
 
   (global-set-key "\C-s" 'swiper)
 
-  (dolist (map (list ivy-minibuffer-map
-                     ivy-switch-buffer-map
-                     ivy-reverse-i-search-map))
-    (define-key map (kbd "C-j") 'ivy-next-line)
-    (define-key map (kbd "C-k") 'ivy-previous-line))
+  ;; (dolist (map (list ivy-minibuffer-map
+  ;;                    ivy-switch-buffer-map
+  ;;                    ivy-reverse-i-search-map))
+  ;;   (define-key map (kbd "C-j") 'ivy-next-line)
+  ;;   (define-key map (kbd "C-k") 'ivy-previous-line))
+
+  (add-to-list 'user/evil-collection-mode-list 'ivy)
 
   :bind
   (("C-c s s" . 'swiper)
