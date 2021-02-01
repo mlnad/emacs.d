@@ -66,15 +66,15 @@
 (use-package company-mode
   :ensure company
   :hook prog-mode
-  :config
-  (progn
-    (setq company-idle-delay 0.2)
-    (setq company-minimum-prefix-length 2)
-    (setq tab-always-indent 'complete)
-    (setq-default company-backends (delete 'company-semantic company-backends))
-    (push '(company-semantic :with company-yasnippet) company-backends))
-
+  :custom
+  (company-idle-delay 0.2)
+  (company-minimum-prefix-length 2)
+  (tab-always-indent 'complete)
+  :init
   (add-to-list 'user/evil-collection-mode-list 'company)
+  :config
+  (setq-default company-backends (delete 'company-semantic company-backends))
+  (push '(company-semantic :with company-yasnippet) company-backends)
   :diminish company-mode
   )
 

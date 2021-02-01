@@ -74,12 +74,24 @@
 If `lsp-mode' use lsp-mode as lsp client.")
 
 (defvar user/evil-collection-mode-list
-  '(bookmark
-    calc calendar
-    diff-mode dired doc-view edebug ediff elisp-mode eww finder grep help ibuffer
-    (package-menu package)
-    popup proced
-    xwidget)
+  '(ag apropos bm bookmark
+       (buff-menu "buff-menu")
+       calc calendar
+       cus-theme debug dictionary diff-mode dired dired-sidebar disk-usage doc-view docker ebib edbi edebug ediff eglot explain-pause-mode elfeed elisp-mode elisp-refs elisp-slime-nav emms epa ert eshell eval-sexp-fu evil-mc eww finder flycheck flymake free-keys geiser ggtags git-timemachine gnus go-mode grep guix hackernews helm help helpful hg-histedit hungry-delete ibuffer image image-dired image+ imenu imenu-list
+       (indent "indent")
+       lispy log-edit log-view lsp-ui-imenu man magit magit-todos neotree nov
+       (occur replace)
+       org-present outline
+       (package-menu package)
+       pass
+       (pdf pdf-view)
+       popup proced
+       (process-menu simple)
+       prodigy profiler python quickrun realgud reftex restclient rg ripgrep scroll-lock sh-script simple slime sly speedbar tab-bar tablist tabulated-list tar-mode
+       (term term ansi-term multi-term)
+       tetris thread timer-list vc-annotate vc-dir vc-git vdiff view vlf vterm wdired wgrep which-key woman xref
+       (ztree ztree-diff)
+       xwidget)
   )
 
 

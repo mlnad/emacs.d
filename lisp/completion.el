@@ -75,6 +75,7 @@
             (swiper-isearch . ,standard-seaarch-fn)))
 ;;            (t . ,alt-search-fn)) ;; Error when use this line
     )
+  (add-to-list 'user/evil-collection-mode-list 'ivy)
   :config
   (setq ivy-sort-max-size 7500)
 
@@ -98,7 +99,6 @@
   ;;   (define-key map (kbd "C-j") 'ivy-next-line)
   ;;   (define-key map (kbd "C-k") 'ivy-previous-line))
 
-  (add-to-list 'user/evil-collection-mode-list 'ivy)
 
   :bind
   (("C-c s s" . 'swiper)

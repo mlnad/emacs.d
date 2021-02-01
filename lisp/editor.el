@@ -92,6 +92,9 @@
 (use-package evil-collection
   :after evil
   :ensure t
+  :custom
+  (evil-collection-setup-minibuffer t)
+  (evil-collection-mode-list nil)
   )
 
 ;;; General - for keybindings
@@ -201,12 +204,6 @@
     (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
     (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
     ))
-
-(use-package popup
-  :ensure t
-  :config
-  (add-to-list 'user/evil-collection-mode-list 'popup)
-  )
 
 
 ;;; Modeline
