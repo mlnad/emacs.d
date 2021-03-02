@@ -3,6 +3,11 @@
 ;;; Commentary:
 
 ;;; Code:
+(defvar user/default-font '("Consolas"
+                            :size 10
+                            :weight normal
+                            :width normal))
+
 (defvar user/userconfig-file
   (expand-file-name "cache/userconfig" user-emacs-directory))
 

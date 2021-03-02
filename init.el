@@ -47,9 +47,6 @@
   (set-keyboard-coding-system 'utf-8)
   (set-default-coding-systems 'utf-8)
 
-  ;; Set font
-  (set-frame-font "Source Code Pro 11" t t)
-
   (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
   
 ;;; Packages

@@ -75,6 +75,12 @@
 (when (bound-and-true-p tooltip-mode)
   (tooltip-mode -1))
 
+;; Font set
+(when (find-font (font-spec :name (car user/default-font)))
+  (let* ((font (car user/default-font))
+         (props (cdr user/default-font))
+         (fontspec (apply 'font-spec :name font props)))
+    (set-frame-font fontspec nil t)))
 
 ;;; Keybinding
 (use-package evil
