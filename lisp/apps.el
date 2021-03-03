@@ -22,9 +22,14 @@
 (use-package magit
   :ensure t
   :bind (("C-c g s" . 'magit-status)
-         ("C-c g d" . 'magit-diff-range)
-         )
-    )
+         ("C-c g d" . 'magit-diff-range))
+  :init
+  (use-package forge
+    :ensure t)
+  (use-package magit-gitflow
+    :ensure t
+    :hook (maigt-mode . turn-on-magit-gitflow))
+  )
 
 
 (provide 'apps)

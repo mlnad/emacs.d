@@ -80,7 +80,6 @@
 
   (require 'core-libs)
   (require 'keybindings)
-  (require 'init-git)
   (require 'prog-common)
   (require 'prog-c-cpp)
   (require 'prog-python)
