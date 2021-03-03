@@ -11,8 +11,7 @@
 (defun load-init-file()
   "Load init.el."
   (interactive)
-  (load-file (concat user-emacs-directory "init.el"))
-  )
+  (load-file (concat user-emacs-directory "init.el")))
 
 (defun open-userconfig-file()
   "Open userconfig."
@@ -25,10 +24,8 @@ If INITIAL-DIRECTORY is non nil start in that directory."
   (interactive)
   (require 'counsel)
   (let* ((default-directory
-	   (or initial-directory (read-directory-name "Start from directory: ")))
-	 )
-    (counsel-rg "" default-directory nil "rg: "))
-  )
+	   (or initial-directory (read-directory-name "Start from directory: "))))
+    (counsel-rg "" default-directory nil "rg: ")))
 
 (defun user/counsel-search-project()
   "Seraching project with rg."
@@ -44,8 +41,7 @@ If INITIAL-DIRECTORY is non nil start in that directory."
   "Load after everything."
   (interactive)
   (setq evil-collection-mode-list nil)
-  (evil-collection-init user/evil-collection-mode-list)
-  )
+  (evil-collection-init user/evil-collection-mode-list))
 
 (provide 'core-libs)
 ;;; core-libs.el ends here

@@ -53,8 +53,7 @@
   (require 'package)
   (setq package--init-file-ensured t
         package-enable-at-startup nil
-        package-archives user/package-mirror
-        )
+        package-archives user/package-mirror)
 
   ;; Evaluate the correct package subdirectory of packages.
   (setq package-user-dir
@@ -65,9 +64,7 @@
 				 emacs-major-version
 				 version-separator
 				 emacs-minor-version)))
-	     (expand-file-name subdir elpa-pack-dir))
-	     )
-	 ))
+	     (expand-file-name subdir elpa-pack-dir)))))
 
   ;; Load Emacs packages and initialize them.
   (package-initialize)
@@ -76,8 +73,7 @@
   (or (package-installed-p 'use-package)
       (progn
         (package-refresh-contents)
-        (package-install 'use-package))
-      )
+        (package-install 'use-package)))
 
   (require 'editor)
   (require 'completion)

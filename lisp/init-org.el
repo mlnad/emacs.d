@@ -10,8 +10,7 @@
     ("\\subsection{%s}" . "\\subsection*{%s}")
     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
     ("\\paragraph{%s}" . "\\paragraph*{%s}")
-    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-  )
+    ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
 (defvar org-complex-ctexbook-class
   '("cctexbook"
@@ -20,8 +19,7 @@
     ("\\chapter{%s}" . "\\chapter*{%s}")
     ("\\section{%s}" . "\\section*{%s}")
     ("\\subsection{%s}" . "\\subsection*{%s}")
-    ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-  )
+    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
 
 (defvar org-simple-ctexbook-class
   '("sctexbook"
@@ -29,8 +27,7 @@
     ("\\chapter{%s}" . "\\chapter*{%s}")
     ("\\section{%s}" . "\\section*{%s}")
     ("\\subsection{%s}" . "\\subsection*{%s}")
-    ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-  )
+    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
 
 (defvar org-user-latex-class
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
@@ -84,8 +81,7 @@
                (make-face 'width-font-face)
                (set-face-attribute 'width-font-face nil :font "Sarasa Mono SC 12") ;; 13, 14, 16等会出现不等宽
                (setq buffer-face-mode-face 'width-font-face)
-               (buffer-face-mode))
-            ))
+               (buffer-face-mode))))
 
 (provide 'init-org)
 ;;; init-org.el ends here

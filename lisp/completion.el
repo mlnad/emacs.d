@@ -20,8 +20,7 @@
   :defer t
   :commands (projectile-project-root
              projectile-project-name
-             projectile-project-p
-             )
+             projectile-project-p)
   :init
   (progn
     (setq projectile-indexing-method 'alien
@@ -33,16 +32,14 @@
 
     (setq projectile-sort-order 'recentf
           projectile-cache-file user/projectile-cache-file
-          projectile-known-projects-file user/projectile-known-projects-file)
-    )
+          projectile-known-projects-file user/projectile-known-projects-file))
   :config
   (projectile-mode +1)
 
   (setq projectile-project-root-files-bottom-up
         (append '(".projectile"         ; projctiles's root marker
                   ".project"            ; doom project marker
-                  ".git")               ; Git
-                )
+                  ".git"))              ; Git
         ;; This will be filled by other pakages
         projectile-project-root-files '()
         projectile-project-root-files-top-down-recurring '("Makefile"))
@@ -55,8 +52,7 @@
   :bind (("C-c p f" . 'counsel-projectile-find-file)
          ("C-c p p" . 'counsel-projectile-switch-project)
          ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-         ("C-c p k" . 'projectile-kill-buffers))
-  )
+         ("C-c p k" . 'projectile-kill-buffers)))
 
 (use-package ivy
   :ensure t
@@ -67,14 +63,11 @@
     (setq ivy-more-chars-alist
           `((counsel-rg . 1)
             (counsel-search . 2)
-            (t . 3))
-          )
+            (t . 3)))
     (setq ivy-re-builders-alist
           `((counsel-rg . ,standard-seaarch-fn)
             (swiper . ,standard-seaarch-fn)
-            (swiper-isearch . ,standard-seaarch-fn)))
-;;            (t . ,alt-search-fn)) ;; Error when use this line
-    )
+            (swiper-isearch . ,standard-seaarch-fn))))
   (add-to-list 'user/evil-collection-mode-list 'ivy)
   :config
   (setq ivy-sort-max-size 7500)
@@ -88,8 +81,7 @@
         ivy-use-virtual-buffers nil
         ivy-virtual-abbreviate 'full
         ivy-on-del-error-function #'ignore
-        ivy-use-selectable-prompt t
-        )
+        ivy-use-selectable-prompt t)
 
   (global-set-key "\C-s" 'swiper)
 
@@ -103,9 +95,7 @@
   :bind
   (("C-c s s" . 'swiper)
    ("C-c s p" . 'user/counsel-search-project)
-   ("C-c s d" . 'user/counsel-search-dir)
-   )
-  )
+   ("C-c s d" . 'user/counsel-search-dir)))
 
 (use-package counsel
   :ensure t
@@ -138,8 +128,6 @@
   :config
   ;; Don't use ^
   (setq ivy-initial-inputs-alist nil)
-
-  
   )
 
 (use-package counsel-projectile
@@ -168,9 +156,7 @@
   :config
   (progn
     (setq ivy-rich-parse-remote-buffer nil)
-    (ivy-rich-mode)
-    )
-  )
+    (ivy-rich-mode)))
 
 (provide 'completion)
 ;;; completion.el ends here

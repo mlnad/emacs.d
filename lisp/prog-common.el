@@ -14,21 +14,17 @@
     :config
     (setq nox-server-programs user/nox-server-programs)
     (dolist (hook user/nox-list)
-      (add-hook hook '(lambda () (nox-ensure)))))
-  )
-
+      (add-hook hook '(lambda () (nox-ensure))))))
  ;; Use lsp-mode as client
  ((eq 'lsp-mode user/lsp-client)
   (use-package lsp-mode
     :ensure t
     :init
     (setq lsp-keymap-prefix "C-c l")
-    :hook (
-	   (c-mode . lsp-deferred)
-	   (c++-mode . lsp-deferred)
-	   (python-mode . lsp-deferred)
-	   (lsp-mode . lsp-enable-which-key-integration)
-	   )
+    :hook ((c-mode . lsp-deferred)
+           (c++-mode . lsp-deferred)
+           (python-mode . lsp-deferred)
+           (lsp-mode . lsp-enable-which-key-integration))
     :config
     (setq lsp-enable-snippet nil)
     (setq lsp-modeline-diagnostics-enable nil)
