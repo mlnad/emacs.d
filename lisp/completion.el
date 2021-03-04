@@ -157,5 +157,12 @@
     (setq ivy-rich-parse-remote-buffer nil)
     (ivy-rich-mode)))
 
+(use-package smex
+  :ensure t
+  :defer t
+  :init
+  (setq-default smex-history 32
+                smex-save-file (concat user-emacs-directory "cache/smex-items")))
+
 (provide 'completion)
 ;;; completion.el ends here

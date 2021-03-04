@@ -150,7 +150,7 @@
   (savehist-mode 1)
   :config
   (setq savehist-save-minibuffer-history t
-        history-length 1000
+        history-length 100
         savehist-autosave-interval 60
         savehist-additional-variables '(mark-ring
                                         global-mark-ring
