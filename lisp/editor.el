@@ -141,15 +141,28 @@
 
 (use-package display-line-numbers
   :hook
-  (prog-mode . display-line-numbers-mode)
-  )
+  (prog-mode . display-line-numbers-mode))
 
-;;
+(use-package savehist
+  :init
+  ;; Minibuffer history
+  (setq savehist-file (concat user-emacs-directory "cache/savehist"))
+  (savehist-mode 1)
+  :config
+  (setq savehist-save-minibuffer-history t
+        history-length 1000
+        savehist-autosave-interval 60
+        savehist-additional-variables '(mark-ring
+                                        global-mark-ring
+                                        search-ring
+                                        regexp-search-ring
+                                        extended-command-history
+                                        kill-ring)))
+
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
-  (setq save-place-file user/save-place-file)
-  )
+  (setq save-place-file user/save-place-file))
 
 (use-package subword
   :hook (after-init . global-subword-mode)

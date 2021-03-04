@@ -50,3 +50,5 @@ transient
 gmon.out
 
 org-roam.db
+
+savehist
