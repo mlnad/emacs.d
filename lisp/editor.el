@@ -300,9 +300,15 @@
 
 ;;; Define key
 (evil-define-key* nil 'global
+  ;; Files
   (kbd "<leader>ff") 'find-file
   (kbd "<leader>fs") 'save-buffer
-  (kbd "<leader>fS") 'evil-write-all)
+  (kbd "<leader>fS") 'evil-write-all
+  ;; Buffers
+  (kbd "<leader>bd") 'kill-buffer
+  (kbd "<leader>bn") 'next-buffer
+  (kbd "<leader>bp") 'previous-buffer
+  (kbd "<leader>bx") 'kill-buffer-and-window)
 
 (provide 'editor)
 ;;; editor.el ends here

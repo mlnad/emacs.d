@@ -93,7 +93,8 @@
   (evil-define-key* nil 'global
     (kbd "<leader>ss") 'swiper
     (kbd "<leader>sp") 'user/counsel-search-project
-    (kbd "<leader>sd") 'user/counsel-search-dir))
+    (kbd "<leader>sd") 'user/counsel-search-dir
+    (kbd "<leader>bb") 'ivy-switch-buffer))
 
 (use-package counsel
   :ensure t
