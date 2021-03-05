@@ -111,9 +111,7 @@
   (defalias 'undefine-key! #'general-unbind)
   )
 
-
 ;;; Build-in packages
-
 (use-package paren
   :hook (after-init . show-paren-mode)
   :config
@@ -136,7 +134,7 @@
 	      recentf-auto-save-timer (run-with-idle-timer 600 t
 							                           'recentf-save-list)))
   :config
-  (evil-define-key '(normal insert emacs) 'global (kbd "<leader>fr") 'recentf-open-files)
+  (evil-define-key nil 'global (kbd "<leader>fr") 'recentf-open-files)
   )
 
 (use-package display-line-numbers
@@ -178,9 +176,9 @@
 
 (use-package imenu
   :defer t
-  :bind (("C-c j i" . 'imenu))
   :config
   (add-to-list 'user/evil-collection-mode-list 'imenu)
+  (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
   )
 
 ;;; Minibuffers
@@ -296,10 +294,13 @@
           writeroom-set-tool-bar-lines
           writeroom-set-vertical-scroll-bars
           writeroom-set-bottom-divider-width))
-  :bind
-  (("C-c w c" . writeroom-mode))
+
+  (evil-define-key nil 'global (kbd "<leader>wc") 'writeroom-mode)
   )
 
+;;; Define key
+(evil-define-key* nil 'global
+  (kbd "<leader>ff") 'find-file)
 
 (provide 'editor)
 ;;; editor.el ends here

@@ -47,13 +47,13 @@
   ;; Per-project compilation buffers
   (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
         compilation-save-buffers-predicate #'projectile-current-project-buffer-p)
+  (evil-define-key* nil 'global
+    (kbd "<leader>pk") 'projectile-kill-buffers
+    (kbd "<leader>pf") 'projectile-find-file
+    (kbd "<leader>pb") 'projectile-switch-to-buffer
+    (kbd "<leader>pp") 'projectile-switch-project)
 
-  :diminish projectile-mode
-  :bind (("C-c p f" . 'counsel-projectile-find-file)
-         ("C-c p p" . 'counsel-projectile-switch-project)
-         ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-         ("C-c p k" . 'projectile-kill-buffers)))
-
+  :diminish projectile-mode)
 (use-package ivy
   :ensure t
   :hook (after-init . ivy-mode)
@@ -90,11 +90,10 @@
                      ivy-reverse-i-search-map))
     (define-key map (kbd "C-j") 'ivy-next-line)
     (define-key map (kbd "C-k") 'ivy-previous-line))
-
-  :bind
-  (("C-c s s" . 'swiper)
-   ("C-c s p" . 'user/counsel-search-project)
-   ("C-c s d" . 'user/counsel-search-dir)))
+  (evil-define-key* nil 'global
+    (kbd "<leader>ss") 'swiper
+    (kbd "<leader>sp") 'user/counsel-search-project
+    (kbd "<leader>sd") 'user/counsel-search-dir))
 
 (use-package counsel
   :ensure t
@@ -131,9 +130,9 @@
 
 (use-package counsel-projectile
   :ensure t
-  :defer t
   :init
   (define-key!
+    [remap projectile-find-file]        #'counsel-projectile-find-file
     [remap projectile-find-dir]         #'counsel-projectile-find-dir
     [remap projectile-switch-to-buffer] #'counsel-projectile-switch-to-buffer
     [remap projectile-grep]             #'counsel-projectile-grep
@@ -142,16 +141,19 @@
 
   :config
   (ivy-set-display-transformer #'counsel-projectile-find-file nil)
+  ;; (evil-define-key* nil 'global
+  ;;   (kbd "<leader>pk") 'counsel-projectile-kill-buffers
+  ;;   (kbd "<leader>pf") 'counsel-projectile-find-file
+  ;;   (kbd "<leader>pb") 'counsel-projectile-switch-to-buffer
+  ;;   (kbd "<leader>pp") 'counsel-projectile-switch-project)
   )
 
 (use-package ivy-rich
   :ensure t
   :after counsel
   :init
-  (progn
-    (setq ivy-rich-path-stytle 'abbrev
-          ivy-virtual-abbreviate 'full
-          ))
+  (setq ivy-rich-path-stytle 'abbrev
+        ivy-virtual-abbreviate 'full)
   :config
   (progn
     (setq ivy-rich-parse-remote-buffer nil)

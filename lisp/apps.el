@@ -15,20 +15,23 @@
 ;;; youdao-dict
 (use-package youdao-dictionary
   :ensure t
-  :bind (("C-c o y" . 'youdao-dictionary-search-at-point+))
+  :config
+  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+)
   )
 
 ;;; Magit for git
 (use-package magit
   :ensure t
-  :bind (("C-c g s" . 'magit-status)
-         ("C-c g d" . 'magit-diff-range))
   :init
   (use-package forge
     :ensure t)
   (use-package magit-gitflow
     :ensure t
     :hook (maigt-mode . turn-on-magit-gitflow))
+  :config
+  (evil-define-key* nil 'global
+    (kbd "<leader>gs") 'magit-status
+    (kbd "<leader>gd") 'magit-diff-range)
   )
 
 

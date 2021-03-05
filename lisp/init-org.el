@@ -57,13 +57,14 @@
   :hook (after-init . org-roam-mode)
   :custom
   (org-roam-directory user/org-roam-dir)
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n g" . org-roam-graph))
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert))
-              (("C-c n I" . org-roam-insert-immediate))))
+  :config
+  (evil-define-key* nil org-roam-mode-map
+    (kbd "<leader>nl") 'org-roam
+    (kbd "<leader>nf") 'org-roam-find-file
+    (kbd "<leader>ng") 'org-roam-graph)
+  (evil-define-key* nil org-mode-map
+    (kbd "<leader>ni") 'org-roam-insert
+    (kbd "<leader>nI") 'org-roam-insert-immediate))
 
 (use-package gnuplot
   :ensure gnuplot
