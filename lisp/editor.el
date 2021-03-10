@@ -92,28 +92,18 @@
   (evil-mode 1)
   (evil-set-undo-system 'undo-tree)
   (evil-set-leader '(normal motion) (kbd "SPC"))
-  (evil-set-leader '(insert replace visual) (kbd "C-c"))
-
-  ;; Evil normal state
-  (evil-define-key* nil 'global
-    ;; windows jump
-    (kbd "<leader>wh") 'evil-window-left
-    (kbd "<leader>wl") 'evil-window-right
-    (kbd "<leader>wj") 'evil-window-down
-    (kbd "<leader>wk") 'evil-window-up
-    ;; window split
-    (kbd "<leader>wv") 'evil-window-vsplit
-    (kbd "<leader>w-") 'evil-window-split
-    (kbd "<leader>wd") 'evil-window-delete)
-  )
+  (evil-set-leader '(insert replace visual) (kbd "C-c")))
 
 (use-package evil-collection
   :after evil
   :ensure t
   :custom
   (evil-collection-setup-minibuffer t)
-  (evil-collection-mode-list nil)
-  )
+  (evil-collection-mode-list nil))
+
+(defmacro user/set-leader-key (states keymap key op)
+  "Bind KEY with OP at STATES and KEYMAP."
+  `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
 
 ;;; General - for keybindings
 (use-package general
@@ -146,7 +136,8 @@
 	      recentf-auto-save-timer (run-with-idle-timer 600 t
 							                           'recentf-save-list)))
   :config
-  (evil-define-key nil 'global (kbd "<leader>fr") 'recentf-open-files)
+;;  (evil-define-key nil 'global (kbd "<leader>fr") 'recentf-open-files)
+  (user/set-leader-key nil 'global "fr" 'recentf-open-files)
   )
 
 (use-package display-line-numbers
