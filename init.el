@@ -75,11 +75,11 @@
         (package-refresh-contents)
         (package-install 'use-package)))
 
+  (require 'keybindings)
   (require 'editor)
   (require 'completion)
-
   (require 'core-libs)
-  (require 'keybindings)
+
   (require 'prog-common)
   (require 'prog-c-cpp)
   (require 'prog-python)

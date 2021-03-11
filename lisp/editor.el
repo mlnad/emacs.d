@@ -82,37 +82,6 @@
          (fontspec (apply 'font-spec :name font props)))
     (set-frame-font fontspec nil t)))
 
-;;; Keybinding
-(use-package evil
-  :ensure t
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  :config
-  (evil-mode 1)
-  (evil-set-undo-system 'undo-tree)
-  (evil-set-leader '(normal motion) (kbd "SPC"))
-  (evil-set-leader '(insert replace visual) (kbd "C-c")))
-
-(use-package evil-collection
-  :after evil
-  :ensure t
-  :custom
-  (evil-collection-setup-minibuffer t)
-  (evil-collection-mode-list nil))
-
-(defmacro user/set-leader-key (states keymap key op)
-  "Bind KEY with OP at STATES and KEYMAP."
-  `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
-
-;;; General - for keybindings
-(use-package general
-  :ensure t
-  :init
-  (defalias 'define-key! #'general-def)
-  (defalias 'undefine-key! #'general-unbind)
-  )
-
 ;;; Build-in packages
 (use-package paren
   :hook (after-init . show-paren-mode)
@@ -136,8 +105,7 @@
 	      recentf-auto-save-timer (run-with-idle-timer 600 t
 							                           'recentf-save-list)))
   :config
-;;  (evil-define-key nil 'global (kbd "<leader>fr") 'recentf-open-files)
-  (user/set-leader-key nil 'global "fr" 'recentf-open-files)
+  (user/set-global-leader-key "fr" 'recentf-open-files)
   )
 
 (use-package display-line-numbers
@@ -181,7 +149,8 @@
   :defer t
   :config
   (add-to-list 'user/evil-collection-mode-list 'imenu)
-  (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
+  ;; (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
+  (user/set-global-leader-key "ji" 'imenu)
   )
 
 ;;; Minibuffers
@@ -268,8 +237,7 @@
   :init
   (which-key-mode)
   :config
-  :diminish which-key-mode
-  )
+  :diminish which-key-mode)
 
 ;;; Undo tree mode
 (use-package undo-tree
@@ -297,9 +265,7 @@
           writeroom-set-tool-bar-lines
           writeroom-set-vertical-scroll-bars
           writeroom-set-bottom-divider-width))
-
-  (evil-define-key nil 'global (kbd "<leader>wc") 'writeroom-mode)
-  )
+  (user/set-global-leader-key "wc" 'writeroom-mode))
 
 (provide 'editor)
 ;;; editor.el ends here
