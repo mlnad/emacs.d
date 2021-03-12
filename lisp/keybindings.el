@@ -5,6 +5,15 @@
 (defvar emacs-default-map (make-sparse-keymap)
   "Base keymap for all Emacs leader key commands.")
 
+;;; Whichkey
+(use-package which-key
+  :ensure t
+  :hook (after-init . which-key-mode)
+  :config
+  (setq which-key-show-early-on-C-h t)
+  (which-key-show-major-mode)
+  :diminish which-key-mode)
+
 ;;; Keybinding
 (use-package evil
   :ensure t

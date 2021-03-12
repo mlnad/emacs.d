@@ -92,7 +92,6 @@
         show-paren-when-point-in-periphery t))
 
 (use-package recentf
-  :defer 1
   :commands (recentf-save-list)
   :init
   (progn
@@ -230,14 +229,6 @@
   :ensure t
   :config
   (load-theme 'doom-one t))
-
-;;; Whichkey
-(use-package which-key
-  :ensure t
-  :init
-  (which-key-mode)
-  :config
-  :diminish which-key-mode)
 
 ;;; Undo tree mode
 (use-package undo-tree
