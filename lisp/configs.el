@@ -8,6 +8,9 @@
                             :weight normal
                             :width normal))
 
+(defvar user/cache-directory
+  (expand-file-name "cache/" user-emacs-directory))
+
 (defvar user/userconfig-file
   (expand-file-name "cache/userconfig" user-emacs-directory))
 
@@ -31,6 +34,9 @@
 
 (defvar user/auto-save-list-prefix
   (expand-file-name "cache/auto-save-list/.saves-" user-emacs-directory))
+
+(defvar user/layouts-directory
+  (expand-file-name "cache/layouts/" user-emacs-directory))
 
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
@@ -94,7 +100,7 @@ If `lsp-mode' use lsp-mode as lsp client.")
        (process-menu simple)
        prodigy profiler python quickrun realgud reftex restclient rg ripgrep scroll-lock sh-script simple slime sly speedbar tab-bar tablist tabulated-list tar-mode
        (term term ansi-term multi-term)
-       tetris thread timer-list vc-annotate vc-dir vc-git vdiff view vlf vterm wdired wgrep which-key woman xref
+       tetris thread timer-list vc-annotate vc-dir vc-git vdiff view vlf vterm wdired wgrep woman xref
        (ztree ztree-diff)
        xwidget)
   )

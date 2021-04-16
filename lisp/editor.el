@@ -94,18 +94,17 @@
 (use-package recentf
   :commands (recentf-save-list)
   :init
-  (progn
-    (add-hook 'find-file-hook (lambda () (unless recentf-mode
-					                       (recentf-mode)
-					                       (recentf-track-opened-file))))
-    (setq recentf-save-file user/recentf-save-file
-	      recentf-max-saved-items 1000
-	      recentf-auto-cleanup 'never
-	      recentf-auto-save-timer (run-with-idle-timer 600 t
-							                           'recentf-save-list)))
+  (add-hook 'find-file-hook (lambda () (unless recentf-mode
+					                     (recentf-mode)
+					                     (recentf-track-opened-file))))
+  (setq recentf-save-file user/recentf-save-file
+	    recentf-max-saved-items 1000
+	    recentf-auto-cleanup 'never
+	    recentf-auto-save-timer (run-with-idle-timer 600 t
+							                         'recentf-save-list))
+  (recentf-mode 1)
   :config
-  (user/set-global-leader-key "fr" 'recentf-open-files)
-  )
+  (user/set-global-leader-key "fr" 'recentf-open-files))
 
 (use-package display-line-numbers
   :hook

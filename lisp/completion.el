@@ -15,12 +15,45 @@
 ;;
 ;;
 ;;; Code:
+(use-package persp-mode
+  :ensure t
+  :init
+  (setq persp-add-buffer-on-after-change-major-mode 'free
+        persp-auto-resume-time 1
+        persp-is-ibc-as-f-supported nil
+        persp-set-ido-hooks t
+        persp-set-last-persp-for-new-frames nil
+        persp-save-dir user/layouts-directory))
+
 (use-package projectile
   :ensure t
   :defer t
   :commands (projectile-project-root
              projectile-project-name
-             projectile-project-p)
+             projectile-project-p
+             projectile-ack
+             projectile-ag
+             projectile-compile-project
+             projectile-dired
+             projectile-find-dir
+             projectile-find-file
+             projectile-find-tag
+             projectile-test-project
+             projectile-grep
+             projectile-invalidate-cache
+             projectile-kill-buffers
+             projectile-multi-occur
+             projectile-project-p
+             projectile-project-root
+             projectile-recentf
+             projectile-regenerate-tags
+             projectile-replace
+             projectile-replace-regexp
+             projectile-run-async-shell-command-in-root
+             projectile-run-shell-command-in-root
+             projectile-switch-project
+             projectile-switch-to-buffer
+             projectile-vc)
   :init
   (progn
     (setq projectile-indexing-method 'alien
@@ -54,47 +87,71 @@
     (kbd "<leader>pp") 'projectile-switch-project)
 
   :diminish projectile-mode)
+
 (use-package ivy
   :ensure t
   :hook (after-init . ivy-mode)
   :init
-  (let ((standard-seaarch-fn #'ivy--regex-plus)
-        (alt-search-fn #'ivy--regex-ignore-order))
-    (setq ivy-more-chars-alist
-          `((counsel-rg . 1)
-            (counsel-search . 2)
-            (t . 3)))
-    (setq ivy-re-builders-alist
-          `((counsel-rg . ,standard-seaarch-fn)
-            (swiper . ,standard-seaarch-fn)
-            (swiper-isearch . ,standard-seaarch-fn))))
+  ;; (let ((standard-seaarch-fn #'ivy--regex-plus)
+  ;;       (alt-search-fn #'ivy--regex-ignore-order))
+  ;;   (setq ivy-more-chars-alist
+  ;;         `((counsel-rg . 1)
+  ;;           (counsel-search . 2)
+  ;;           (t . 3)))
+  ;;   (setq ivy-re-builders-alist
+  ;;         `((counsel-rg . ,standard-seaarch-fn)
+  ;;           (swiper . ,standard-seaarch-fn)
+  ;;           (swiper-isearch . ,standard-seaarch-fn))))
   (add-to-list 'user/evil-collection-mode-list 'ivy)
   :config
   (setq ivy-sort-max-size 7500)
 
   (require 'counsel nil t)
 
-  (setq ivy-height 17
-        ivy-wrap t
-        ivy-fixed-height-minibuffer t
+  (setq ivy-wrap t
         projectile-completion-system 'ivy
         ivy-use-virtual-buffers nil
         ivy-virtual-abbreviate 'full
         ivy-on-del-error-function #'ignore
         ivy-use-selectable-prompt t)
 
-  (global-set-key "\C-s" 'swiper)
-
   (dolist (map (list ivy-minibuffer-map
                      ivy-switch-buffer-map
                      ivy-reverse-i-search-map))
     (define-key map (kbd "C-j") 'ivy-next-line)
     (define-key map (kbd "C-k") 'ivy-previous-line))
+
+  ;; Occur
+  (evil-set-initial-state 'ivy-occur-grep-mode 'normal)
+  (evil-make-overriding-map ivy-occur-mode-map 'normal)
+  
+
   (evil-define-key* nil 'global
-    (kbd "<leader>ss") 'swiper
     (kbd "<leader>sp") 'user/counsel-search-project
     (kbd "<leader>sd") 'user/counsel-search-dir
-    (kbd "<leader>bb") 'ivy-switch-buffer))
+    (kbd "<leader>bb") 'ivy-switch-buffer)
+
+  (use-package swiper
+    :ensure t
+    :config
+    (evil-define-key* nil 'global
+      (kbd "<leader>ss") 'swiper
+      (kbd "<leader>sS") 'swiper-thing-at-point
+      (kbd "<leader>sb") 'swiper-all
+      (kbd "<leader>sB") 'swiper-all-thing-at-point)
+    (global-set-key "\C-s" 'swiper)))
+
+(use-package ivy-avy
+  :ensure t
+  :after ivy)
+
+(use-package ivy-xref
+  :ensure t
+  :defer t
+  :init
+  (setq xref-prompt-for-identifier '(not xref-find-definitions
+                                         xref-find-definitions-other-window
+                                         xref-find-references)))
 
 (use-package counsel
   :ensure t

@@ -40,9 +40,9 @@
     (global-git-gutter-mode +1))
 
   :config
-  (evil-define-key* nil 'global
-    (kbd "<leader>gs") 'magit-status
-    (kbd "<leader>gd") 'magit-diff-range))
+  (user/set-global-leader-key*
+    "gs" 'magit-status
+    "gd" 'magit-diff-range))
 
 
 (provide 'apps)

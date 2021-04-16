@@ -37,9 +37,25 @@
   "Bind KEY to OP at STATES and KEYMAP."
   `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
 
+(defun user/set-leader-key* (states keymap key op &rest key-ops)
+  "Bind KEY-OPS lists at states and KEYMAP."
+  (while key
+    (evil-define-key states keymap (kbd (concat "<leader>" key)) op)
+    (setq key (pop key-ops)
+          op (pop key-ops))))
+(put 'user/set-leader-key* 'lisp-indent-function 'defun)
+
 (defmacro user/set-global-leader-key (key op)
   "Bind KEY to OP globally for all evil states."
   `(user/set-leader-key nil 'global ,key ,op))
+
+(defun user/set-global-leader-key* (key op &rest key-ops)
+  "Bind KEY to OP."
+  (while key
+    (evil-define-key nil 'global (kbd (concat "<leader>" key)) op)
+    (setq key (pop key-ops)
+          op (pop key-ops))))
+(put 'user/set-global-leader-key* 'lisp-indent-function 'defun)
 
 ;;; General - for keybindings
 (use-package general
@@ -49,27 +65,27 @@
   (defalias 'undefine-key! #'general-unbind))
 
 ;;; Define key
-(evil-define-key* nil 'global
-  ;; windows jump
-  (kbd "<leader>wh") 'evil-window-left
-  (kbd "<leader>wl") 'evil-window-right
-  (kbd "<leader>wj") 'evil-window-down
-  (kbd "<leader>wk") 'evil-window-up
+(user/set-global-leader-key*
+ ;; windows jump
+  "wh" 'evil-window-left
+  "wl" 'evil-window-right
+  "wj" 'evil-window-down
+  "wk" 'evil-window-up
   ;; window split
-  (kbd "<leader>wv") 'evil-window-vsplit
-  (kbd "<leader>w-") 'evil-window-split
-  (kbd "<leader>wd") 'evil-window-delete
+  "wv" 'evil-window-vsplit
+  "w-" 'evil-window-split
+  "wd" 'evil-window-delete
   ;;
-  (kbd "<leader><SPC>") 'execute-extended-command
+  "<SPC>" 'execute-extended-command
   ;; Files
-  (kbd "<leader>ff") 'find-file
-  (kbd "<leader>fs") 'save-buffer
-  (kbd "<leader>fS") 'evil-write-all
+  "ff" 'find-file
+  "fs" 'save-buffer
+  "fS" 'evil-write-all
   ;; Buffers
-  (kbd "<leader>bd") 'kill-buffer
-  (kbd "<leader>bn") 'next-buffer
-  (kbd "<leader>bp") 'previous-buffer
-  (kbd "<leader>bx") 'kill-buffer-and-window)
+  "bd" 'kill-buffer
+  "bn" 'next-buffer
+  "bp" 'previous-buffer
+  "bx" 'kill-buffer-and-window)
 
 (provide 'keybindings)
 ;;; keybindings.el ends here
