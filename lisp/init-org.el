@@ -38,11 +38,11 @@
   :init
   (with-eval-after-load 'org
     (add-hook 'org-mode-hook
-              '(lambda ()
-                 (make-face 'width-font-face)
-                 (set-face-attribute 'width-font-face nil :font "Sarasa Mono SC 12") ;; 13, 14, 16等会出现不等宽
-                 (setq buffer-face-mode-face 'width-font-face)
-                 (buffer-face-mode))))
+              (lambda ()
+                (make-face 'width-font-face)
+                (set-face-attribute 'width-font-face nil :font "等距更纱黑体 SC 12") ;; 13, 14, 16等会出现不等宽
+                (setq buffer-face-mode-face 'width-font-face)
+                (buffer-face-mode))))
 
   :config
   (setq org-clock-persist-file (concat user/cache-directory
@@ -146,7 +146,7 @@
 (use-package ob
   :init
   (add-hook 'org-mode-hook
-            '(lambda ()
+            (lambda ()
                (org-babel-do-load-languages 'org-babel-load-languages
                                             org-babel-load-languages))))
 

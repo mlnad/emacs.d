@@ -68,6 +68,9 @@
   (tab-always-indent 'complete)
   :init
   (add-to-list 'user/evil-collection-mode-list 'company)
+  (add-hook 'company-completion-started-hook 'company-turn-off-fci)
+  (add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
+  (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
   :config
   (setq-default company-backends (delete 'company-semantic company-backends))
   (push '(company-semantic :with company-yasnippet) company-backends)

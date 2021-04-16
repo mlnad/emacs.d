@@ -75,7 +75,7 @@
                   ".git"))              ; Git
         ;; This will be filled by other pakages
         projectile-project-root-files '()
-        projectile-project-root-files-top-down-recurring '("Makefile"))
+        projectile-project-root-files-top-down-recurring '("Makefile" "CMakeLists.txt"))
 
   ;; Per-project compilation buffers
   (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
