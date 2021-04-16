@@ -49,8 +49,14 @@
 ;;; Completion
 (use-package yasnippet
   :ensure t
+  :commands (yas-global-mode yas-minor-mode yas-active-extra-mode)
   :init
+  (setq yas-trigger-in-field t
+        yas-wrap-around-region t
+        yas-prompt-functions '(yas-completing-prompt))
+
   (add-hook 'prog-mode-hook #'yas-minor-mode)
+  (add-hook 'org-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all)
   :diminish yas-minor-mode
@@ -68,14 +74,18 @@
   (tab-always-indent 'complete)
   :init
   (add-to-list 'user/evil-collection-mode-list 'company)
-  (add-hook 'company-completion-started-hook 'company-turn-off-fci)
-  (add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
-  (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
   :config
   (setq-default company-backends (delete 'company-semantic company-backends))
   (push '(company-semantic :with company-yasnippet) company-backends)
-  :diminish company-mode
-  )
+  (define-key company-active-map (kbd "C-/") 'counsel-company)
+  :diminish company-mode)
+
+(use-package company-statistics
+  :ensure t
+  :init
+  (setq company-statistics-file (concat user/cache-directory
+                                        "company-statistics-cache.el"))
+  (add-hook 'company-mode-hook 'company-statistics-mode))
 
 (use-package company-quickhelp
   :ensure t
@@ -84,20 +94,27 @@
   :bind (("C-c d" . 'company-quickhelp-manual-begin)))
 
 ;;; Flycheck
-(use-package flycheck-mode
-  :ensure flycheck
+(use-package flycheck
+  :ensure t
   :defer t
+  :hook (prog-mode . flycheck-mode)
   :init
-  (progn
-    (setq flycheck-standard-error-navigation nil
-	  flycheck-global-modes nil))
-  :bind
-  (("C-c e b" . 'flycheck-buffer)
-   ("C-c e c" . 'flycheck-clear)
-   ("C-c e h" . 'flycheck-describe-checker)
-   ("C-c e s" . 'flycheck-select-checker)
-   ("C-c e x" . 'flycheck-explain-error-at-point))
-  :hook prog-mode)
+  (push '("^\\*Flycheck.+\\*$"
+          :regexp t
+          :dedicated t
+          :position bottom
+          :stick t
+          :noselect t)
+        popwin:special-display-config)
+  :config
+  (user/set-global-leader-key*
+    "en" 'flycheck-next-error
+    "ep" 'flycheck-previous-error
+    "eb" 'flycheck-buffer
+    "ec" 'flycheck-clear
+    "eh" 'flycheck-describe-checker
+    "es" 'flycheck-select-checker
+    "ex" 'flycheck-explain-error-at-point))
 
 (provide 'prog-common)
 ;;; prog-common.el ends here

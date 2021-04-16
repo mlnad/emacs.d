@@ -61,7 +61,7 @@
           projectile-ignored-projects '("~/" "/tmp")
           projectile-globally-ignored-files '(".DS_Store" "TAGS")
           projectile-globally-ignored-directories '(".ccls-cache")
-          projectile-kill-buffers-filter 'kill-only-files)
+          projectile-kill-buffers-filter 'kill-all)
 
     (setq projectile-sort-order 'recentf
           projectile-cache-file user/projectile-cache-file

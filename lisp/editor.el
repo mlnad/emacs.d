@@ -60,6 +60,9 @@
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
 
+;; truncate-lines only on prog mode.
+(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
+
 (unless (assq 'menu-bar-lines default-frame-alist)
   (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
   (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
@@ -147,8 +150,10 @@
   :config
   (add-to-list 'user/evil-collection-mode-list 'imenu)
   ;; (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
-  (user/set-global-leader-key "ji" 'imenu)
-  )
+  (user/set-global-leader-key "ji" 'imenu))
+
+(use-package display-fill-column-indicator
+  :ensure nil)
 
 ;;; Minibuffers
 ;; Allow for minibuffer-ception.

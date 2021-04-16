@@ -44,11 +44,9 @@
   (require 'cl-lib)
   ;; Language and coding
   (set-language-environment "utf-8")
-  (set-keyboard-coding-system 'utf-8)
-  (set-default-coding-systems 'utf-8)
+  ;; (set-keyboard-coding-system 'utf-8)
+  ;; (set-default-coding-systems 'utf-8)
 
-  (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
-  
 ;;; Packages
   (require 'package)
   (setq package--init-file-ensured t
