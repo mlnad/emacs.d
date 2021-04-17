@@ -6,32 +6,36 @@
 ;;;
 
 ;;; Language server protocol
-(cond
- ;; Use nox as client.
- ((eq 'nox user/lsp-client)
-  (use-package nox
-    :load-path "lisp/nox"
-    :config
-    (setq nox-server-programs user/nox-server-programs)
-    (dolist (hook user/nox-list)
-      (add-hook hook '(lambda () (nox-ensure))))))
- ;; Use lsp-mode as client
- ((eq 'lsp-mode user/lsp-client)
-  (use-package lsp-mode
-    :ensure t
-    :init
-    (setq lsp-keymap-prefix "C-c l")
-    :hook ((c-mode . lsp-deferred)
-           (c++-mode . lsp-deferred)
-           (python-mode . lsp-deferred)
-           (lsp-mode . lsp-enable-which-key-integration))
-    :config
-    (setq lsp-enable-snippet nil)
-    (setq lsp-modeline-diagnostics-enable nil)
-    :commands (lsp lsp-deferred)
-    )
+(use-package lsp-mode
+  :ensure t
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :commands (lsp lsp-deferred)
+  :hook ((c-mode . lsp-deferred)
+         (c++-mode . lsp-deferred)
+         (python-mode . lsp-deferred)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :config
+  (setq lsp-enable-snippet nil
+        lsp-modeline-diagnostics-enable nil
+        lsp-prefer-capf t)
 
- (use-package lsp-ui
+  (push '("*lsp-help*" :dedicated t :position bottom :stick t :noselect t :height 0.4)
+        popwin:special-display-config)
+
+  (user/set-leader-key* nil lsp-mode-map
+    ;; format
+    "=b" #'lsp-format-buffer
+    "=r" #'lsp-format-region
+    "=o" #'lsp-organize-imports
+    ;; code
+    "cr" #'lsp-rename
+    ;; backends
+    "bd" #'lsp-describe-session
+    "br" #'lsp-workspace-restart
+    "bx" #'lsp-workspace-shutdown))
+
+(use-package lsp-ui
   :ensure t
   :config
   (setq lsp-ui-doc-enable nil)
@@ -44,7 +48,6 @@
 (use-package dap-mode
   :after (lsp-mode)
   :ensure t)
- ))
 
 ;;; Completion
 (use-package yasnippet

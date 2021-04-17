@@ -14,5 +14,8 @@
   :init
   (add-to-list 'company-backends 'company-c-headers))
 
+(use-package bison-mode
+  :ensure t)
+
 (provide 'prog-c-cpp)
 ;;; prog-c-cpp.el ends here
