@@ -218,14 +218,19 @@
   (use-package anzu
     :ensure t
     :defer t
-    :hook (isearch-mode . anzu-mode)
-    )
+    :hook (isearch-mode . anzu-mode))
 
   (use-package evil-anzu
     :ensure t
     :defer t
     :config
     (global-anzu-mode +1)))
+
+(use-package unicode-fonts
+  :ensure t
+  :init
+  (setq unicode-fonts-skip-font-groups '(decorative low-quality-glyphs))
+  (unicode-fonts-setup))
 
 ;;; doom themes
 (use-package doom-themes
