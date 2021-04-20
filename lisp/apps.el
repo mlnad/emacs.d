@@ -11,15 +11,13 @@
   :config
   (setq-default deft-extensions user/notes-extensions
                 deft-directory user/notes-dir
-                deft-recursive t
-                ))
+                deft-recursive t))
 
 ;;; youdao-dict
 (use-package youdao-dictionary
   :ensure t
   :config
-  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+)
-  )
+  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+))
 
 ;;; Magit for git
 (use-package magit
@@ -43,6 +41,13 @@
   (user/set-global-leader-key*
     "gs" 'magit-status
     "gd" 'magit-diff-range))
+
+;;; Rime
+(use-package rime
+  :ensure t
+  :config
+  (setq rime-show-candidate 'posframe
+        default-input-method "rime"))
 
 
 (provide 'apps)

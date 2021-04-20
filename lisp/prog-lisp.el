@@ -12,5 +12,10 @@
   :ensure t
   :hook (scheme-mode . parinfer-mode))
 
+(use-package lispy-mode
+  :ensure lispy
+  :hook emacs-lisp-mode
+  :diminish lispy-mode)
+
 (provide 'prog-lisp)
 ;;; prog-lisp.el ends here

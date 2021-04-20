@@ -40,11 +40,13 @@
     (add-hook 'org-mode-hook
               (lambda ()
                 (make-face 'width-font-face)
-                (set-face-attribute 'width-font-face nil :font "等距更纱黑体 SC 12") ;; 13, 14, 16等会出现不等宽
+                (set-face-attribute 'width-font-face nil :font "等距更纱黑体 SC 15") ;; 13, 14, 16等会出现不等宽
                 (setq buffer-face-mode-face 'width-font-face)
                 (buffer-face-mode))))
 
   :config
+  (require 'org-tempo)
+
   (setq org-clock-persist-file (concat user/cache-directory
                                        "org-clock-save.el")
         org-id-locations-file (concat user/cache-directory
