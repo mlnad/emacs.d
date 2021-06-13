@@ -83,6 +83,7 @@
   (require 'prog-python)
   (require 'prog-haskell)
   (require 'prog-lisp)
+  (require 'prog-verilog)
   (require 'init-org)
   (require 'apps)
 

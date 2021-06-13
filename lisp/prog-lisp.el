@@ -8,10 +8,6 @@
   :ensure t
   :commands run-geiser)
 
-(use-package parinfer-rust-mode
-  :ensure t
-  :hook emacs-lisp-mode scheme-mode common-lisp-mode)
-
 (use-package lispy-mode
   :ensure lispy
   :hook emacs-lisp-mode
