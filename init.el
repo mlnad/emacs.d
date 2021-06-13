@@ -12,7 +12,7 @@
 
 (let (
       ;; adjust garbage collection at startup
-      (gc-cons-threshold most-positive-fixnum)
+      (gc-cons-threshold (* 128 1024 1024))
       (gc-cons-percentage 0.6))
 
   ;; Use a hook so the messages doesn't get clobbered by other messages.
