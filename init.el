@@ -82,6 +82,7 @@
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
+  (require 'prog-lisp)
   (require 'init-org)
   (require 'apps)
 
