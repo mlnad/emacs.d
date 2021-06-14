@@ -49,6 +49,23 @@
   (setq rime-show-candidate 'posframe
         default-input-method "rime"))
 
+;;; EAF
+(quelpa '(eaf :fetcher github
+              :repo "manateelazycat/emacs-application-framework"
+              :files ("*")))
+
+(use-package eaf
+  :load-path "quelpa/build/eaf"
+  :init
+  (use-package epc :defer t :ensure t)
+  (use-package ctable :defer t :ensure t)
+  (use-package deferred :defer t :ensure t)
+  :custom
+  (eaf-browser-continue-where-left-off t)
+  :config
+  (eaf-setq eaf-browser-enable-adblocker "true")
+  (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
+  (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding))
 
 (provide 'apps)
 ;;; apps.el ends here
