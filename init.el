@@ -73,10 +73,11 @@
         (package-refresh-contents)
         (package-install 'use-package)))
   ;; Install use-package from melpa
-  (or (package-installed-p 'quelpa)
-      (progn
+  (unless (package-installed-p 'quelpa)
+    (progn
         (package-refresh-contents)
         (package-install 'quelpa)))
+  (setq quelpa-checkout-melpa-p nil)
 
   (require 'keybindings)
   (require 'editor)
