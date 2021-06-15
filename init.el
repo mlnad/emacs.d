@@ -12,7 +12,7 @@
 
 (let (
       ;; adjust garbage collection at startup
-      (gc-cons-threshold most-positive-fixnum)
+      (gc-cons-threshold (* 128 1024 1024))
       (gc-cons-percentage 0.6))
 
   ;; Use a hook so the messages doesn't get clobbered by other messages.
@@ -72,6 +72,12 @@
       (progn
         (package-refresh-contents)
         (package-install 'use-package)))
+  ;; Install use-package from melpa
+  (unless (package-installed-p 'quelpa)
+    (progn
+        (package-refresh-contents)
+        (package-install 'quelpa)))
+  (setq quelpa-checkout-melpa-p nil)
 
   (require 'keybindings)
   (require 'editor)
@@ -82,6 +88,8 @@
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
+  (require 'prog-lisp)
+  (require 'prog-verilog)
   (require 'init-org)
   (require 'apps)
 
