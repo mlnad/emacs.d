@@ -3,6 +3,18 @@
 ;;; Commentary:
 
 ;;; Code:
+(defvar user/full-name "Liu Miao")
+(defvar user/email-address "liumiaogemini@foxmail.com")
+
+(defconst *sys/win32*
+  (eq system-type 'windows-nt))
+
+(defconst *sys/linux*
+  (eq system-type 'gnu/linux))
+
+(defconst *sys/mac*
+  (eq system-type 'darwin))
+
 (defvar user/default-font '("Consolas"
                             :size 10
                             :weight normal
