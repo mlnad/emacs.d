@@ -10,12 +10,13 @@
   :ensure t
   :init
   (setq lsp-keymap-prefix "C-c l")
-  ;; :hook ((c-mode . lsp-deferred)
-  ;;        (c++-mode . lsp-deferred)
-  ;;        (python-mode . lsp-deferred)
-  ;;        (lsp-mode . lsp-enable-which-key-integration))
+  <<<<<<< HEAD
+  :commands (lsp lsp-deferred)
   :hook ((c-mode c++-mode python-mode) . lsp-deferred)
   :config
+  (setq lsp-enable-snippet nil
+        lsp-modeline-diagnostics-enable nil
+        lsp-prefer-capf t)
   (setq lsp-enable-snippet nil)
   (setq lsp-modeline-diagnostics-enable nil)
   (push '("^\\*[Ll]sp.+\\*$"
@@ -26,6 +27,17 @@
           :noselect t)
         popwin:special-display-config)
 
+  (user/set-leader-key* nil lsp-mode-map
+                        ;; format
+                        "=b" #'lsp-format-buffer
+                        "=r" #'lsp-format-region
+                        "=o" #'lsp-organize-imports
+                        ;; code
+                        "cr" #'lsp-rename
+                        ;; backends
+                        "bd" #'lsp-describe-session
+                        "br" #'lsp-workspace-restart
+                        "bx" #'lsp-workspace-shutdown)
   :commands (lsp lsp-deferred))
 
 (use-package lsp-ui
@@ -41,7 +53,6 @@
 (use-package dap-mode
   :after (lsp-mode)
   :ensure t)
-
 
 ;;; Completion
 (use-package yasnippet

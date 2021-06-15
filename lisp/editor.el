@@ -152,8 +152,9 @@
   ;; (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
   (user/set-global-leader-key "ji" 'imenu))
 
-(use-package display-fill-column-indicator
-  :ensure nil)
+(when (>= emacs-major-version 27)
+  (use-package display-fill-column-indicator
+    :ensure nil))
 
 ;;; Minibuffers
 ;; Allow for minibuffer-ception.
