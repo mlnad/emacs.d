@@ -32,11 +32,7 @@
                         "=r" #'lsp-format-region
                         "=o" #'lsp-organize-imports
                         ;; code
-                        "cr" #'lsp-rename
-                        ;; backends
-                        "bd" #'lsp-describe-session
-                        "br" #'lsp-workspace-restart
-                        "bx" #'lsp-workspace-shutdown)
+                        "cr" #'lsp-rename)
   :commands (lsp lsp-deferred))
 
 (use-package lsp-ui
