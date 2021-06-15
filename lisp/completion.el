@@ -56,7 +56,7 @@
              projectile-vc)
   :init
   (progn
-    (setq projectile-indexing-method 'alien
+    (setq ;; projectile-indexing-method 'alien
           projectile-generic-command "find . -type f"
           projectile-ignored-projects '("~/" "/tmp")
           projectile-globally-ignored-files '(".DS_Store" "TAGS")
