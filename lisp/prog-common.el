@@ -10,7 +10,6 @@
   :ensure t
   :init
   (setq lsp-keymap-prefix "C-c l")
-  <<<<<<< HEAD
   :commands (lsp lsp-deferred)
   :hook ((c-mode c++-mode python-mode) . lsp-deferred)
   :config
