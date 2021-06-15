@@ -12,12 +12,11 @@
       (let ((file-path (expand-file-name ".venv" root-path)))
         (cond ((file-directory-p file-path)
                (pyvenv-activate file-path)
+               (setq pyvenv-activate file-path)
                (message "Activated local virtualenv"))
               (t (message ".venv is not a directory")))))))
 
 (use-package python
-  :defer t
-  :ensure nil
   :after flycheck
   :mode "\\.py\\'"
   :custom
@@ -29,12 +28,12 @@
 (use-package lsp-pyright
   :ensure t
   :hook (python-mode . (lambda () (require 'lsp-pyright)))
-  :init (when (executable-find "python3")
-          (setq lsp-pyright-python-executable-cmd "python3")))
+;;  :init (when (executable-find "python3")
+;;          (setq lsp-pyright-python-executable-cmd "python3")))
+  )
 
 (use-package yapfify
   :ensure t
-  :defer t
   :hook (python-mode . yapf-mode))
 
 (use-package pyvenv
