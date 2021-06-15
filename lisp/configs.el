@@ -8,6 +8,14 @@
                             :weight normal
                             :width normal))
 
+(defvar user/org-default-font '("等距更纱黑体 SC"
+                                :height 15
+                                :weight normal
+                                :width normal))
+
+(defvar user/cache-directory
+  (expand-file-name "cache/" user-emacs-directory))
+
 (defvar user/userconfig-file
   (expand-file-name "cache/userconfig" user-emacs-directory))
 
@@ -32,6 +40,9 @@
 (defvar user/auto-save-list-prefix
   (expand-file-name "cache/auto-save-list/.saves-" user-emacs-directory))
 
+(defvar user/layouts-directory
+  (expand-file-name "cache/layouts/" user-emacs-directory))
+
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
 
@@ -40,37 +51,19 @@
 
 (defvar user/notes-extensions '("org" "md" "markdown"))
 
-(defvar user/mode-line-format
-  (list
-   "%e" ;; print error message
-   mode-line-front-space
-   '(:eval evil-mode-line-tag) ;; Show evil mode.
-   mode-line-mule-info mode-line-client mode-line-modified
-   mode-line-remote
-   mode-line-frame-identification mode-line-buffer-identification ;; buffer files
-   mode-line-modes ;; Major mode and some important minor modes.
-   " "
-   mode-line-position ;; position of this buffer
-   ;; "   "
-   '(vc-mode vc-mode) ;; version control messages.
-   mode-line-misc-info mode-line-end-spaces))
-
 (defvar elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
-(defvar elpa-subdirectory 'emacs-version
-  )
+(defvar elpa-subdirectory 'emacs-version)
 
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
                                  ("org" . "https://orgmode.org/elpa/")
-                                 ("gnu" . "https://elpa.gnu.org/packages/"))
-  )
+                                 ("gnu" . "https://elpa.gnu.org/packages/")))
 
 (defvar emacs-china-package-mirror '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
                                      ("melpa" . "http://elpa.emacs-china.org/melpa/")
-                                     ("org"   . "http://elpa.emacs-china.org/org/"))
-  )
+                                     ("org"   . "http://elpa.emacs-china.org/org/")))
 
 (defvar user/package-mirror default-package-mirror)
 
@@ -82,7 +75,7 @@ If `lsp-mode' use lsp-mode as lsp client.")
   '(ag apropos bm bookmark
        (buff-menu "buff-menu")
        calc calendar
-       cus-theme debug dictionary diff-mode dired dired-sidebar disk-usage doc-view docker ebib edbi edebug ediff eglot explain-pause-mode elfeed elisp-mode elisp-refs elisp-slime-nav emms epa ert eshell eval-sexp-fu evil-mc eww finder flycheck flymake free-keys geiser ggtags git-timemachine gnus go-mode grep guix hackernews helm help helpful hg-histedit hungry-delete ibuffer image image-dired image+ imenu imenu-list
+       cus-theme debug dictionary diff-mode dired dired-sidebar disk-usage doc-view docker ebib edbi edebug ediff eglot explain-pause-mode elfeed elisp-mode elisp-refs elisp-slime-nav emms epa ert eshell eval-sexp-fu evil-mc eww finder free-keys geiser ggtags git-timemachine gnus go-mode grep guix hackernews helm help helpful hg-histedit hungry-delete ibuffer image image-dired image+ imenu imenu-list
        (indent "indent")
        lispy log-edit log-view lsp-ui-imenu man magit magit-todos neotree nov
        (occur replace)
@@ -94,7 +87,7 @@ If `lsp-mode' use lsp-mode as lsp client.")
        (process-menu simple)
        prodigy profiler python quickrun realgud reftex restclient rg ripgrep scroll-lock sh-script simple slime sly speedbar tab-bar tablist tabulated-list tar-mode
        (term term ansi-term multi-term)
-       tetris thread timer-list vc-annotate vc-dir vc-git vdiff view vlf vterm wdired wgrep which-key woman xref
+       tetris thread timer-list vc-annotate vc-dir vc-git vdiff view vlf vterm wdired wgrep woman xref
        (ztree ztree-diff)
        xwidget)
   )

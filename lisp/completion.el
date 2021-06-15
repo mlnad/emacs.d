@@ -15,12 +15,45 @@
 ;;
 ;;
 ;;; Code:
+(use-package persp-mode
+  :ensure t
+  :init
+  (setq persp-add-buffer-on-after-change-major-mode 'free
+        persp-auto-resume-time 1
+        persp-is-ibc-as-f-supported nil
+        persp-set-ido-hooks t
+        persp-set-last-persp-for-new-frames nil
+        persp-save-dir user/layouts-directory))
+
 (use-package projectile
   :ensure t
   :defer t
   :commands (projectile-project-root
              projectile-project-name
-             projectile-project-p)
+             projectile-project-p
+             projectile-ack
+             projectile-ag
+             projectile-compile-project
+             projectile-dired
+             projectile-find-dir
+             projectile-find-file
+             projectile-find-tag
+             projectile-test-project
+             projectile-grep
+             projectile-invalidate-cache
+             projectile-kill-buffers
+             projectile-multi-occur
+             projectile-project-p
+             projectile-project-root
+             projectile-recentf
+             projectile-regenerate-tags
+             projectile-replace
+             projectile-replace-regexp
+             projectile-run-async-shell-command-in-root
+             projectile-run-shell-command-in-root
+             projectile-switch-project
+             projectile-switch-to-buffer
+             projectile-vc)
   :init
   (progn
     (setq projectile-indexing-method 'alien
@@ -28,7 +61,7 @@
           projectile-ignored-projects '("~/" "/tmp")
           projectile-globally-ignored-files '(".DS_Store" "TAGS")
           projectile-globally-ignored-directories '(".ccls-cache")
-          projectile-kill-buffers-filter 'kill-only-files)
+          projectile-kill-buffers-filter 'kill-all)
 
     (setq projectile-sort-order 'recentf
           projectile-cache-file user/projectile-cache-file
@@ -42,60 +75,83 @@
                   ".git"))              ; Git
         ;; This will be filled by other pakages
         projectile-project-root-files '()
-        projectile-project-root-files-top-down-recurring '("Makefile"))
+        projectile-project-root-files-top-down-recurring '("Makefile" "CMakeLists.txt"))
 
   ;; Per-project compilation buffers
   (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
         compilation-save-buffers-predicate #'projectile-current-project-buffer-p)
+  (evil-define-key* nil 'global
+    (kbd "<leader>pk") 'projectile-kill-buffers
+    (kbd "<leader>pf") 'projectile-find-file
+    (kbd "<leader>pb") 'projectile-switch-to-buffer
+    (kbd "<leader>pp") 'projectile-switch-project)
 
-  :diminish projectile-mode
-  :bind (("C-c p f" . 'counsel-projectile-find-file)
-         ("C-c p p" . 'counsel-projectile-switch-project)
-         ("C-c p b" . 'counsel-projectile-switch-to-buffer)
-         ("C-c p k" . 'projectile-kill-buffers)))
+  :diminish projectile-mode)
 
 (use-package ivy
   :ensure t
   :hook (after-init . ivy-mode)
   :init
-  (let ((standard-seaarch-fn #'ivy--regex-plus)
-        (alt-search-fn #'ivy--regex-ignore-order))
-    (setq ivy-more-chars-alist
-          `((counsel-rg . 1)
-            (counsel-search . 2)
-            (t . 3)))
-    (setq ivy-re-builders-alist
-          `((counsel-rg . ,standard-seaarch-fn)
-            (swiper . ,standard-seaarch-fn)
-            (swiper-isearch . ,standard-seaarch-fn))))
+  ;; (let ((standard-seaarch-fn #'ivy--regex-plus)
+  ;;       (alt-search-fn #'ivy--regex-ignore-order))
+  ;;   (setq ivy-more-chars-alist
+  ;;         `((counsel-rg . 1)
+  ;;           (counsel-search . 2)
+  ;;           (t . 3)))
+  ;;   (setq ivy-re-builders-alist
+  ;;         `((counsel-rg . ,standard-seaarch-fn)
+  ;;           (swiper . ,standard-seaarch-fn)
+  ;;           (swiper-isearch . ,standard-seaarch-fn))))
   (add-to-list 'user/evil-collection-mode-list 'ivy)
   :config
   (setq ivy-sort-max-size 7500)
 
   (require 'counsel nil t)
 
-  (setq ivy-height 17
-        ivy-wrap t
-        ivy-fixed-height-minibuffer t
+  (setq ivy-wrap t
         projectile-completion-system 'ivy
         ivy-use-virtual-buffers nil
         ivy-virtual-abbreviate 'full
         ivy-on-del-error-function #'ignore
         ivy-use-selectable-prompt t)
 
-  (global-set-key "\C-s" 'swiper)
+  (dolist (map (list ivy-minibuffer-map
+                     ivy-switch-buffer-map
+                     ivy-reverse-i-search-map))
+    (define-key map (kbd "C-j") 'ivy-next-line)
+    (define-key map (kbd "C-k") 'ivy-previous-line))
 
-  ;; (dolist (map (list ivy-minibuffer-map
-  ;;                    ivy-switch-buffer-map
-  ;;                    ivy-reverse-i-search-map))
-  ;;   (define-key map (kbd "C-j") 'ivy-next-line)
-  ;;   (define-key map (kbd "C-k") 'ivy-previous-line))
+  ;; Occur
+  (evil-set-initial-state 'ivy-occur-grep-mode 'normal)
+  (evil-make-overriding-map ivy-occur-mode-map 'normal)
+  
 
+  (evil-define-key* nil 'global
+    (kbd "<leader>sp") 'user/counsel-search-project
+    (kbd "<leader>sd") 'user/counsel-search-dir
+    (kbd "<leader>bb") 'ivy-switch-buffer)
 
-  :bind
-  (("C-c s s" . 'swiper)
-   ("C-c s p" . 'user/counsel-search-project)
-   ("C-c s d" . 'user/counsel-search-dir)))
+  (use-package swiper
+    :ensure t
+    :config
+    (evil-define-key* nil 'global
+      (kbd "<leader>ss") 'swiper
+      (kbd "<leader>sS") 'swiper-thing-at-point
+      (kbd "<leader>sb") 'swiper-all
+      (kbd "<leader>sB") 'swiper-all-thing-at-point)
+    (global-set-key "\C-s" 'swiper)))
+
+(use-package ivy-avy
+  :ensure t
+  :after ivy)
+
+(use-package ivy-xref
+  :ensure t
+  :defer t
+  :init
+  (setq xref-prompt-for-identifier '(not xref-find-definitions
+                                         xref-find-definitions-other-window
+                                         xref-find-references)))
 
 (use-package counsel
   :ensure t
@@ -132,9 +188,9 @@
 
 (use-package counsel-projectile
   :ensure t
-  :defer t
   :init
   (define-key!
+    [remap projectile-find-file]        #'counsel-projectile-find-file
     [remap projectile-find-dir]         #'counsel-projectile-find-dir
     [remap projectile-switch-to-buffer] #'counsel-projectile-switch-to-buffer
     [remap projectile-grep]             #'counsel-projectile-grep
@@ -143,20 +199,30 @@
 
   :config
   (ivy-set-display-transformer #'counsel-projectile-find-file nil)
+  ;; (evil-define-key* nil 'global
+  ;;   (kbd "<leader>pk") 'counsel-projectile-kill-buffers
+  ;;   (kbd "<leader>pf") 'counsel-projectile-find-file
+  ;;   (kbd "<leader>pb") 'counsel-projectile-switch-to-buffer
+  ;;   (kbd "<leader>pp") 'counsel-projectile-switch-project)
   )
 
 (use-package ivy-rich
   :ensure t
   :after counsel
   :init
-  (progn
-    (setq ivy-rich-path-stytle 'abbrev
-          ivy-virtual-abbreviate 'full
-          ))
+  (setq ivy-rich-path-stytle 'abbrev
+        ivy-virtual-abbreviate 'full)
   :config
   (progn
     (setq ivy-rich-parse-remote-buffer nil)
     (ivy-rich-mode)))
+
+(use-package smex
+  :ensure t
+  :defer t
+  :init
+  (setq-default smex-history 32
+                smex-save-file (concat user-emacs-directory "cache/smex-items")))
 
 (provide 'completion)
 ;;; completion.el ends here

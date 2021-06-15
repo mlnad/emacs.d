@@ -12,7 +12,7 @@
 
 (let (
       ;; adjust garbage collection at startup
-      (gc-cons-threshold most-positive-fixnum)
+      (gc-cons-threshold (* 128 1024 1024))
       (gc-cons-percentage 0.6))
 
   ;; Use a hook so the messages doesn't get clobbered by other messages.
@@ -44,11 +44,9 @@
   (require 'cl-lib)
   ;; Language and coding
   (set-language-environment "utf-8")
-  (set-keyboard-coding-system 'utf-8)
-  (set-default-coding-systems 'utf-8)
+  ;; (set-keyboard-coding-system 'utf-8)
+  ;; (set-default-coding-systems 'utf-8)
 
-  (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
-  
 ;;; Packages
   (require 'package)
   (setq package--init-file-ensured t
@@ -74,16 +72,24 @@
       (progn
         (package-refresh-contents)
         (package-install 'use-package)))
+  ;; Install use-package from melpa
+  (unless (package-installed-p 'quelpa)
+    (progn
+        (package-refresh-contents)
+        (package-install 'quelpa)))
+  (setq quelpa-checkout-melpa-p nil)
 
+  (require 'keybindings)
   (require 'editor)
   (require 'completion)
-
   (require 'core-libs)
-  (require 'keybindings)
+
   (require 'prog-common)
   (require 'prog-c-cpp)
   (require 'prog-python)
   (require 'prog-haskell)
+  (require 'prog-lisp)
+  (require 'prog-verilog)
   (require 'init-org)
   (require 'apps)
 

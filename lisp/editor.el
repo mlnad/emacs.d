@@ -60,6 +60,9 @@
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
 
+;; truncate-lines only on prog mode.
+(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
+
 (unless (assq 'menu-bar-lines default-frame-alist)
   (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
   (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
@@ -82,38 +85,7 @@
          (fontspec (apply 'font-spec :name font props)))
     (set-frame-font fontspec nil t)))
 
-;;; Keybinding
-(use-package evil
-  :ensure t
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  :config
-  (evil-mode 1)
-  (evil-set-undo-system 'undo-tree)
-  (evil-set-leader '(normal motion) (kbd "SPC"))
-  (evil-set-leader '(insert replace visual) (kbd "C-c"))
-  )
-
-(use-package evil-collection
-  :after evil
-  :ensure t
-  :custom
-  (evil-collection-setup-minibuffer t)
-  (evil-collection-mode-list nil)
-  )
-
-;;; General - for keybindings
-(use-package general
-  :ensure t
-  :init
-  (defalias 'define-key! #'general-def)
-  (defalias 'undefine-key! #'general-unbind)
-  )
-
-
 ;;; Build-in packages
-
 (use-package paren
   :hook (after-init . show-paren-mode)
   :config
@@ -123,21 +95,18 @@
         show-paren-when-point-in-periphery t))
 
 (use-package recentf
-  :defer 1
   :commands (recentf-save-list)
   :init
-  (progn
-    (add-hook 'find-file-hook (lambda () (unless recentf-mode
-					                       (recentf-mode)
-					                       (recentf-track-opened-file))))
-    (setq recentf-save-file user/recentf-save-file
-	      recentf-max-saved-items 1000
-	      recentf-auto-cleanup 'never
-	      recentf-auto-save-timer (run-with-idle-timer 600 t
-							                           'recentf-save-list)))
+  (add-hook 'find-file-hook (lambda () (unless recentf-mode
+					                     (recentf-mode)
+					                     (recentf-track-opened-file))))
+  (setq recentf-save-file user/recentf-save-file
+	    recentf-max-saved-items 1000
+	    recentf-auto-cleanup 'never)
+
+  (recentf-mode 1)
   :config
-  (evil-define-key '(normal insert emacs) 'global (kbd "<leader>fr") 'recentf-open-files)
-  )
+  (user/set-global-leader-key "fr" 'recentf-open-files))
 
 (use-package display-line-numbers
   :hook
@@ -150,7 +119,7 @@
   (savehist-mode 1)
   :config
   (setq savehist-save-minibuffer-history t
-        history-length 1000
+        history-length 100
         savehist-autosave-interval 60
         savehist-additional-variables '(mark-ring
                                         global-mark-ring
@@ -178,10 +147,13 @@
 
 (use-package imenu
   :defer t
-  :bind (("C-c j i" . 'imenu))
   :config
   (add-to-list 'user/evil-collection-mode-list 'imenu)
-  )
+  ;; (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
+  (user/set-global-leader-key "ji" 'imenu))
+
+(use-package display-fill-column-indicator
+  :ensure nil)
 
 ;;; Minibuffers
 ;; Allow for minibuffer-ception.
@@ -246,8 +218,7 @@
   (use-package anzu
     :ensure t
     :defer t
-    :hook (isearch-mode . anzu-mode)
-    )
+    :hook (isearch-mode . anzu-mode))
 
   (use-package evil-anzu
     :ensure t
@@ -255,20 +226,17 @@
     :config
     (global-anzu-mode +1)))
 
+(use-package unicode-fonts
+  :ensure t
+  :init
+  (setq unicode-fonts-skip-font-groups '(decorative low-quality-glyphs))
+  (unicode-fonts-setup))
+
 ;;; doom themes
 (use-package doom-themes
   :ensure t
   :config
   (load-theme 'doom-one t))
-
-;;; Whichkey
-(use-package which-key
-  :ensure t
-  :init
-  (which-key-mode)
-  :config
-  :diminish which-key-mode
-  )
 
 ;;; Undo tree mode
 (use-package undo-tree
@@ -296,10 +264,7 @@
           writeroom-set-tool-bar-lines
           writeroom-set-vertical-scroll-bars
           writeroom-set-bottom-divider-width))
-  :bind
-  (("C-c w c" . writeroom-mode))
-  )
-
+  (user/set-global-leader-key "wc" 'writeroom-mode))
 
 (provide 'editor)
 ;;; editor.el ends here
