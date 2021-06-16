@@ -42,6 +42,19 @@
     "gs" 'magit-status
     "gd" 'magit-diff-range))
 
+;;; Shell
+(use-package eshell
+  :ensure nil
+  :init
+  (setq eshell-scroll-to-bottom-on-input 'all
+        eshell-scroll-to-bottom-on-output 'all
+        eshell-kill-processes-on-exit t
+        eshell-hist-ignoredups t
+        eshell-input-filter (lambda (input) (not (string-match-p "\\`\\s-+" input)))
+        eshell-prompt-regexp "^.* λ "
+        eshell-glob-case-insensitive t
+        eshell-error-if-no-glob t))
+
 ;;; Rime
 (use-package rime
   :ensure t
