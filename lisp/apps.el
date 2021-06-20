@@ -43,24 +43,16 @@
     "gd" 'magit-diff-range))
 
 ;;; Shell
-;; (use-package eshell
-;;   :ensure nil
-;;   :init
-;;   (setq eshell-scroll-to-bottom-on-input 'all
-;;         eshell-scroll-to-bottom-on-output 'all
-;;         eshell-kill-processes-on-exit t
-;;         eshell-hist-ignoredups t
-;;         eshell-input-filter (lambda (input) (not (string-match-p "\\`\\s-+" input)))
-;;         eshell-prompt-regexp "^.* λ "
-;;         eshell-glob-case-insensitive t
-;;         eshell-error-if-no-glob t)
-;;   :config
-;;   (user/set-global-leader-key "'" 'eshell/toggle-eshell))
+(quelpa '(aweshell :fetcher github
+                   :repo "manateelazycat/aweshell"
+                   :files ("*")))
 
 (use-package aweshell
-  :ensure nil
-  :load-path "site-lisp/aweshell"
+  :load-path "quelpa/build/aweshell"
   :config
+  (with-eval-after-load "esh-opt"
+    (setq eshell-highlight-prompt nil
+          eshell-prompt-function 'epe-theme-lambda))
   (user/set-global-leader-key*
     "'" 'aweshell-dedicated-toggle
     "ts" 'aweshell-toggle)
