@@ -43,17 +43,29 @@
     "gd" 'magit-diff-range))
 
 ;;; Shell
-(use-package eshell
+;; (use-package eshell
+;;   :ensure nil
+;;   :init
+;;   (setq eshell-scroll-to-bottom-on-input 'all
+;;         eshell-scroll-to-bottom-on-output 'all
+;;         eshell-kill-processes-on-exit t
+;;         eshell-hist-ignoredups t
+;;         eshell-input-filter (lambda (input) (not (string-match-p "\\`\\s-+" input)))
+;;         eshell-prompt-regexp "^.* λ "
+;;         eshell-glob-case-insensitive t
+;;         eshell-error-if-no-glob t)
+;;   :config
+;;   (user/set-global-leader-key "'" 'eshell/toggle-eshell))
+
+(use-package aweshell
   :ensure nil
-  :init
-  (setq eshell-scroll-to-bottom-on-input 'all
-        eshell-scroll-to-bottom-on-output 'all
-        eshell-kill-processes-on-exit t
-        eshell-hist-ignoredups t
-        eshell-input-filter (lambda (input) (not (string-match-p "\\`\\s-+" input)))
-        eshell-prompt-regexp "^.* λ "
-        eshell-glob-case-insensitive t
-        eshell-error-if-no-glob t))
+  :load-path "site-lisp/aweshell"
+  :config
+  (user/set-global-leader-key*
+    "'" 'aweshell-dedicated-toggle
+    "ts" 'aweshell-toggle)
+  :custom
+  (aweshell-dedicated-window-height 20))
 
 ;;; Rime
 (use-package rime
