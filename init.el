@@ -98,7 +98,8 @@
   (progn
     (package-refresh-contents)
     (package-install 'quelpa)))
-(setq quelpa-checkout-melpa-p nil)
+(setq quelpa-checkout-melpa-p nil
+      quelpa-dir user/quelpa-dir)
 
 (require 'keybindings)
 (require 'editor)

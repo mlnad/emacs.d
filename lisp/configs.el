@@ -26,34 +26,37 @@
                                 :width normal))
 
 (defvar user/cache-directory
-  (expand-file-name "cache/" user-emacs-directory))
+  (expand-file-name ".cache/" user-emacs-directory))
 
 (defvar user/userconfig-file
-  (expand-file-name "cache/userconfig" user-emacs-directory))
+  (expand-file-name "userconfig" user/cache-directory))
 
 (defvar user/custom-file
-  (expand-file-name "cache/custom.el" user-emacs-directory))
+  (expand-file-name "custom.el" user/cache-directory))
 
 (defvar user/recentf-save-file
-  (expand-file-name "cache/recentf" user-emacs-directory))
+  (expand-file-name "recentf" user/cache-directory))
 
 (defvar user/save-place-file
-  (expand-file-name "cache/places" user-emacs-directory))
+  (expand-file-name "places" user/cache-directory))
 
 (defvar user/backup-directory-alist
-  (expand-file-name "cache/backup/" user-emacs-directory))
+  (expand-file-name "backup/" user/cache-directory))
 
 (defvar user/projectile-known-projects-file
-  (expand-file-name "cache/projectile-bookmarks.eld" user-emacs-directory))
+  (expand-file-name "projectile-bookmarks.eld" user/cache-directory))
 
 (defvar user/projectile-cache-file
-  (expand-file-name "cache/projectile.cache" user-emacs-directory))
+  (expand-file-name "projectile.cache" user/cache-directory))
 
 (defvar user/auto-save-list-prefix
-  (expand-file-name "cache/auto-save-list/.saves-" user-emacs-directory))
+  (expand-file-name "auto-save-list/.saves-" user/cache-directory))
 
 (defvar user/layouts-directory
-  (expand-file-name "cache/layouts/" user-emacs-directory))
+  (expand-file-name "layouts/" user/cache-directory))
+
+(defvar user/quelpa-dir
+  (expand-file-name "quelpa/" user/cache-directory))
 
 (defvar user/notes-dir "~/org"
   "User defined notes directory.")
