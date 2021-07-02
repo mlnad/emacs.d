@@ -18,7 +18,7 @@
 
 (use-package python
   :after flycheck
-  :mode "\\.py\\'"
+  :mode (("\\.py\\'" . python-mode))
   :custom
   (python-indent-offset 4)
   (flycheck-python-pycompile-executable "python3")

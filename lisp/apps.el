@@ -48,7 +48,6 @@
                    :files ("*")))
 
 (use-package aweshell
-  :load-path "quelpa/build/aweshell"
   :config
   (with-eval-after-load "esh-opt"
     (setq eshell-highlight-prompt nil
@@ -72,7 +71,6 @@
               :files ("*")))
 
 (use-package eaf
-  :load-path "quelpa/build/eaf"
   :init
   (use-package epc :defer t :ensure t)
   (use-package ctable :defer t :ensure t)
