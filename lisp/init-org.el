@@ -48,7 +48,10 @@
       (add-hook 'org-mode-hook
                 (lambda ()
                   (make-face 'width-font-face)
-                  (set-face-attribute 'width-font-face nil :font "Sarasa Mono SC 15") ;; 13, 14, 16等会出现不等宽
+                  (set-face-attribute 'width-font-face nil
+                                      :family (font-get org-face-font :family)
+                                      :height (font-get org-face-font :height)
+                                      :width (font-get org-face-font :width)) ;; 13, 14, 16等会出现不等宽
                   (setq buffer-face-mode-face 'width-font-face)
                   (buffer-face-mode)))))
 

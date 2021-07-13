@@ -20,8 +20,8 @@
                             :weight normal
                             :width normal))
 
-(defvar user/org-default-font '("等距更纱黑体 SC"
-                                :height 15
+(defvar user/org-default-font '("Noto Sans CJK SC"
+                                :height 140
                                 :weight normal
                                 :width normal))
 
