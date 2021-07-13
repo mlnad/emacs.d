@@ -76,7 +76,6 @@
   (company-minimum-prefix-length 2)
   (tab-always-indent 'complete)
   :init
-  (add-to-list 'user/evil-collection-mode-list 'company)
   :config
   (setq-default company-backends (delete 'company-semantic company-backends))
   (push '(company-semantic :with company-yasnippet) company-backends)

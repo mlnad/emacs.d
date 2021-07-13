@@ -148,8 +148,6 @@
 (use-package imenu
   :defer t
   :config
-  (add-to-list 'user/evil-collection-mode-list 'imenu)
-  ;; (evil-define-key nil 'global (kbd "<leader>ji") 'imenu)
   (user/set-global-leader-key "ji" 'imenu))
 
 (when (>= emacs-major-version 27)

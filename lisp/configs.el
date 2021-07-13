@@ -82,9 +82,5 @@
 
 (defvar user/package-mirror default-package-mirror)
 
-(defvar user/lsp-client 'lsp-mode
-  "If `nox' use nox as lsp client.
-If `lsp-mode' use lsp-mode as lsp client.")
-
 (provide 'configs)
 ;;; configs.el ends here

@@ -102,7 +102,6 @@
   ;;         `((counsel-rg . ,standard-seaarch-fn)
   ;;           (swiper . ,standard-seaarch-fn)
   ;;           (swiper-isearch . ,standard-seaarch-fn))))
-  (add-to-list 'user/evil-collection-mode-list 'ivy)
   :config
   (setq ivy-sort-max-size 7500)
 
