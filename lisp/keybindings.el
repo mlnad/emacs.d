@@ -29,9 +29,9 @@
 (use-package evil-collection
   :after evil
   :ensure t
-  :custom
-  (evil-collection-setup-minibuffer t)
-  (evil-collection-mode-list nil))
+  :config
+  (setq evil-collection-setup-minibuffer t)
+  (evil-collection-init))
 
 (defmacro user/set-leader-key (states keymap key op)
   "Bind KEY to OP at STATES and KEYMAP."

@@ -114,8 +114,6 @@
 (require 'init-org)
 (require 'apps)
 
-(user/lazy-load)
-
 
 (provide 'init)
 ;;; init.el ends here

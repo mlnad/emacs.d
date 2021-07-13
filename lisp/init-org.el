@@ -48,7 +48,7 @@
       (add-hook 'org-mode-hook
                 (lambda ()
                   (make-face 'width-font-face)
-                  (set-face-attribute 'width-font-face nil :font "等距更纱黑体 SC 15") ;; 13, 14, 16等会出现不等宽
+                  (set-face-attribute 'width-font-face nil :font "Sarasa Mono SC 15") ;; 13, 14, 16等会出现不等宽
                   (setq buffer-face-mode-face 'width-font-face)
                   (buffer-face-mode)))))
 
