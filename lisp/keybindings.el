@@ -75,6 +75,8 @@
   "wv" 'evil-window-vsplit
   "w-" 'evil-window-split
   "wd" 'evil-window-delete
+  "w1" 'delete-other-windows
+  "w0" 'delete-window
   ;;
   "<SPC>" 'execute-extended-command
   ;; Files
@@ -82,7 +84,7 @@
   "fs" 'save-buffer
   "fS" 'evil-write-all
   ;; Buffers
-  "bd" 'kill-buffer
+  "bd" 'kill-this-buffer
   "bn" 'next-buffer
   "bp" 'previous-buffer
   "bx" 'kill-buffer-and-window)

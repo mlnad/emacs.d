@@ -53,14 +53,15 @@
 
 (setq-default fill-column 80)
 
+;; Word wrap by category. Break up for CJK.
 (setq-default word-wrap t)
-
-(setq-default truncate-lines t)
+(setq-default word-wrap-by-category t)
 
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
 
-;; truncate-lines only on prog mode.
+;; truncate-lines only on prog mode. Then it will not break lines.
+(setq-default truncate-lines t)
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
 (unless (assq 'menu-bar-lines default-frame-alist)
