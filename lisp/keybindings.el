@@ -24,7 +24,7 @@
   (evil-mode 1)
   (evil-set-undo-system 'undo-tree)
   (evil-set-leader '(normal motion visual) (kbd "SPC"))
-  (evil-set-leader '(insert replace emacs) (kbd "C-c")))
+  (evil-set-leader '(insert replace emacs) (kbd "M-m")))
 
 (use-package evil-collection
   :after evil
