@@ -55,6 +55,9 @@
                user/userconfig-file))
 (load user/userconfig-file)
 
+;; Config before init
+(user/config-before-init)
+
 ;; load `custom-file'
 (setq custom-file user/custom-file)
 (when (file-exists-p custom-file)
@@ -114,6 +117,8 @@
 (require 'init-org)
 (require 'apps)
 
+;; Configurations after init
+(user/config-after-init)
 
 (provide 'init)
 ;;; init.el ends here

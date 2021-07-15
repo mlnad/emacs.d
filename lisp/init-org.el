@@ -37,24 +37,6 @@
   :commands (orgtbl-mode)
   :init
   (defvar org-face-font nil)
-  (when (find-font (font-spec :name (car user/org-default-font)))
-    (let* ((font (car user/org-default-font))
-           (props (cdr user/org-default-font))
-           (fontspec (apply 'font-spec :name font props)))
-      (setq org-face-font fontspec)))
-
-  (when (fontp org-face-font)
-    (with-eval-after-load 'org
-      (add-hook 'org-mode-hook
-                (lambda ()
-                  (make-face 'width-font-face)
-                  (set-face-attribute 'width-font-face nil
-                                      :family (font-get org-face-font :family)
-                                      :height (font-get org-face-font :height)
-                                      :width (font-get org-face-font :width)) ;; 13, 14, 16等会出现不等宽
-                  (setq buffer-face-mode-face 'width-font-face)
-                  (buffer-face-mode)))))
-
   :config
   (require 'org-tempo)
 

@@ -20,11 +20,6 @@
                             :weight normal
                             :width normal))
 
-(defvar user/org-default-font '("Noto Sans CJK SC"
-                                :height 140
-                                :weight normal
-                                :width normal))
-
 (defvar user/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))
 
