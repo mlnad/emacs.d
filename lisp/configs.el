@@ -77,5 +77,11 @@
 
 (defvar user/package-mirror default-package-mirror)
 
+(defvar user/enable-org nil)
+
+(defvar user/enable-org-roam nil)
+
+(defvar user/enable-eaf nil)
+
 (provide 'configs)
 ;;; configs.el ends here
