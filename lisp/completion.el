@@ -221,7 +221,7 @@
   :defer t
   :init
   (setq-default smex-history 32
-                smex-save-file (concat user-emacs-directory "cache/smex-items")))
+                smex-save-file (expand-file-name "smex-items" user/cache-directory)))
 
 (provide 'completion)
 ;;; completion.el ends here
