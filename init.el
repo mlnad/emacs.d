@@ -50,6 +50,8 @@
 
 ;; load user configs.
 (require 'configs)
+(or (file-exists-p user/cache-directory)
+    (make-directory user/cache-directory))
 (or (file-exists-p user/userconfig-file)
     (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
                user/userconfig-file))
