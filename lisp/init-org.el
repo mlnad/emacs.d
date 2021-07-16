@@ -33,6 +33,7 @@
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
 
 (use-package org
+  :if user/enable-org
   :ensure org
   :commands (orgtbl-mode)
   :init
@@ -146,6 +147,7 @@
                                             org-babel-load-languages))))
 
 (use-package evil-org
+  :if user/enable-org
   :ensure evil-org
   :defer t
   :hook (org-mode . evil-org-mode)
@@ -161,6 +163,7 @@
   (setq org-agenda-restore-windows-after-quit t))
 
 (use-package org-roam
+  :if (and user/enable-org-roam user/enable-org)
   :ensure t
   :hook (after-init . org-roam-mode)
   :custom
