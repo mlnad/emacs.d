@@ -55,7 +55,8 @@
 
 ;; Word wrap by category. Break up for CJK.
 (setq-default word-wrap t)
-(setq-default word-wrap-by-category t)
+(when (>= emacs-major-version 28)
+  (setq-default word-wrap-by-category t))
 
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
@@ -116,7 +117,7 @@
 (use-package savehist
   :init
   ;; Minibuffer history
-  (setq savehist-file (concat user-emacs-directory "cache/savehist"))
+  (setq savehist-file (expand-file-name "savehist" user/cache-directory))
   (savehist-mode 1)
   :config
   (setq savehist-save-minibuffer-history t
