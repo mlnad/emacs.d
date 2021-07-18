@@ -17,7 +17,8 @@
 (use-package youdao-dictionary
   :ensure t
   :config
-  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+))
+  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+)
+  (push '("*Youdao Dictionary*" :dedicated t :position bottom :stick nil :noselect nil :height 0.4) popwin:special-display-config))
 
 ;;; Magit for git
 (use-package magit
@@ -79,6 +80,7 @@
   (eaf-browser-continue-where-left-off t)
   :config
   (eaf-setq eaf-browser-enable-adblocker "true")
+  (eaf-setq eaf-pdf-dark-mode "false")
   (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
   (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding))
 

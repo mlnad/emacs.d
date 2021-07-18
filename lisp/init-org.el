@@ -61,6 +61,7 @@
   (evil-define-key 'normal org-mode-map (kbd "RET") 'org-open-at-point)
 
   (user/set-leader-key* 'normal org-mode-map
+    ;; basic
     "oc" 'org-capture
     "Cc" 'org-clock-cancel
     "Cd" 'org-clock-display
@@ -71,6 +72,9 @@
     "dt" 'org-time-stamp
     "dT" 'org-time-stamp-inactive
     "ee" 'org-export-dispatch
+
+    ;; roam
+    "mia" 'org-id-get-create
 
     ;; Subtree
     "msa" 'org-toggle-archive-tag
@@ -136,7 +140,6 @@
     "mbZ"     'org-babel-switch-to-session-with-code
     "mba"     'org-babel-sha1-hash
     "mbx"     'org-babel-do-key-sequence-in-edit-buffer
-    "mb."     'spacemacs/org-babel-transient-state/body
     ))
 
 (use-package ob
@@ -172,18 +175,14 @@
              org-roam-tag-add
              org-roam-tag-delete)
   :config
-  (user/set-leader-key* nil org-roam-mode-map
-    "nrl" 'org-roam
-    "nrg" 'org-roam-graph)
   (user/set-leader-key* nil org-mode-map
-    "nri" 'org-roam-insert
-    "nrI" 'org-roam-insert-immediate)
-
+    "mrg" 'org-roam-graph
+    "mri" 'org-roam-node-insert
+    "mrf" 'org-roam-node-find
+    "mrta" 'org-roam-tag-add
+    "mrtd" 'org-roam-tag-remove)
   (user/set-global-leader-key*
-    "nrl" 'org-roam
-    "nrf" 'org-roam-find-file
-    "nrta" 'org-roam-tag-add
-    "nrtd" 'org-roam-tag-delete))
+    "nrf" 'org-roam-node-find))
 
 (use-package gnuplot
   :ensure gnuplot
