@@ -83,5 +83,10 @@
 
 (defvar user/enable-eaf nil)
 
+(defvar user/org-journal-type 'daily)
+
+(defvar user/org-src-block-face '(:family "Jetbrains Mono")
+  "Face for org source block.")
+
 (provide 'configs)
 ;;; configs.el ends here

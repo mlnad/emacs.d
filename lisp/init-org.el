@@ -54,6 +54,14 @@
         org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-imenu-depth 8)
+  (setq org-src-block-faces
+        `(("emacs-lisp" ,user/org-src-block-face)
+          ("c" ,user/org-src-block-face)
+          ("c++" ,user/org-src-block-face)
+          ("shell" ,user/org-src-block-face)
+          ("rust" ,user/org-src-block-face)
+          ("python" ,user/org-src-block-face)
+          ("haskell" ,user/org-src-block-face)))
 
   (with-eval-after-load 'org-agenda
     (add-to-list 'org-modules 'org-habit))
@@ -183,6 +191,14 @@
     "mrtd" 'org-roam-tag-remove)
   (user/set-global-leader-key*
     "nrf" 'org-roam-node-find))
+
+(use-package org-journal
+  :if user/enable-org
+  :ensure t
+  :config
+  (setq org-journal-file-type user/org-journal-type)
+  (setq org-journal-dir (expand-file-name "journal" user/notes-dir)
+        org-journal-file-format "%Y-%m-%d.org"))
 
 (use-package gnuplot
   :ensure gnuplot
