@@ -11,7 +11,7 @@
   :hook (after-init . which-key-mode)
   :config
   (setq which-key-show-early-on-C-h t)
-  (which-key-show-major-mode)
+;;  (which-key-show-major-mode)
   :diminish which-key-mode)
 
 ;;; Keybinding
