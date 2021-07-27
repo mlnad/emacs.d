@@ -176,7 +176,7 @@
 (use-package org-roam
   :if (and user/enable-org-roam user/enable-org)
   :ensure t
-  :hook (after-init . org-roam-mode)
+  :hook (after-init . org-roam-setup)
   :custom
   (org-roam-directory user/org-roam-dir)
   :commands (org-roam-buffer-toggle-display
