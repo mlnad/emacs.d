@@ -64,7 +64,8 @@
   :ensure t
   :config
   (setq rime-show-candidate 'posframe
-        default-input-method "rime"))
+        default-input-method "rime"
+        rime-user-data-dir user/rime-data-dir))
 
 ;;; EAF
 (use-package eaf

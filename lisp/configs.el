@@ -61,6 +61,8 @@
 
 (defvar user/notes-extensions '("org" "md" "markdown"))
 
+(defvar user/rime-data-dir "~/.local/share/fcitx5/rime/")
+
 (defvar elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
