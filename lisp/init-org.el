@@ -32,6 +32,12 @@
 (defvar org-user-latex-class
   (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
 
+(defvar roam/default-capture
+  '("d" "default" plain "%?"
+   	:if-new (file+head "${slug}.org"
+                       "#+title: ${title}\n\n#+startup: indent\n")
+    :unnarrowed t))
+
 (use-package org
   :if user/enable-org
   :ensure org
@@ -183,6 +189,9 @@
              org-roam-tag-add
              org-roam-tag-delete)
   :config
+  (add-to-list 'user/roam-templates roam/default-capture)
+  (setq org-roam-capture-templates user/roam-templates)
+
   (user/set-leader-key* nil org-mode-map
     "mrg" 'org-roam-graph
     "mri" 'org-roam-node-insert
