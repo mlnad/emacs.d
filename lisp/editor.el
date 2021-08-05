@@ -88,6 +88,10 @@
     (set-frame-font fontspec nil t)))
 
 ;;; Build-in packages
+;;; tramp
+(unless *sys/win32*
+  (setq tramp-default-method "ssh"))
+
 (use-package paren
   :hook (after-init . show-paren-mode)
   :config
