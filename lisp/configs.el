@@ -90,5 +90,7 @@
 (defvar user/org-src-block-face '(:family "Jetbrains Mono")
   "Face for org source block.")
 
+(defvar user/roam-templates nil)
+
 (provide 'configs)
 ;;; configs.el ends here
