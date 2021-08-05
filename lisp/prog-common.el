@@ -15,9 +15,9 @@
   :config
   (setq lsp-enable-snippet nil
         lsp-modeline-diagnostics-enable nil
-        lsp-prefer-capf t)
-  (setq lsp-enable-snippet nil)
-  (setq lsp-modeline-diagnostics-enable nil)
+        lsp-prefer-capf t
+        lsp-keep-workspace-alive nil)
+
   (push '("^\\*[Ll]sp.+\\*$"
           :regexp t
           :dedicated t
