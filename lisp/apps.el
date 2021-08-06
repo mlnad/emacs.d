@@ -65,7 +65,14 @@
   :config
   (setq rime-show-candidate 'posframe
         default-input-method "rime"
-        rime-user-data-dir user/rime-data-dir))
+        rime-user-data-dir user/rime-data-dir)
+  (add-hook 'after-init-hook
+            (lambda ()
+              (or (file-exists-p user/rime-data-dir)
+                  (progn
+                    (make-directory user/rime-data-dir)
+                    (copy-file (concat user-emacs-directory "lisp/templates/user.yaml")
+                               (concat user/rime-data-dir "user.yaml")))))))
 
 ;;; EAF
 (use-package eaf
@@ -84,6 +91,13 @@
   (eaf-setq eaf-pdf-dark-mode "false")
   (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
   (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding))
+
+;;; Docker
+(use-package docker
+  :ensure t)
+
+(use-package docker-tramp
+  :ensure t)
 
 (provide 'apps)
 ;;; apps.el ends here
