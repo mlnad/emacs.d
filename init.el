@@ -115,6 +115,7 @@
 (require 'prog-c-cpp)
 (require 'prog-python)
 (require 'prog-lisp)
+(require 'prog-rust)
 (require 'prog-verilog)
 (require 'init-org)
 (require 'apps)

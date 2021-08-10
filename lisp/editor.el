@@ -154,7 +154,7 @@
 (use-package imenu
   :defer t
   :config
-  (user/set-global-leader-key "ji" 'imenu))
+  (user/set-global-leader-key "si" 'imenu))
 
 (when (>= emacs-major-version 27)
   (use-package display-fill-column-indicator
@@ -199,6 +199,7 @@
     (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
     (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
     (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
+    (push '("*xref*"              :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
     ))
 
 
@@ -215,7 +216,7 @@
   (setq doom-modeline-bar-width 3
         doom-modeline-github nil
         doom-modeline-mu4e nil
-        doom-modeline-persp-name nil
+        doom-modeline-persp-name t
         doom-modeline-minor-modes nil
         doom-modeline-major-mode-icon t
         doom-modeline-buffer-file-name-style 'relative-from-project)

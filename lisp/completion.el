@@ -2,12 +2,6 @@
 ;;
 ;; Copyright (C) 2020 Liu Miao
 ;;
-;; Author: John Doe <http://github/l>
-;; Maintainer: John Doe <john@doe.com>
-;; Version: 0.0.1
-;; Keywords:
-;; Package-Requires: ((emacs 27.1) (cl-lib "0.5"))
-;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
@@ -15,16 +9,6 @@
 ;;
 ;;
 ;;; Code:
-(use-package persp-mode
-  :ensure t
-  :init
-  (setq persp-add-buffer-on-after-change-major-mode 'free
-        persp-auto-resume-time 1
-        persp-is-ibc-as-f-supported nil
-        persp-set-ido-hooks t
-        persp-set-last-persp-for-new-frames nil
-        persp-save-dir user/layouts-directory))
-
 (use-package projectile
   :ensure t
   :defer t
