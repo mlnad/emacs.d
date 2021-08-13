@@ -6,8 +6,10 @@
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
-  :config
+  :after rust-mode
+  :init
   (add-to-list 'projectile-project-root-files "Cargo.toml")
+  :config
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
 
@@ -16,8 +18,6 @@
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.
-  (remove-hook 'rustic-mode-hook #'rustic-setup-lsp)
-  (add-hook 'rustic-mode-local-vars-hook #'rustic-setup-lsp)
   (setq rustic-lsp-client 'lsp-mode))
 
 (provide 'prog-rust)
