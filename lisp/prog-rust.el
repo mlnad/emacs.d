@@ -6,7 +6,6 @@
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
-  :after rust-mode
   :init
   (add-to-list 'projectile-project-root-files "Cargo.toml")
   :config

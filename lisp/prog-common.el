@@ -37,8 +37,15 @@
 
 (use-package lsp-ui
   :ensure t
+  :hook (lsp-mode . lsp-ui-mode)
   :config
-  (setq lsp-ui-doc-enable nil)
+  (setq lsp-ui-doc-enable nil
+        lsp-ui-peek-enable nil
+        lsp-ui-doc-show-with-mouse nil
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-ignore-duplicate t
+        lsp-ui-sideline-show-hover nil
+        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)
   :commands lsp-ui-mode)
 
 (use-package lsp-ivy
