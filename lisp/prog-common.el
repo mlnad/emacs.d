@@ -6,6 +6,9 @@
 ;;;
 
 ;;; Language server protocol
+(defvar lsp-company-backends
+  '(:separate company-yapf company-yasnippet))
+
 (use-package lsp-mode
   :ensure t
   :init
@@ -33,7 +36,7 @@
                         "=o" #'lsp-organize-imports
                         ;; code
                         "cr" #'lsp-rename)
-  :commands (lsp lsp-deferred))
+  :commands (lsp-install-server))
 
 (use-package lsp-ui
   :ensure t
@@ -59,7 +62,16 @@
 ;;; Completion
 (use-package yasnippet
   :ensure t
-  :commands (yas-global-mode yas-minor-mode yas-active-extra-mode)
+  :commands (yas-minor-mode-on
+             yas-expand
+             yas-expand-snippet
+             yas-lookup-snippet
+             yas-insert-snippet
+             yas-new-snippet
+             yas-visit-extra-mode
+             yas-active-extra-mode
+             yas-deactive-extra-mode
+             yas-maybe-expand-abbrev-key-filter)
   :init
   (setq yas-trigger-in-field t
         yas-wrap-around-region t
@@ -81,11 +93,17 @@
   :custom
   (company-idle-delay 0.2)
   (company-minimum-prefix-length 2)
-  (tab-always-indent 'complete)
   :init
+  (setq company-tooltip-limit 14
+        company-tooltip-align-annotations t
+        company-require-match 'never
+        company-auto-commit nil
+        company-dabbrev-ignore-case nil
+        company-dabbrev-downcase nil)
+
+  (add-hook 'company-mode-hook #'company-tng-mode)
   :config
-  (setq-default company-backends (delete 'company-semantic company-backends))
-  (push '(company-semantic :with company-yasnippet) company-backends)
+  (add-hook 'company-mode-hook #'evil-normalize-keymaps)
   (define-key company-active-map (kbd "C-/") 'counsel-company)
   :diminish company-mode)
 
