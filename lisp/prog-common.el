@@ -7,7 +7,7 @@
 
 ;;; Language server protocol
 (defvar lsp-company-backends
-  '(:separate company-yapf company-yasnippet))
+  '(:separate company-capf company-yasnippet))
 
 (use-package lsp-mode
   :ensure t
@@ -20,6 +20,14 @@
         lsp-modeline-diagnostics-enable nil
         lsp-prefer-capf t
         lsp-keep-workspace-alive nil)
+
+  (add-hook 'lsp-completion-mode-hook
+            (defun lsp-init-company-backends-h ()
+              (when lsp-completion-mode
+                (set (make-local-variable 'company-backends)
+                     (cons lsp-company-backends
+                           (remove lsp-company-backends
+                                   (remq 'company-capf company-backends)))))))
 
   (push '("^\\*[Ll]sp.+\\*$"
           :regexp t
@@ -81,6 +89,8 @@
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all)
+  (with-eval-after-load 'company
+    (add-to-list 'company-backends 'company-yasnippet))
   :diminish yas-minor-mode
   )
 
@@ -97,14 +107,13 @@
   (setq company-tooltip-limit 14
         company-tooltip-align-annotations t
         company-require-match 'never
+        company-backends '(company-capf)
         company-auto-commit nil
         company-dabbrev-ignore-case nil
         company-dabbrev-downcase nil)
 
-  (add-hook 'company-mode-hook #'company-tng-mode)
+  ;; (add-hook 'company-mode-hook #'company-tng-mode)
   :config
-  (add-hook 'company-mode-hook #'evil-normalize-keymaps)
-  (define-key company-active-map (kbd "C-/") 'counsel-company)
   :diminish company-mode)
 
 (use-package company-statistics
