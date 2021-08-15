@@ -90,7 +90,14 @@
 ;;; Build-in packages
 ;;; tramp
 (unless *sys/win32*
-  (setq tramp-default-method "ssh"))
+  (setq tramp-default-method "ssh"
+        tramp-auto-save-directory (expand-file-name "tramp-autosave/" user/cache-directory)
+        tramp-backup-directory-alist (expand-file-name "backup/" user/cache-directory)))
+
+(with-eval-after-load 'tramp
+  (setq remote-file-name-inihibit-cache 60
+        tramp-completion-reread-directory-timeout 60
+        tramp-verbose 1))
 
 (use-package paren
   :hook (after-init . show-paren-mode)

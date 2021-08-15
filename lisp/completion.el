@@ -45,6 +45,10 @@
           projectile-ignored-projects '("~/" "/tmp")
           projectile-globally-ignored-files '(".DS_Store" "TAGS")
           projectile-kill-buffers-filter 'kill-all)
+    (setq projectile-mode-line-function
+          (lambda ()
+            (if (file-remote-p default-directory) ""
+              (projectile-default-mode-line))))
 
     (setq projectile-sort-order 'recentf
           projectile-cache-file user/projectile-cache-file

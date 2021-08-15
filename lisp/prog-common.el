@@ -29,6 +29,13 @@
                            (remove lsp-company-backends
                                    (remq 'company-capf company-backends)))))))
 
+  ;; Tramp
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
+                    :major-modes '(c-mode c++-mode)
+                    :remote? t
+                    :server-id 'clangd-remote))
+
   (push '("^\\*[Ll]sp.+\\*$"
           :regexp t
           :dedicated t
