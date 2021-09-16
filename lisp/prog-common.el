@@ -44,13 +44,6 @@
           :noselect t)
         popwin:special-display-config)
 
-  (user/set-leader-key* nil lsp-mode-map
-                        ;; format
-                        "=b" #'lsp-format-buffer
-                        "=r" #'lsp-format-region
-                        "=o" #'lsp-organize-imports
-                        ;; code
-                        "cr" #'lsp-rename)
   :commands (lsp-install-server))
 
 (use-package lsp-ui
@@ -149,15 +142,7 @@
           :stick t
           :noselect t)
         popwin:special-display-config)
-  :config
-  (user/set-global-leader-key*
-    "en" 'flycheck-next-error
-    "ep" 'flycheck-previous-error
-    "eb" 'flycheck-buffer
-    "ec" 'flycheck-clear
-    "eh" 'flycheck-describe-checker
-    "es" 'flycheck-select-checker
-    "ex" 'flycheck-explain-error-at-point))
+  :config)
 
 (provide 'prog-common)
 ;;; prog-common.el ends here

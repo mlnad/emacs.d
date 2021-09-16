@@ -106,10 +106,9 @@
 (setq quelpa-checkout-melpa-p nil
       quelpa-dir user/quelpa-dir)
 
-(require 'keybindings)
+(require 'core-libs)
 (require 'editor)
 (require 'completion)
-(require 'core-libs)
 
 (require 'prog-common)
 (require 'prog-c-cpp)
@@ -119,6 +118,7 @@
 (require 'prog-verilog)
 (require 'init-org)
 (require 'apps)
+(require 'keybindings)
 
 ;; Configurations after init
 (user/config-after-init)

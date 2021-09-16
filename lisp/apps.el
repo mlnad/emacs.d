@@ -36,12 +36,7 @@
     :custom
     (git-gutter:update-interval 2)
     :config
-    (global-git-gutter-mode +1))
-
-  :config
-  (user/set-global-leader-key*
-    "gs" 'magit-status
-    "gd" 'magit-diff-range))
+    (global-git-gutter-mode +1)))
 
 ;;; Shell
 (quelpa '(aweshell :fetcher github
@@ -53,9 +48,6 @@
   (with-eval-after-load "esh-opt"
     (setq eshell-highlight-prompt nil
           eshell-prompt-function 'epe-theme-lambda))
-  (user/set-global-leader-key*
-    "'" 'aweshell-dedicated-toggle
-    "ts" 'aweshell-toggle)
   :custom
   (aweshell-dedicated-window-height 20))
 

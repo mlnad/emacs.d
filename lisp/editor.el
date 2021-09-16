@@ -117,9 +117,7 @@
 	    recentf-max-saved-items 1000
 	    recentf-auto-cleanup 'never)
 
-  (recentf-mode 1)
-  :config
-  (user/set-global-leader-key "fr" 'recentf-open-files))
+  (recentf-mode 1))
 
 (use-package display-line-numbers
   :hook
@@ -159,9 +157,7 @@
   :hook (after-init . global-auto-revert-mode))
 
 (use-package imenu
-  :defer t
-  :config
-  (user/set-global-leader-key "si" 'imenu))
+  :defer t)
 
 (when (>= emacs-major-version 27)
   (use-package display-fill-column-indicator
@@ -276,8 +272,15 @@
           writeroom-set-menu-bar-lines
           writeroom-set-tool-bar-lines
           writeroom-set-vertical-scroll-bars
-          writeroom-set-bottom-divider-width))
-  (user/set-global-leader-key "wc" 'writeroom-mode))
+          writeroom-set-bottom-divider-width)))
+
+;;; General - for keybindings
+(use-package general
+  :ensure t
+  :init
+  (defalias 'define-key! #'general-def)
+  (defalias 'undefine-key! #'general-unbind))
+
 
 (provide 'editor)
 ;;; editor.el ends here

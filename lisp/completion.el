@@ -40,9 +40,7 @@
              projectile-vc)
   :init
   (progn
-    (setq ;; projectile-indexing-method 'alien
-          projectile-generic-command "find . -type f"
-          projectile-ignored-projects '("~/" "/tmp")
+    (setq projectile-ignored-projects '("~/" "/tmp")
           projectile-globally-ignored-files '(".DS_Store" "TAGS")
           projectile-kill-buffers-filter 'kill-all)
     (setq projectile-mode-line-function
@@ -67,28 +65,12 @@
   ;; Per-project compilation buffers
   (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
         compilation-save-buffers-predicate #'projectile-current-project-buffer-p)
-  (evil-define-key* nil 'global
-    (kbd "<leader>pk") 'projectile-kill-buffers
-    (kbd "<leader>pf") 'projectile-find-file
-    (kbd "<leader>pb") 'projectile-switch-to-buffer
-    (kbd "<leader>pp") 'projectile-switch-project)
 
   :diminish projectile-mode)
 
 (use-package ivy
   :ensure t
   :hook (after-init . ivy-mode)
-  :init
-  ;; (let ((standard-seaarch-fn #'ivy--regex-plus)
-  ;;       (alt-search-fn #'ivy--regex-ignore-order))
-  ;;   (setq ivy-more-chars-alist
-  ;;         `((counsel-rg . 1)
-  ;;           (counsel-search . 2)
-  ;;           (t . 3)))
-  ;;   (setq ivy-re-builders-alist
-  ;;         `((counsel-rg . ,standard-seaarch-fn)
-  ;;           (swiper . ,standard-seaarch-fn)
-  ;;           (swiper-isearch . ,standard-seaarch-fn))))
   :config
   (setq ivy-sort-max-size 7500)
 
@@ -107,24 +89,44 @@
     (define-key map (kbd "C-j") 'ivy-next-line)
     (define-key map (kbd "C-k") 'ivy-previous-line))
 
-  ;; Occur
-  (evil-set-initial-state 'ivy-occur-grep-mode 'normal)
-  (evil-make-overriding-map ivy-occur-mode-map 'normal)
-  
+(defun user/counsel-search-rg (&optional use-initial-input initial-directory)
+  "Searching with rg in Emacs.
+If INITIAL-DIRECTORY is non nil start in that directory."
+  (interactive)
+  (require 'counsel)
+  (let* ((initial-input (if use-initial-input
+                            (if (region-active-p)
+                                (buffer-substring-no-properties
+                                 (region-beginning) (region-end))
+                              (thing-at-point 'symbol t))
+                          ""))
+         (default-directory
+           (or initial-directory (read-directory-name "Start from directory: "))))
+    (counsel-rg initial-input default-directory nil "rg: ")))
 
-  (evil-define-key* nil 'global
-    (kbd "<leader>sp") 'user/counsel-search-project
-    (kbd "<leader>sd") 'user/counsel-search-dir
-    (kbd "<leader>bb") 'ivy-switch-buffer)
+(defun user/counsel-search-project()
+  "Seraching project with rg."
+  (interactive)
+  (user/counsel-search-rg nil (projectile-project-root)))
+
+(defun user/counsel-search-project-at-point ()
+  "Seraching project with rg."
+  (interactive)
+  (user/counsel-search-rg (current-word t nil) (projectile-project-root)))
+
+(defun user/counsel-search-dir ()
+  "Searching directory with rg."
+  (interactive)
+  (user/counsel-search-rg nil default-directory))
+
+(defun user/counsel-search-dir-at-point ()
+  "Searching directory with rg."
+  (interactive)
+  (user/counsel-search-rg (current-word t nil) default-directory))
 
   (use-package swiper
     :ensure t
     :config
-    (evil-define-key* nil 'global
-      (kbd "<leader>ss") 'swiper
-      (kbd "<leader>sS") 'swiper-thing-at-point
-      (kbd "<leader>sb") 'swiper-all
-      (kbd "<leader>sB") 'swiper-all-thing-at-point)
     (global-set-key "\C-s" 'swiper)))
 
 (use-package ivy-avy
