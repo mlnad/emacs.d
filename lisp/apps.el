@@ -3,8 +3,6 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'evil)
-
 ;;; Deft
 (use-package deft
   :ensure t
@@ -17,7 +15,6 @@
 (use-package youdao-dictionary
   :ensure t
   :config
-  (evil-define-key nil 'global (kbd "<leader>oy") 'youdao-dictionary-search-at-point+)
   (push '("*Youdao Dictionary*" :dedicated t :position bottom :stick nil :noselect nil :height 0.4) popwin:special-display-config))
 
 ;;; Magit for git

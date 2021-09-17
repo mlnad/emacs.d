@@ -27,6 +27,24 @@
   (evil-set-leader '(insert replace emacs) (kbd "M-m"))
   (evil-set-initial-state 'ivy-occur-grep-mode 'normal))
 
+(use-package evil-anzu
+    :ensure t
+    :defer t
+    :config
+    (global-anzu-mode +1))
+
+(use-package evil-org
+  :if user/enable-org
+  :ensure evil-org
+  :defer t
+  :hook (org-mode . evil-org-mode)
+  :config
+  (setq evil-org-use-additional-insert t
+        evil-org-key-theme `(textobjects
+                             navigation
+                             additional))
+  :diminish evil-org-mode)
+
 (use-package evil-collection
   :after evil
   :ensure t
@@ -99,7 +117,7 @@
   "ss" 'swiper
   "sS" 'swiper-thing-at-point
   "sb" 'swiper-all
-  "sB" 'swiper-all-thing-at-point)
+  "sB" 'swiper-all-thing-at-point
   ;; Flycheck
   "en" 'flycheck-next-error
   "ep" 'flycheck-previous-error
@@ -115,7 +133,9 @@
   "'" 'aweshell-dedicated-toggle
   "ts" 'aweshell-toggle
   ;; Notes
-  "nrf" 'org-roam-node-find)
+  "nrf" 'org-roam-node-find
+  ;; Operations
+  "oy" 'youdao-dictionary-search-at-point+);; global keybindings
 
 (user/set-leader-key* nil lsp-mode-map
   ;; format

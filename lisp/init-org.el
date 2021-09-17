@@ -79,18 +79,6 @@
                (org-babel-do-load-languages 'org-babel-load-languages
                                             org-babel-load-languages))))
 
-(use-package evil-org
-  :if user/enable-org
-  :ensure evil-org
-  :defer t
-  :hook (org-mode . evil-org-mode)
-  :config
-  (setq evil-org-use-additional-insert t
-        evil-org-key-theme `(textobjects
-                             navigation
-                             additional))
-  :diminish evil-org-mode)
-
 (use-package org-agenda
   :init
   (setq org-agenda-restore-windows-after-quit t))

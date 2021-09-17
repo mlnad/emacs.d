@@ -187,11 +187,6 @@ If INITIAL-DIRECTORY is non nil start in that directory."
 
   :config
   (ivy-set-display-transformer #'counsel-projectile-find-file nil)
-  ;; (evil-define-key* nil 'global
-  ;;   (kbd "<leader>pk") 'counsel-projectile-kill-buffers
-  ;;   (kbd "<leader>pf") 'counsel-projectile-find-file
-  ;;   (kbd "<leader>pb") 'counsel-projectile-switch-to-buffer
-  ;;   (kbd "<leader>pp") 'counsel-projectile-switch-project)
   )
 
 (use-package ivy-rich

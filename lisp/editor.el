@@ -227,13 +227,7 @@
   (use-package anzu
     :ensure t
     :defer t
-    :hook (isearch-mode . anzu-mode))
-
-  (use-package evil-anzu
-    :ensure t
-    :defer t
-    :config
-    (global-anzu-mode +1)))
+    :hook (isearch-mode . anzu-mode)))
 
 (use-package unicode-fonts
   :ensure t
