@@ -259,8 +259,7 @@
         ;; Emacs GC which truncages the undo history very aggresively
         undo-limit 800000
         undo-strong-limit 12000000
-        undo-outer-limit 120000000)
-  (global-undo-tree-mode))
+        undo-outer-limit 120000000))
 
 (use-package writeroom-mode
   :ensure t
