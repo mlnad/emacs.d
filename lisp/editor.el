@@ -54,9 +54,12 @@
               frame-title-format "%b")
 
 ;;; Formatting
-(setq-default indent-tabs-mode nil
-              tab-width 4
-              tab-always-indent nil)
+(setq-default tab-width 4
+	      indent-tabs-mode nil)
+(setq-default tab-always-indent nil)
+;; Make `tabify' and `untabify' only affect indentation. Not tabs/spaces in the
+;; middle of a line.
+(setq tabify-regexp "^\t* [ \t]+")
 
 (setq-default fill-column 80)
 
@@ -89,10 +92,10 @@
 
 ;; Font set
 (when (find-font (font-spec :name (car user/default-font)))
-  (let* ((font (car user/default-font))
-         (props (cdr user/default-font))
-         (fontspec (apply 'font-spec :name font props)))
-    (set-frame-font fontspec nil t)))
+      (let* ((font (car user/default-font))
+	     (props (cdr user/default-font))
+	     (fontspec (apply 'font-spec :name font props)))
+	(set-frame-font fontspec nil t)))
 
 ;;; Build-in packages
 ;;; tramp
@@ -251,7 +254,6 @@
 ;;; Undo tree mode
 (use-package undo-tree
   :ensure t
-  :hook (after-init . global-undo-tree-mode)
   :config
   (setq undo-tree-visualizer-timestamps t
         undo-tree-visualizer-diff t
@@ -259,7 +261,8 @@
         ;; Emacs GC which truncages the undo history very aggresively
         undo-limit 800000
         undo-strong-limit 12000000
-        undo-outer-limit 120000000))
+        undo-outer-limit 120000000)
+  global-undo-tree-mode)
 
 (use-package writeroom-mode
   :ensure t
