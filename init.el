@@ -118,7 +118,7 @@
 (require 'prog-verilog)
 (require 'init-org)
 (require 'apps)
-(require 'keybindings)
+(require 'keybinds)
 
 ;; Configurations after init
 (user/config-after-init)

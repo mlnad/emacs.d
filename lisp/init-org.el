@@ -2,36 +2,6 @@
 ;;; Commentary:
 
 ;;; Code:
-
-(defvar org-ctexart-class
-  '("ctexart"
-    "\\documentclass[11pt]{ctexart}"
-    ("\\section{%s}" . "\\section*{%s}")
-    ("\\subsection{%s}" . "\\subsection*{%s}")
-    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-    ("\\paragraph{%s}" . "\\paragraph*{%s}")
-    ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-
-(defvar org-complex-ctexbook-class
-  '("cctexbook"
-    "\\documentclass[11pt]{ctexbook}"
-    ("\\part{%s}" . "\\part*{%s}")
-    ("\\chapter{%s}" . "\\chapter*{%s}")
-    ("\\section{%s}" . "\\section*{%s}")
-    ("\\subsection{%s}" . "\\subsection*{%s}")
-    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
-
-(defvar org-simple-ctexbook-class
-  '("sctexbook"
-    "\\documentclass[11pt]{ctexbook}"
-    ("\\chapter{%s}" . "\\chapter*{%s}")
-    ("\\section{%s}" . "\\section*{%s}")
-    ("\\subsection{%s}" . "\\subsection*{%s}")
-    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
-
-(defvar org-user-latex-class
-  (list org-ctexart-class org-complex-ctexbook-class org-simple-ctexbook-class))
-
 (defvar roam/default-capture
   '("d" "default" plain "%?"
    	:if-new (file+head "${slug}.org"
@@ -85,7 +55,7 @@
 
 (use-package org-roam
   :if (and user/enable-org-roam user/enable-org)
-  :ensure t
+  :ensure org-roam
   :hook (after-init . org-roam-setup)
   :custom
   (org-roam-directory user/org-roam-dir)
@@ -96,14 +66,6 @@
   (add-to-list 'user/roam-templates roam/default-capture)
   (setq org-roam-capture-templates user/roam-templates))
 
-(use-package org-journal
-  :if user/enable-org
-  :ensure t
-  :config
-  (setq org-journal-file-type user/org-journal-type)
-  (setq org-journal-dir (expand-file-name "journal" user/notes-dir)
-        org-journal-file-format "%Y-%m-%d.org"))
-
 (use-package gnuplot
   :ensure gnuplot
   :defer t)
@@ -113,7 +75,6 @@
   :config
   (add-hook 'org-mode-hook #'valign-mode)
   :diminish valign-mode)
-
 
 (provide 'init-org)
 ;;; init-org.el ends here

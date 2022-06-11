@@ -3,7 +3,6 @@
 ;;; Commentary:
 ;;
 ;;; Code:
-
 ;; Resolve symlinks when opening files
 (setq find-file-visit-truename t
       vc-follow-symlinks t)
@@ -35,7 +34,15 @@
       backup-directory-alist user/backup-directory-alist
       tramp-backup-directory-alist backup-directory-alist)
 
-(setq-default scroll-step 1) ;; smooth scroll
+;;; Scrolling
+(setq hscroll-margin 2
+      hscroll-step 1
+      scroll-conservatively 101
+      scroll-margin 0
+      scroll-preserve-screen-position t
+      auto-window-vscroll nil
+      mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
+      mouse-wheel-scroll-amount-horizontal 2)
 
 (setq-default auto-image-file-mode t)
 
@@ -163,6 +170,12 @@
   (use-package display-fill-column-indicator
     :ensure nil))
 
+(use-package compile
+  :config
+  (setq compilation-always-kill t
+        compilation-ask-about-save nil
+        compilation-scroll-output 'first-error))
+
 ;;; Minibuffers
 ;; Allow for minibuffer-ception.
 (setq enable-recursive-minibuffers t)
@@ -229,12 +242,6 @@
     :defer t
     :hook (isearch-mode . anzu-mode)))
 
-(use-package unicode-fonts
-  :ensure t
-  :init
-  (setq unicode-fonts-skip-font-groups '(decorative low-quality-glyphs))
-  (unicode-fonts-setup))
-
 ;;; doom themes
 (use-package doom-themes
   :ensure t
@@ -244,17 +251,16 @@
 ;;; Undo tree mode
 (use-package undo-tree
   :ensure t
-  :defer t
-  :init
-  (progn
-    (setq undo-tree-visualizer-timestamps t
-          undo-tree-visualizer-diff t
-          ;; 10X bump of the undo limits to avoid issues with premature
-          ;; Emacs GC which truncages the undo history very aggresively
-          undo-limit 800000
-          undo-strong-limit 12000000
-          undo-outer-limit 120000000)
-    (global-undo-tree-mode)))
+  :hook (after-init . global-undo-tree-mode)
+  :config
+  (setq undo-tree-visualizer-timestamps t
+        undo-tree-visualizer-diff t
+        ;; 10X bump of the undo limits to avoid issues with premature
+        ;; Emacs GC which truncages the undo history very aggresively
+        undo-limit 800000
+        undo-strong-limit 12000000
+        undo-outer-limit 120000000)
+  (global-undo-tree-mode))
 
 (use-package writeroom-mode
   :ensure t

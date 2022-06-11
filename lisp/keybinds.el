@@ -2,8 +2,14 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar emacs-default-map (make-sparse-keymap)
+(defvar user/leader-map (make-sparse-keymap)
   "Base keymap for all Emacs leader key commands.")
+
+(defvar user/leader-key "SPC"
+  "The leader prefix key.")
+
+(defvar user/localleader-key "SPC m"
+  "The localleader prefix key.")
 
 ;;; Whichkey
 (use-package which-key
@@ -237,5 +243,5 @@
     "mrta" 'org-roam-tag-add
     "mrtd" 'org-roam-tag-remove))
 
-(provide 'keybindings)
+(provide 'keybinds)
 ;;; keybindings.el ends here
