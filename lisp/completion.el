@@ -68,144 +68,35 @@
 
   :diminish projectile-mode)
 
-(use-package ivy
-  :ensure t
-  :hook (after-init . ivy-mode)
-  :config
-  (setq ivy-sort-max-size 7500)
-
-  (require 'counsel nil t)
-
-  (setq ivy-wrap t
-        projectile-completion-system 'ivy
-        ivy-use-virtual-buffers nil
-        ivy-virtual-abbreviate 'full
-        ivy-on-del-error-function #'ignore
-        ivy-use-selectable-prompt t)
-
-  (dolist (map (list ivy-minibuffer-map
-                     ivy-switch-buffer-map
-                     ivy-reverse-i-search-map))
-    (define-key map (kbd "C-j") 'ivy-next-line)
-    (define-key map (kbd "C-k") 'ivy-previous-line))
-
-(defun user/counsel-search-rg (&optional use-initial-input initial-directory)
-  "Searching with rg in Emacs.
-If INITIAL-DIRECTORY is non nil start in that directory."
-  (interactive)
-  (require 'counsel)
-  (let* ((initial-input (if use-initial-input
-                            (if (region-active-p)
-                                (buffer-substring-no-properties
-                                 (region-beginning) (region-end))
-                              (thing-at-point 'symbol t))
-                          ""))
-         (default-directory
-           (or initial-directory (read-directory-name "Start from directory: "))))
-    (counsel-rg initial-input default-directory nil "rg: ")))
-
-(defun user/counsel-search-project()
-  "Seraching project with rg."
-  (interactive)
-  (user/counsel-search-rg nil (projectile-project-root)))
-
-(defun user/counsel-search-project-at-point ()
-  "Seraching project with rg."
-  (interactive)
-  (user/counsel-search-rg (current-word t nil) (projectile-project-root)))
-
-(defun user/counsel-search-dir ()
-  "Searching directory with rg."
-  (interactive)
-  (user/counsel-search-rg nil default-directory))
-
-(defun user/counsel-search-dir-at-point ()
-  "Searching directory with rg."
-  (interactive)
-  (user/counsel-search-rg (current-word t nil) default-directory))
-
-  (use-package swiper
-    :ensure t
-    :config
-    (global-set-key "\C-s" 'swiper)))
-
-(use-package ivy-avy
-  :ensure t
-  :after ivy)
-
-(use-package ivy-xref
-  :ensure t
-  :defer t
-  :init
-  (setq xref-prompt-for-identifier '(not xref-find-definitions
-                                         xref-find-definitions-other-window
-                                         xref-find-references)))
-
-(use-package counsel
-  :ensure t
-  :defer t
-  :init
-  (define-key!
-    [remap apropos]                  #'counsel-apropos
-    [remap bookmark-jump]            #'counsel-bookmark
-    [remap describe-bindings]        #'counsel-descbinds
-    [remap describe-face]            #'counsel-faces
-    [remap describe-function]        #'counsel-describe-function
-    [remap describe-variable]        #'counsel-describe-variable
-    [remap evil-ex-registers]        #'counsel-evil-registers
-    [remap evil-show-marks]          #'counsel-mark-ring
-    [remap execute-extended-command] #'counsel-M-x
-    [remap find-file]                #'counsel-find-file
-    [remap find-library]             #'counsel-find-library
-    [remap imenu]                    #'counsel-imenu
-    [remap info-lookup-symbol]       #'counsel-info-lookup-symbol
-    [remap load-theme]               #'counsel-load-theme
-    [remap locate]                   #'counsel-locate
-    [remap org-goto]                 #'counsel-org-goto
-    [remap org-set-tags-command]     #'counsel-org-tag
-    [remap recentf-open-files]       #'counsel-recentf
-    [remap set-variable]             #'counsel-set-variable
-    [remap swiper]                   #'counsel-grep-or-swiper
-    [remap unicode-chars-list-chars] #'counsel-unicode-char
-    [remap switch-to-buffer]         #'counsel-switch-buffer
-    [remap yank-pop]                 #'counsel-yank-pop)
-  :config
-  ;; Don't use ^
-  (setq ivy-initial-inputs-alist nil)
-  )
-
-(use-package counsel-projectile
+(use-package vertico
   :ensure t
   :init
-  (define-key!
-    [remap projectile-find-file]        #'counsel-projectile-find-file
-    [remap projectile-find-dir]         #'counsel-projectile-find-dir
-    [remap projectile-switch-to-buffer] #'counsel-projectile-switch-to-buffer
-    [remap projectile-grep]             #'counsel-projectile-grep
-    [remap projectile-ag]               #'counsel-projectile-ag
-    [remap projectile-switch-project]   #'counsel-projectile-switch-project)
+  (vertico-mode))
 
-  :config
-  (ivy-set-display-transformer #'counsel-projectile-find-file nil)
-  )
+(use-package corfu
+    ;; Optional customizations
+    ;; :custom
+    ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    ;; (corfu-auto t)                 ;; Enable auto completion
+    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-(use-package ivy-rich
-  :ensure t
-  :after counsel
-  :init
-  (setq ivy-rich-path-stytle 'abbrev
-        ivy-virtual-abbreviate 'full)
-  :config
-  (progn
-    (setq ivy-rich-parse-remote-buffer nil)
-    (ivy-rich-mode)))
+    ;; Enable Corfu only for certain modes.
+    ;; :hook ((prog-mode . corfu-mode)
+    ;;        (shell-mode . corfu-mode)
+    ;;        (eshell-mode . corfu-mode))
 
-(use-package smex
-  :ensure t
-  :defer t
-  :init
-  (setq-default smex-history 32
-                smex-save-file (expand-file-name "smex-items" user/cache-directory)))
+    ;; Recommended: Enable Corfu globally.
+    ;; This is recommended since Dabbrev can be used globally (M-/).
+    ;; See also `corfu-excluded-modes'.
+    :init
+    (global-corfu-mode))
 
 (provide 'completion)
 ;;; completion.el ends here

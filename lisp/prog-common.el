@@ -97,38 +97,6 @@
 (use-package yasnippet-snippets
   :ensure t)
 
-(use-package company-mode
-  :ensure company
-  :hook prog-mode
-  :custom
-  (company-idle-delay 0.2)
-  (company-minimum-prefix-length 2)
-  :init
-  (setq company-tooltip-limit 14
-        company-tooltip-align-annotations t
-        company-require-match 'never
-        company-backends '(company-capf)
-        company-auto-commit nil
-        company-dabbrev-ignore-case nil
-        company-dabbrev-downcase nil)
-
-  ;; (add-hook 'company-mode-hook #'company-tng-mode)
-  :config
-  :diminish company-mode)
-
-(use-package company-statistics
-  :ensure t
-  :init
-  (setq company-statistics-file (concat user/cache-directory
-                                        "company-statistics-cache.el"))
-  (add-hook 'company-mode-hook 'company-statistics-mode))
-
-(use-package company-quickhelp
-  :ensure t
-  :defer company
-  :commands company-quickhelp-manual-begin
-  :bind (("C-c d" . 'company-quickhelp-manual-begin)))
-
 ;;; Flycheck
 (use-package flycheck
   :ensure t
