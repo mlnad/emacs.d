@@ -68,10 +68,18 @@
 
   :diminish projectile-mode)
 
+(use-package orderless
+  :ensure t
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
 (use-package vertico
   :ensure t
   :init
-  (vertico-mode))
+  (vertico-mode)
+  (setq vertico-resize t
+        vertico-cycle t))
 
 (use-package corfu
     ;; Optional customizations

@@ -11,7 +11,7 @@
 
 ;; Create missing directory when we open a file that doesn't exist under
 ;; a directory tree tha may not exist.
-(add-hook 'find-file-not-found-hooks
+(add-hook 'find-file-not-found-functions
 	  (lambda ()
 	    (unless (file-remote-p buffer-file-name)
 	      (let ((parent-directory (file-name-directory buffer-file-name)))
@@ -56,7 +56,6 @@
 ;;; Formatting
 (setq-default tab-width 4
 	      indent-tabs-mode nil)
-(setq-default tab-always-indent nil)
 ;; Make `tabify' and `untabify' only affect indentation. Not tabs/spaces in the
 ;; middle of a line.
 (setq tabify-regexp "^\t* [ \t]+")
@@ -183,6 +182,13 @@
     :init
     ;; TAB cycle if there are only few candidates
     (setq completion-cycle-threshold 3)
+    (defun crm-indicator (args)
+      (cons (concat "[CRM]" (car args)) (cdr args)))
+    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+    ;; Do not allow the cursor in the minibuffer prompt
+    (setq minibuffer-prompt-properties
+          '(read-only t cursor-intangible t face minibuffer-prompt))
+    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
     ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
     ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
@@ -190,9 +196,10 @@
     ;;       #'command-completion-default-include-p)
 
     ;; Enable indentation+completion using the TAB key.
-    ;; `completion-at-point' is often bound to M-TAB.
-    ;; (setq tab-always-indent 'complete)
-    )
+    (setq tab-always-indent 'complete)
+
+    ;; Enable recursive minibuffers
+    (setq enable-recursive-minibuffers t))
 
 ;;; Minibuffers
 ;; Allow for minibuffer-ception.
