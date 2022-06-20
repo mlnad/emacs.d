@@ -71,12 +71,11 @@
 (defvar elpa-subdirectory 'emacs-version)
 
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
-                                 ("org" . "https://orgmode.org/elpa/")
                                  ("gnu" . "https://elpa.gnu.org/packages/")))
 
-(defvar emacs-china-package-mirror '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
-                                     ("melpa" . "http://elpa.emacs-china.org/melpa/")
-                                     ("org"   . "http://elpa.emacs-china.org/org/")))
+(defvar emacs-china-package-mirror '(("gnu"   . "http://mirrors.ustc.edu.cn/elpa/gnu/")
+                                     ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
+                                     ("nongnu"   . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
 
 (defvar user/package-mirror default-package-mirror)
 

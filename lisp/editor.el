@@ -90,11 +90,15 @@
   (tooltip-mode -1))
 
 ;; Font set
-(when (find-font (font-spec :name (car user/default-font)))
-      (let* ((font (car user/default-font))
-	     (props (cdr user/default-font))
-	     (fontspec (apply 'font-spec :name font props)))
-	(set-frame-font fontspec nil t)))
+(let ((hook (if (daemonp)
+                'server-after-make-frame-hook
+              'after-init-hook)))
+  (add-hook hook #'(lambda ()
+                     (when (find-font (font-spec :name (car user/default-font)))
+                       (let* ((font (car user/default-font))
+                              (props (cdr user/default-font))
+                              (fontspec (apply 'font-spec :name font props)))
+                         (set-frame-font fontspec nil t))))))
 
 ;;; Build-in packages
 ;;; tramp
@@ -136,7 +140,7 @@
   :init
   ;; Minibuffer history
   (setq savehist-file (expand-file-name "savehist" user/cache-directory))
-  (savehist-mode 1)
+  (savehist-mode)
   :config
   (setq savehist-save-minibuffer-history t
         history-length 100
@@ -190,26 +194,23 @@
           '(read-only t cursor-intangible t face minibuffer-prompt))
     (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
+    (fset #'yes-or-no-p #'y-or-n-p)
+
     ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
     ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
     ;; (setq read-extended-command-predicate
     ;;       #'command-completion-default-include-p)
 
     ;; Enable indentation+completion using the TAB key.
-    (setq tab-always-indent 'complete)
+    (setq tab-always-indent 't)
 
     ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t))
+    (setq enable-recursive-minibuffers t
+          echo-keystrokes 0.02
+          resize-mini-windows 'grow-only
+          max-mini-window-height 0.15))
 
 ;;; Minibuffers
-;; Allow for minibuffer-ception.
-(setq enable-recursive-minibuffers t)
-
-(setq echo-keystrokes 0.02)
-(setq resize-mini-windows 'grow-only
-      max-mini-window-height 0.15)
-
-(fset #'yes-or-no-p #'y-or-n-p)
 
 ;; Try really hard to keep the cursor from getting stuce in the read-only prompt
 ;; portion of the minibuffer.
@@ -305,6 +306,8 @@
   (defalias 'define-key! #'general-def)
   (defalias 'undefine-key! #'general-unbind))
 
+(use-package restart-emacs
+  :ensure t)
 
 (provide 'editor)
 ;;; editor.el ends here

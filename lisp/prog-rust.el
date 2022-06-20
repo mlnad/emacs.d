@@ -6,9 +6,9 @@
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
-  :init
-  (add-to-list 'projectile-project-root-files "Cargo.toml")
+  :after (projectile)
   :config
+  (add-to-list 'projectile-project-root-files "Cargo.toml")
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
 

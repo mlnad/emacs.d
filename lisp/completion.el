@@ -11,30 +11,17 @@
 ;;; Code:
 (use-package projectile
   :ensure t
-  :defer t
   :commands (projectile-project-root
              projectile-project-name
              projectile-project-p
-             projectile-ack
-             projectile-ag
              projectile-compile-project
              projectile-dired
              projectile-find-dir
              projectile-find-file
-             projectile-find-tag
-             projectile-test-project
-             projectile-grep
              projectile-invalidate-cache
              projectile-kill-buffers
              projectile-multi-occur
-             projectile-project-p
-             projectile-project-root
              projectile-recentf
-             projectile-regenerate-tags
-             projectile-replace
-             projectile-replace-regexp
-             projectile-run-async-shell-command-in-root
-             projectile-run-shell-command-in-root
              projectile-switch-project
              projectile-switch-to-buffer
              projectile-vc)
@@ -74,26 +61,63 @@
   (setq completion-styles '(orderless basic)
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion)))))
+
+(use-package consult
+  :ensure t)
+
 (use-package vertico
   :ensure t
   :init
   (vertico-mode)
-  (setq vertico-resize t
-        vertico-cycle t))
+  (setq vertico-resize nil
+        vertico-scroll-margin 0
+        vertico-cycle t)
+  :config
+  (cl-defun vetico/search-files (&key query path all-files (recursive t) prompt args)
+    "Conduct a file search using ripgrep.
+:query STRING
+	The initial input to search for.
+:path PATH
+	Set the base directory to search out of. Default to the current project's root.
+:recursive BOOL
+	Wheather or not to search files recursively from the base directory."
+    (declare (indent defun))
+    (unless (executable-find "rg")
+      (user-error "Couldn't find ripgrep in your PATH"))
+    (require 'consult)
+    ())
+
+  (defun vertico/search-project (&optional arg)
+    "Conduct a text search in the current project root.
+If prefix ARG is set, include ignored/hidden files."
+
+    (interactive "P")
+    (let* ((projectile-project-root nil)
+           (disabled-command-function nil)
+           (current-prefix-arg (unless (eq arg 'other) arg))
+           (default-directory
+             (if (eq arg 'other)
+                 (if-let (projects (projectile-relevant-known-projects))
+                     (completing-read "Search project: " projects nil t)
+                   (user-error "There are no known projects"))
+               default-directory)))
+      ()))
+  )
 
 (use-package corfu
+  :ensure t
     ;; Optional customizations
-    ;; :custom
-    ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-    ;; (corfu-auto t)                 ;; Enable auto completion
-    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    (corfu-separator ?\s)          ;; Orderless field separator
     ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
     ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
     ;; (corfu-preview-current nil)    ;; Disable current candidate preview
     ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-    ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+    (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+    (corfu-scroll-margin 5)        ;; Use scroll margin
 
     ;; Enable Corfu only for certain modes.
     ;; :hook ((prog-mode . corfu-mode)
