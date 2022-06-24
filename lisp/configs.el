@@ -92,5 +92,7 @@
 
 (defvar user/roam-templates nil)
 
+(defvar configs/theme 'doom-one)
+
 (provide 'configs)
 ;;; configs.el ends here

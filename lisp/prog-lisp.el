@@ -4,10 +4,10 @@
 ;;
 ;;; Code:
 ;;; emacs-lisp
-(use-package lispy-mode
-  :ensure lispy
-  :hook emacs-lisp-mode
-  :diminish lispy-mode)
+;; (use-package lispy-mode
+;;   :ensure lispy
+;;   :hook emacs-lisp-mode
+;;   :diminish lispy-mode)
 
 (use-package ielm
   :defer t)

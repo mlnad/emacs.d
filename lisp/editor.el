@@ -79,10 +79,6 @@
   (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
   (add-to-list 'default-frame-alist '(vertical-scroll-bars)))
 
-(delete-selection-mode 1)
-(electric-pair-mode 1)
-(size-indication-mode t)
-
 (add-hook 'emacs-startup-hook #'window-divider-mode)
 
 ;; Don't display floating tooltips;
@@ -90,15 +86,19 @@
   (tooltip-mode -1))
 
 ;; Font set
-(let ((hook (if (daemonp)
-                'server-after-make-frame-hook
-              'after-init-hook)))
-  (add-hook hook #'(lambda ()
-                     (when (find-font (font-spec :name (car user/default-font)))
-                       (let* ((font (car user/default-font))
-                              (props (cdr user/default-font))
-                              (fontspec (apply 'font-spec :name font props)))
-                         (set-frame-font fontspec nil t))))))
+(defun editor/init-font ()
+  "Initialize Emacs font."
+  (when (find-font (font-spec :name (car user/default-font)))
+    (let* ((font (car user/default-font))
+           (props (cdr user/default-font))
+           (fontspec (apply 'font-spec :name font props)))
+      (set-frame-font fontspec nil t))))
+
+;; Theme set
+(defun editor/init-theme ()
+  "Initialize Emacs theme."
+  (when (and configs/theme (not (custom-theme-enabled-p configs/theme)))
+    (load-theme configs/theme t)))
 
 ;;; Build-in packages
 ;;; tramp
@@ -183,32 +183,37 @@
         compilation-scroll-output 'first-error))
 
 (use-package emacs
-    :init
-    ;; TAB cycle if there are only few candidates
-    (setq completion-cycle-threshold 3)
-    (defun crm-indicator (args)
-      (cons (concat "[CRM]" (car args)) (cdr args)))
-    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-    ;; Do not allow the cursor in the minibuffer prompt
-    (setq minibuffer-prompt-properties
-          '(read-only t cursor-intangible t face minibuffer-prompt))
-    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+  :config
+  (delete-selection-mode 1)
+  (electric-pair-mode 1)
+  (size-indication-mode t)
 
-    (fset #'yes-or-no-p #'y-or-n-p)
+  :init
+  ;; TAB cycle if there are only few candidates
+  (setq completion-cycle-threshold 3)
+  (defun crm-indicator (args)
+    (cons (concat "[CRM]" (car args)) (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-    ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
-    ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
-    ;; (setq read-extended-command-predicate
-    ;;       #'command-completion-default-include-p)
+  (fset #'yes-or-no-p #'y-or-n-p)
 
-    ;; Enable indentation+completion using the TAB key.
-    (setq tab-always-indent 't)
+  ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
+  ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
+  ;; (setq read-extended-command-predicate
+  ;;       #'command-completion-default-include-p)
 
-    ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t
-          echo-keystrokes 0.02
-          resize-mini-windows 'grow-only
-          max-mini-window-height 0.15))
+  ;; Enable indentation+completion using the TAB key.
+  (setq tab-always-indent t)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t
+        echo-keystrokes 0.02
+        resize-mini-windows 'grow-only
+        max-mini-window-height 0.15))
 
 ;;; Minibuffers
 
@@ -252,9 +257,7 @@
   :init
   (unless after-init-time
     (setq-default mode-line-format nil))
-
-  (setq projectile-dynamic-mode-line nil)
-
+  :config
   (setq doom-modeline-bar-width 3
         doom-modeline-github nil
         doom-modeline-mu4e nil
@@ -270,9 +273,13 @@
 
 ;;; doom themes
 (use-package doom-themes
-  :ensure t
-  :config
-  (load-theme 'doom-one t))
+  :ensure t)
+
+(let ((hook (if (daemonp)
+                'server-after-make-frame-hook
+              'after-init-hook)))
+  (add-hook hook #'editor/init-font -100)
+  (add-hook hook #'editor/init-theme -99))
 
 ;;; Undo tree mode
 (use-package undo-tree
