@@ -16,9 +16,11 @@
   (eq system-type 'darwin))
 
 (defvar configs/default-font '("Consolas"
-                            :size 10
-                            :weight normal
-                            :width normal))
+                               :size 10
+                               :weight normal
+                               :width normal))
+
+(defvar configs/unicode-font '("Noto Sans Mono CJK SC"))
 
 (defvar configs/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))

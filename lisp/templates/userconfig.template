@@ -3,14 +3,14 @@
 (setq
  ;; configs for Emacs variables which defined by user
 
- ;; user/custom-file
- ;; user/recentf-save-file
- ;; user/save-place-file
+ ;; configs/custom-file
+ ;; configs/recentf-save-file
+ ;; configs/save-place-file
 
- ;; user/notes-dir
- user/package-mirror emacs-china-package-mirror
+ ;; configs/notes-dir
+ configs/package-mirror emacs-china-package-mirror
 
- ;; user/lsp-client
+ ;; configs/lsp-client
 
  ;; font
  ;; configs/default-font '("Source Code Pro"
@@ -21,14 +21,6 @@
 
 ;;; Custom configures
 (defun user/config-after-init ()
-  (with-eval-after-load 'org
-    (add-hook 'org-mode-hook
-              #'(lambda ()
-                  (make-face 'width-font-face)
-                  (set-face-attribute 'width-font-face nil :font "Noto Sans Mono CJK SC 14")
-                  (setq buffer-face-mode-face 'width-font-face)
-                  (buffer-face-mode))))
-  ;;
   )
 
 

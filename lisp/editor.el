@@ -92,7 +92,13 @@
     (let* ((font (car configs/default-font))
            (props (cdr configs/default-font))
            (fontspec (apply 'font-spec :name font props)))
-      (set-frame-font fontspec nil t))))
+      (set-frame-font fontspec nil t)))
+  (when (find-font (font-spec :name (car configs/unicode-font)))
+    (let* ((font (car configs/unicode-font))
+           (props (cdr configs/unicode-font))
+           (fontspec (apply 'font-spec :name font props)))
+      (set-fontset-font t 'unicode configs/unicode-font)))
+  (run-hooks 'after-setting-font-hook))
 
 ;; Theme set
 (defun editor/init-theme ()
