@@ -31,7 +31,7 @@
       delete-old-versions t
       kept-old-versions 5
       kept-new-versions 5
-      backup-directory-alist user/backup-directory-alist
+      backup-directory-alist configs/backup-directory-alist
       tramp-backup-directory-alist backup-directory-alist)
 
 ;;; Scrolling
@@ -46,7 +46,7 @@
 
 (setq-default auto-image-file-mode t)
 
-(setq auto-save-list-file-prefix user/auto-save-list-prefix)
+(setq auto-save-list-file-prefix configs/auto-save-list-prefix)
 
 (setq-default initial-scratch-message nil
               inhibit-splash-screen t
@@ -88,9 +88,9 @@
 ;; Font set
 (defun editor/init-font ()
   "Initialize Emacs font."
-  (when (find-font (font-spec :name (car user/default-font)))
-    (let* ((font (car user/default-font))
-           (props (cdr user/default-font))
+  (when (find-font (font-spec :name (car configs/default-font)))
+    (let* ((font (car configs/default-font))
+           (props (cdr configs/default-font))
            (fontspec (apply 'font-spec :name font props)))
       (set-frame-font fontspec nil t))))
 
@@ -104,8 +104,8 @@
 ;;; tramp
 (unless *sys/win32*
   (setq tramp-default-method "ssh"
-        tramp-auto-save-directory (expand-file-name "tramp-autosave/" user/cache-directory)
-        tramp-backup-directory-alist (expand-file-name "backup/" user/cache-directory)))
+        tramp-auto-save-directory (expand-file-name "tramp-autosave/" configs/cache-directory)
+        tramp-backup-directory-alist (expand-file-name "backup/" configs/cache-directory)))
 
 (with-eval-after-load 'tramp
   (setq remote-file-name-inihibit-cache 60
@@ -126,7 +126,7 @@
   (add-hook 'find-file-hook (lambda () (unless recentf-mode
 					                     (recentf-mode)
 					                     (recentf-track-opened-file))))
-  (setq recentf-save-file user/recentf-save-file
+  (setq recentf-save-file configs/recentf-save-file
 	    recentf-max-saved-items 1000
 	    recentf-auto-cleanup 'never)
 
@@ -139,7 +139,7 @@
 (use-package savehist
   :init
   ;; Minibuffer history
-  (setq savehist-file (expand-file-name "savehist" user/cache-directory))
+  (setq savehist-file (expand-file-name "savehist" configs/cache-directory))
   (savehist-mode)
   :config
   (setq savehist-save-minibuffer-history t
@@ -155,7 +155,7 @@
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
-  (setq save-place-file user/save-place-file))
+  (setq save-place-file configs/save-place-file))
 
 (use-package subword
   :hook (after-init . global-subword-mode)
@@ -259,7 +259,7 @@
 (use-package undo-tree
   :ensure t
   :hook (after-init . global-undo-tree-mode)
-  :custom (undo-tree-history-directory-alist `(("." . ,(concat user/cache-directory "undo-tree-hist/"))))
+  :custom (undo-tree-history-directory-alist `(("." . ,(concat configs/cache-directory "undo-tree-hist/"))))
   :config
   (setq undo-tree-visualizer-timestamps t
         undo-tree-visualizer-diff t

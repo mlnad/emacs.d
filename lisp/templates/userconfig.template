@@ -13,7 +13,7 @@
  ;; user/lsp-client
 
  ;; font
- ;; user/default-font '("Source Code Pro"
+ ;; configs/default-font '("Source Code Pro"
  ;;                     :size 15
  ;;                     :weight normal
  ;;                     :width normal)

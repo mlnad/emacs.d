@@ -9,7 +9,7 @@
     :unnarrowed t))
 
 (use-package org
-  :if user/enable-org
+  :if configs/enable-org
   :ensure org
   :commands (orgtbl-mode)
   :init
@@ -17,11 +17,11 @@
   :config
   (require 'org-tempo)
 
-  (setq org-clock-persist-file (concat user/cache-directory
+  (setq org-clock-persist-file (concat configs/cache-directory
                                        "org-clock-save.el")
-        org-id-locations-file (concat user/cache-directory
+        org-id-locations-file (concat configs/cache-directory
                                       "org-id-locations")
-        org-publish-timestamp-directory (concat user/cache-directory
+        org-publish-timestamp-directory (concat configs/cache-directory
                                                 "org-timestamps/")
         org-log-done 'time
         org-startup-with-inline-images t
@@ -31,13 +31,13 @@
         org-src-tab-acts-natively t
         org-imenu-depth 8)
   (setq org-src-block-faces
-        `(("emacs-lisp" ,user/org-src-block-face)
-          ("c" ,user/org-src-block-face)
-          ("c++" ,user/org-src-block-face)
-          ("shell" ,user/org-src-block-face)
-          ("rust" ,user/org-src-block-face)
-          ("python" ,user/org-src-block-face)
-          ("haskell" ,user/org-src-block-face)))
+        `(("emacs-lisp" ,configs/org-src-block-face)
+          ("c" ,configs/org-src-block-face)
+          ("c++" ,configs/org-src-block-face)
+          ("shell" ,configs/org-src-block-face)
+          ("rust" ,configs/org-src-block-face)
+          ("python" ,configs/org-src-block-face)
+          ("haskell" ,configs/org-src-block-face)))
 
   (with-eval-after-load 'org-agenda
     (add-to-list 'org-modules 'org-habit)))
@@ -54,17 +54,17 @@
   (setq org-agenda-restore-windows-after-quit t))
 
 (use-package org-roam
-  :if (and user/enable-org-roam user/enable-org)
+  :if (and configs/enable-org-roam configs/enable-org)
   :ensure org-roam
   :hook (after-init . org-roam-setup)
   :custom
-  (org-roam-directory user/org-roam-dir)
+  (org-roam-directory configs/org-roam-dir)
   :commands (org-roam-buffer-toggle-display
              org-roam-tag-add
              org-roam-tag-delete)
   :config
-  (add-to-list 'user/roam-templates roam/default-capture)
-  (setq org-roam-capture-templates user/roam-templates))
+  (add-to-list 'configs/roam-templates roam/default-capture)
+  (setq org-roam-capture-templates configs/roam-templates))
 
 (use-package gnuplot
   :ensure gnuplot

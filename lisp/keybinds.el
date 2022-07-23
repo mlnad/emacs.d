@@ -2,13 +2,13 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar user/leader-map (make-sparse-keymap)
+(defvar keybinds/leader-map (make-sparse-keymap)
   "Base keymap for all Emacs leader key commands.")
 
-(defvar user/leader-key "SPC"
+(defvar keybinds/leader-key "SPC"
   "The leader prefix key.")
 
-(defvar user/localleader-key "SPC m"
+(defvar keybinds/localleader-key "SPC m"
   "The localleader prefix key.")
 
 ;;; Whichkey
@@ -40,7 +40,7 @@
     (global-anzu-mode +1))
 
 (use-package evil-org
-  :if user/enable-org
+  :if configs/enable-org
   :ensure evil-org
   :defer t
   :hook (org-mode . evil-org-mode)
@@ -58,32 +58,32 @@
   (setq evil-collection-setup-minibuffer t)
   (evil-collection-init))
 
-(defmacro user/set-leader-key (states keymap key op)
+(defmacro keybinds/set-leader-key (states keymap key op)
   "Bind KEY to OP at STATES and KEYMAP."
   `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
 
-(defun user/set-leader-key* (states keymap key op &rest key-ops)
+(defun keybinds/set-leader-key* (states keymap key op &rest key-ops)
   "Bind KEY-OPS lists at states and KEYMAP."
   (while key
     (evil-define-key states keymap (kbd (concat "<leader>" key)) op)
     (setq key (pop key-ops)
           op (pop key-ops))))
-(put 'user/set-leader-key* 'lisp-indent-function 'defun)
+(put 'keybinds/set-leader-key* 'lisp-indent-function 'defun)
 
-(defmacro user/set-global-leader-key (key op)
+(defmacro keybinds/set-global-leader-key (key op)
   "Bind KEY to OP globally for all evil states."
-  `(user/set-leader-key nil 'global ,key ,op))
+  `(keybinds/set-leader-key nil 'global ,key ,op))
 
-(defun user/set-global-leader-key* (key op &rest key-ops)
+(defun keybinds/set-global-leader-key* (key op &rest key-ops)
   "Bind KEY to OP."
   (while key
     (evil-define-key nil 'global (kbd (concat "<leader>" key)) op)
     (setq key (pop key-ops)
           op (pop key-ops))))
-(put 'user/set-global-leader-key* 'lisp-indent-function 'defun)
+(put 'keybinds/set-global-leader-key* 'lisp-indent-function 'defun)
 
 ;;; Define key
-(user/set-global-leader-key*
+(keybinds/set-global-leader-key*
  ;; windows jump
   "wh" 'evil-window-left
   "wl" 'evil-window-right
@@ -116,10 +116,10 @@
   "pp" 'projectile-switch-project
   ;; Searching
   "si" 'imenu
-  "sp" 'user/counsel-search-project
-  "sP" 'user/counsel-search-project-at-point
-  "sd" 'user/counsel-search-dir
-  "sD" 'user/counsel-search-dir-at-point
+  "sp" 'keybinds/counsel-search-project
+  "sP" 'keybinds/counsel-search-project-at-point
+  "sd" 'keybinds/counsel-search-dir
+  "sD" 'keybinds/counsel-search-dir-at-point
   "ss" 'swiper
   "sS" 'swiper-thing-at-point
   "sb" 'swiper-all
@@ -143,7 +143,7 @@
   ;; Operations
   "oy" 'youdao-dictionary-search-at-point+);; global keybindings
 
-(user/set-leader-key* nil lsp-mode-map
+(keybinds/set-leader-key* nil lsp-mode-map
   ;; format
   "=b" #'lsp-format-buffer
   "=r" #'lsp-format-region
@@ -151,8 +151,8 @@
   ;; code
   "cr" #'lsp-rename)
 
-(when user/enable-org
-  (user/set-leader-key* 'normal org-mode-map
+(when configs/enable-org
+  (keybinds/set-leader-key* 'normal org-mode-map
     ;; basic
     "RET" 'org-open-at-point
     "oc" 'org-capture
@@ -235,8 +235,8 @@
     "mbx"     'org-babel-do-key-sequence-in-edit-buffer
     ))
 
-(when (and user/enable-org-roam user/enable-org)
-  (user/set-leader-key* nil org-mode-map
+(when (and configs/enable-org-roam configs/enable-org)
+  (keybinds/set-leader-key* nil org-mode-map
     "mrg" 'org-roam-graph
     "mri" 'org-roam-node-insert
     "mrf" 'org-roam-node-find

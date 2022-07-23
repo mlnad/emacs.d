@@ -50,18 +50,18 @@
 
 ;; load user configs.
 (require 'configs)
-(or (file-exists-p user/cache-directory)
-    (make-directory user/cache-directory))
-(or (file-exists-p user/userconfig-file)
+(or (file-exists-p configs/cache-directory)
+    (make-directory configs/cache-directory))
+(or (file-exists-p configs/userconfig-file)
     (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
-               user/userconfig-file))
-(load user/userconfig-file)
+               configs/userconfig-file))
+(load configs/userconfig-file)
 
 ;; Config before init
 (user/config-before-init)
 
 ;; load `custom-file'
-(setq custom-file user/custom-file)
+(setq custom-file configs/custom-file)
 (when (file-exists-p custom-file)
   (load custom-file))
 
@@ -75,7 +75,7 @@
 (require 'package)
 (setq package--init-file-ensured t
       package-enable-at-startup nil
-      package-archives user/package-mirror)
+      package-archives configs/package-mirror)
 
 ;; Evaluate the correct package subdirectory of packages.
 (setq package-user-dir
@@ -104,7 +104,7 @@
     (package-refresh-contents)
     (package-install 'quelpa)))
 (setq quelpa-checkout-melpa-p nil
-      quelpa-dir user/quelpa-dir)
+      quelpa-dir configs/quelpa-dir)
 
 (require 'core-libs)
 (require 'editor)

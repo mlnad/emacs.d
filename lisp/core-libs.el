@@ -16,7 +16,7 @@
 (defun open-userconfig-file()
   "Open userconfig."
   (interactive)
-  (find-file user/userconfig-file))
+  (find-file configs/userconfig-file))
 
 (provide 'core-libs)
 ;;; core-libs.el ends here

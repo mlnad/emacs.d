@@ -15,54 +15,54 @@
 (defconst *sys/mac*
   (eq system-type 'darwin))
 
-(defvar user/default-font '("Consolas"
+(defvar configs/default-font '("Consolas"
                             :size 10
                             :weight normal
                             :width normal))
 
-(defvar user/cache-directory
+(defvar configs/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))
 
-(defvar user/userconfig-file
-  (expand-file-name "userconfig" user/cache-directory))
+(defvar configs/userconfig-file
+  (expand-file-name "userconfig" configs/cache-directory))
 
-(defvar user/custom-file
-  (expand-file-name "custom.el" user/cache-directory))
+(defvar configs/custom-file
+  (expand-file-name "custom.el" configs/cache-directory))
 
-(defvar user/recentf-save-file
-  (expand-file-name "recentf" user/cache-directory))
+(defvar configs/recentf-save-file
+  (expand-file-name "recentf" configs/cache-directory))
 
-(defvar user/save-place-file
-  (expand-file-name "places" user/cache-directory))
+(defvar configs/save-place-file
+  (expand-file-name "places" configs/cache-directory))
 
-(defvar user/backup-directory-alist
-  (expand-file-name "backup/" user/cache-directory))
+(defvar configs/backup-directory-alist
+  (expand-file-name "backup/" configs/cache-directory))
 
-(defvar user/projectile-known-projects-file
-  (expand-file-name "projectile-bookmarks.eld" user/cache-directory))
+(defvar configs/projectile-known-projects-file
+  (expand-file-name "projectile-bookmarks.eld" configs/cache-directory))
 
-(defvar user/projectile-cache-file
-  (expand-file-name "projectile.cache" user/cache-directory))
+(defvar configs/projectile-cache-file
+  (expand-file-name "projectile.cache" configs/cache-directory))
 
-(defvar user/auto-save-list-prefix
-  (expand-file-name "auto-save-list/.saves-" user/cache-directory))
+(defvar configs/auto-save-list-prefix
+  (expand-file-name "auto-save-list/.saves-" configs/cache-directory))
 
-(defvar user/layouts-directory
-  (expand-file-name "layouts/" user/cache-directory))
+(defvar configs/layouts-directory
+  (expand-file-name "layouts/" configs/cache-directory))
 
-(defvar user/quelpa-dir
-  (expand-file-name "quelpa/" user/cache-directory))
+(defvar configs/quelpa-dir
+  (expand-file-name "quelpa/" configs/cache-directory))
 
-(defvar user/notes-dir "~/org"
+(defvar configs/notes-dir "~/org"
   "User defined notes directory.")
 
-(defvar user/org-roam-dir user/notes-dir
+(defvar configs/org-roam-dir configs/notes-dir
   "User defined org roam directory.")
 
-(defvar user/notes-extensions '("org" "md" "markdown"))
+(defvar configs/notes-extensions '("org" "md" "markdown"))
 
-(defvar user/rime-data-dir
-  (expand-file-name "rime/" user/cache-directory))
+(defvar configs/rime-data-dir
+  (expand-file-name "rime/" configs/cache-directory))
 
 (defvar elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
@@ -77,20 +77,20 @@
                                      ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
                                      ("nongnu"   . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
 
-(defvar user/package-mirror default-package-mirror)
+(defvar configs/package-mirror default-package-mirror)
 
-(defvar user/enable-org nil)
+(defvar configs/enable-org nil)
 
-(defvar user/enable-org-roam nil)
+(defvar configs/enable-org-roam nil)
 
-(defvar user/enable-eaf nil)
+(defvar configs/enable-eaf nil)
 
-(defvar user/org-journal-type 'daily)
+(defvar configs/org-journal-type 'daily)
 
-(defvar user/org-src-block-face '(:family "Jetbrains Mono")
+(defvar configs/org-src-block-face '(:family "Jetbrains Mono")
   "Face for org source block.")
 
-(defvar user/roam-templates nil)
+(defvar configs/roam-templates nil)
 
 (defvar configs/theme 'doom-one)
 

@@ -36,8 +36,8 @@
               (projectile-default-mode-line))))
 
     (setq projectile-sort-order 'recentf
-          projectile-cache-file user/projectile-cache-file
-          projectile-known-projects-file user/projectile-known-projects-file))
+          projectile-cache-file configs/projectile-cache-file
+          projectile-known-projects-file configs/projectile-known-projects-file))
   :config
   (projectile-mode +1)
 

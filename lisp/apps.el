@@ -7,8 +7,8 @@
 (use-package deft
   :ensure t
   :config
-  (setq-default deft-extensions user/notes-extensions
-                deft-directory user/notes-dir
+  (setq-default deft-extensions configs/notes-extensions
+                deft-directory configs/notes-dir
                 deft-recursive t))
 
 ;;; youdao-dict
@@ -40,14 +40,14 @@
   :config
   (setq rime-show-candidate 'posframe
         default-input-method "rime"
-        rime-user-data-dir user/rime-data-dir)
+        rime-user-data-dir configs/rime-data-dir)
   (add-hook 'after-init-hook
             (lambda ()
-              (or (file-exists-p user/rime-data-dir)
+              (or (file-exists-p configs/rime-data-dir)
                   (progn
-                    (make-directory user/rime-data-dir)
+                    (make-directory configs/rime-data-dir)
                     (copy-file (concat user-emacs-directory "lisp/templates/user.yaml")
-                               (concat user/rime-data-dir "user.yaml")))))))
+                               (concat configs/rime-data-dir "user.yaml")))))))
 
 ;;; Docker
 (use-package docker
