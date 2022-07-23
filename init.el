@@ -110,12 +110,7 @@
 (require 'editor)
 (require 'completion)
 
-(require 'prog-common)
-(require 'prog-c-cpp)
-(require 'prog-python)
-(require 'prog-lisp)
-(require 'prog-rust)
-(require 'prog-verilog)
+(require 'programming)
 (require 'init-org)
 (require 'apps)
 (require 'keybinds)
