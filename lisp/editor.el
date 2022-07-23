@@ -97,7 +97,7 @@
     (let* ((font (car configs/unicode-font))
            (props (cdr configs/unicode-font))
            (fontspec (apply 'font-spec :name font props)))
-      (set-fontset-font t 'unicode configs/unicode-font)))
+      (set-fontset-font t 'unicode fontspec)))
   (run-hooks 'after-setting-font-hook))
 
 ;; Theme set
