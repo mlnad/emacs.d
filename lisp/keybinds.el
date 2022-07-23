@@ -116,7 +116,7 @@
   "pp" 'projectile-switch-project
   ;; Searching
   "si" 'imenu
-  "sp" 'keybinds/counsel-search-project
+  "sp" #'consult-ripgrep
   "sP" 'keybinds/counsel-search-project-at-point
   "sd" 'keybinds/counsel-search-dir
   "sD" 'keybinds/counsel-search-dir-at-point
