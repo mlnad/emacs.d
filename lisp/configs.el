@@ -1,10 +1,10 @@
 ;;; configs.el -- configurations for my Emacs
-
+;;
 ;;; Commentary:
-
+;;
 ;;; Code:
-(defvar user/full-name "Liu Miao")
-(defvar user/email-address "liumiaogemini@foxmail.com")
+(defvar config/full-name "Liu Miao")
+(defvar config/email-address "liumiaogemini@foxmail.com")
 
 (defconst *sys/win32*
   (eq system-type 'windows-nt))
