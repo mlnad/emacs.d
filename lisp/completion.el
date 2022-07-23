@@ -104,6 +104,21 @@ If prefix ARG is set, include ignored/hidden files."
       ()))
   )
 
+(use-package consult
+  :defer t
+  :preface
+  (advice-add #'multi-occur :override #'consult-multi-occur)
+  :config
+  (setq consult-line-numbers-widen t
+        consult-async-min-input 2
+        consult-async-refresh-delay 0.15
+        consult-async-input-throttle 0.2
+        consult-async-input-debounce 0.1)
+  (consult-customize
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file
+   consult--source-recent-file consult--source-project-recent-file))
+
 (use-package corfu
   :ensure t
     ;; Optional customizations

@@ -224,32 +224,6 @@
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 
-;;; Pop windows
-(use-package popwin
-  :ensure t
-  :config
-  (progn
-    (popwin-mode 1)
-    (setq popwin:special-display-config nil)
-
-    ;; buffer that we manage
-    (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '("*Process List*"         :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
-    (push '(compilation-mode         :dedicated nil :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
-    (push '(dap-server-log-mode      :dedicated nil :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
-    (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*undo-tree*"            :dedicated t :position right  :stick t :noselect nil :width   60) popwin:special-display-config)
-    (push '("*undo-tree Diff*"       :dedicated t :position bottom :stick t :noselect nil :height 0.3) popwin:special-display-config)
-    (push '("*ert*"                  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*grep*"                 :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
-    (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
-    (push '("*xref*"              :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    ))
-
-
 ;;; Modeline
 (use-package doom-modeline
   :ensure t
@@ -284,6 +258,8 @@
 ;;; Undo tree mode
 (use-package undo-tree
   :ensure t
+  :hook (after-init . global-undo-tree-mode)
+  :custom (undo-tree-history-directory-alist `(("." . ,(concat user/cache-directory "undo-tree-hist/"))))
   :config
   (setq undo-tree-visualizer-timestamps t
         undo-tree-visualizer-diff t
@@ -291,8 +267,7 @@
         ;; Emacs GC which truncages the undo history very aggresively
         undo-limit 800000
         undo-strong-limit 12000000
-        undo-outer-limit 120000000)
-  (global-undo-tree-mode))
+        undo-outer-limit 120000000))
 
 (use-package writeroom-mode
   :ensure t
