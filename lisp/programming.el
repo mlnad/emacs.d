@@ -99,6 +99,13 @@
   :config)
 
 ;;; C/C++
+(use-package cc-mode
+  :ensure t
+  :defer t
+  :config
+  (setq c-basic-offset tab-width
+        c-backspace-functon #'delete-backward-char))
+
 (use-package clang-format
   :ensure t
   :defer t)
@@ -108,6 +115,10 @@
   :mode (("\\.lex\\'" . flex-mode)
          ("\\.y\\'" . bison-mode)
          ("\\.grm\\'" . bison-mode)))
+
+(use-package cmake-mode
+  :ensure t)
+
 ;;; Assembly
 (use-package nasm-mode
   :ensure t
