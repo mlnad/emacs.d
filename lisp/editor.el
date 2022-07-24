@@ -255,6 +255,26 @@
 (use-package doom-themes
   :ensure t)
 
+(use-package all-the-icons
+  :ensure t
+  :commands (all-the-icons-oction
+             all-the-icons-faicon
+             all-the-icons-fileicon
+             all-the-icons-wicon
+             all-the-icons-material
+             all-the-icons-alltheicon)
+  :preface
+  (add-hook 'after-setting-font-hook
+            (defun editor/init-all-the-icons-fonts-h ()
+              (when (fboundp 'set-fontset-font)
+                (dolist (font (list "Weather Icons"
+                                    "github-octicons"
+                                    "FontAwesome"
+                                    "all-the-icons"
+                                    "file-icons"
+                                    "Material Icons"))
+                  (set-fontset-font t 'unicode font nil 'append))))))
+
 (let ((hook (if (daemonp)
                 'server-after-make-frame-hook
               'after-init-hook)))
