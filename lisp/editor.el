@@ -290,9 +290,7 @@
 ;;; General - for keybindings
 (use-package general
   :ensure t
-  :init
-  (defalias 'define-key! #'general-def)
-  (defalias 'undefine-key! #'general-unbind))
+  :init)
 
 (use-package restart-emacs
   :ensure t)

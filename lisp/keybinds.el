@@ -115,15 +115,9 @@
   "pb" 'projectile-switch-to-buffer
   "pp" 'projectile-switch-project
   ;; Searching
-  "si" 'imenu
+  "si" #'imenu
   "sp" #'consult-ripgrep
-  "sP" 'keybinds/counsel-search-project-at-point
-  "sd" 'keybinds/counsel-search-dir
-  "sD" 'keybinds/counsel-search-dir-at-point
-  "ss" 'swiper
-  "sS" 'swiper-thing-at-point
-  "sb" 'swiper-all
-  "sB" 'swiper-all-thing-at-point
+  "ss" #'consult-line
   ;; Flycheck
   "en" 'flycheck-next-error
   "ep" 'flycheck-previous-error
@@ -133,7 +127,7 @@
   "es" 'flycheck-select-checker
   "ex" 'flycheck-explain-error-at-point
   ;; Magit
-  "gs" 'magit-status
+  "gg" 'magit-status
   "gd" 'magit-diff-range
   ;; Aweshell
   "'" 'aweshell-dedicated-toggle
@@ -141,7 +135,7 @@
   ;; Notes
   "nrf" 'org-roam-node-find
   ;; Operations
-  "oy" 'youdao-dictionary-search-at-point+);; global keybindings
+  "oy" 'youdao-dictionary-search-at-point+)
 
 (keybinds/set-leader-key* nil lsp-mode-map
   ;; format

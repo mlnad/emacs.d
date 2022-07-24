@@ -103,13 +103,14 @@ If prefix ARG is set, include ignored/hidden files."
 
 (use-package consult
   :defer t
+  :after (projectile vertico)
   :preface
-  (define-key!
+  (general-def
     [remap apropos]                       #'consult-apropos
     [remap bookmark-jump]                 #'consult-bookmark
     [remap evil-show-marks]               #'consult-mark
     [remap evil-show-registers]           #'consult-register
-    [remap evil-show-jumps]               #'consult-xref
+    ;; [remap evil-show-jumps]               #'consult-xref
     [remap goto-line]                     #'consult-goto-line
     [remap imenu]                         #'consult-imenu
     [remap locate]                        #'consult-locate
@@ -119,6 +120,7 @@ If prefix ARG is set, include ignored/hidden files."
     [remap switch-to-buffer]              #'consult-buffer
     [remap switch-to-buffer-other-window] #'consult-buffer-other-window
     [remap switch-to-buffer-other-frame]  #'consult-buffer-other-frame
+    [remap projectile-switch-to-buffer]   #'consult-project-buffer
     [remap yank-pop]                      #'consult-yank-pop)
   (advice-add #'multi-occur :override #'consult-multi-occur)
   :config
