@@ -15,27 +15,10 @@
   :init
   (setq lsp-keymap-prefix "C-c l")
   :commands (lsp lsp-deferred)
-  :hook ((c-mode c++-mode python-mode) . lsp-deferred)
+  :hook ((c-mode c++-mode python-mode rust-mode) . lsp-deferred)
   :config
-  (setq lsp-enable-snippet nil
-        lsp-modeline-diagnostics-enable nil
-        lsp-prefer-capf t
+  (setq lsp-modeline-diagnostics-enable nil
         lsp-keep-workspace-alive nil)
-
-  (add-hook 'lsp-completion-mode-hook
-            (defun lsp-init-company-backends-h ()
-              (when lsp-completion-mode
-                (set (make-local-variable 'company-backends)
-                     (cons lsp-company-backends
-                           (remove lsp-company-backends
-                                   (remq 'company-capf company-backends)))))))
-
-  ;; Tramp
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-                    :major-modes '(c-mode c++-mode)
-                    :remote? t
-                    :server-id 'clangd-remote))
 
   :commands (lsp-install-server))
 
@@ -81,11 +64,7 @@
   (add-hook 'prog-mode-hook #'yas-minor-mode)
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :config
-  (add-hook 'prog-mode-hook 'yas-reload-all)
-  (with-eval-after-load 'company
-    (add-to-list 'company-backends 'company-yasnippet))
-  :diminish yas-minor-mode
-  )
+  (add-hook 'prog-mode-hook 'yas-reload-all))
 
 (use-package yasnippet-snippets
   :ensure t)
@@ -104,7 +83,7 @@
   :defer t
   :config
   (setq c-basic-offset tab-width
-        c-backspace-functon #'delete-backward-char))
+        c-backspace-function #'delete-backward-char))
 
 (use-package clang-format
   :ensure t

@@ -73,7 +73,7 @@
 (use-package consult
   :ensure t
   :defer t
-  :after (projectile vertico)
+  :after (vertico)
   :bind (([remap apropos]                       . consult-apropos)
          ([remap bookmark-jump]                 . consult-bookmark)
          ([remap evil-show-marks]               . consult-mark)
