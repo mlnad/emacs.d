@@ -72,36 +72,6 @@
   :bind (:map vertico-map
               ("DEL" . vertico-directory-delete-char))
   :config
-  (cl-defun vetico/search-files (&key query path all-files (recursive t) prompt args)
-    "Conduct a file search using ripgrep.
-:query STRING
-	The initial input to search for.
-:path PATH
-	Set the base directory to search out of. Default to the current project's root.
-:recursive BOOL
-	Wheather or not to search files recursively from the base directory."
-    (declare (indent defun))
-    (unless (executable-find "rg")
-      (user-error "Couldn't find ripgrep in your PATH"))
-    (require 'consult)
-    ())
-
-  (defun vertico/search-project (&optional arg)
-    "Conduct a text search in the current project root.
-If prefix ARG is set, include ignored/hidden files."
-
-    (interactive "P")
-    (let* ((projectile-project-root nil)
-           (disabled-command-function nil)
-           (current-prefix-arg (unless (eq arg 'other) arg))
-           (default-directory
-             (if (eq arg 'other)
-                 (if-let (projects (projectile-relevant-known-projects))
-                     (completing-read "Search project: " projects nil t)
-                   (user-error "There are no known projects"))
-               default-directory)))
-      ()))
-  ;; Bind directory delete
   (add-hook 'minibuffer-setup-hook #'vertico-repeat-save))
 
 (use-package consult
@@ -136,6 +106,39 @@ If prefix ARG is set, include ignored/hidden files."
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file
    consult--source-recent-file consult--source-project-recent-file))
+
+(defun completion/search--dir (&optional dir initial)
+  "Search directory.
+
+DIR for the search directory.
+INITIAL for the initial input."
+  (require 'consult)
+  (let ()
+    (cond ((executable-find "rg")
+           (consult-ripgrep dir initial))
+          ((executable-find "grep")
+           (consult-grep dir initial))
+          (t (user-error "Couldn't find ripgrep or grep in PATH")))))
+
+(defun completion/search-project ()
+  "Search current project."
+  (interactive)
+  (completion/search--dir nil nil))
+
+(defun completion/search-project-at ()
+  "Search current project at point."
+  (interactive)
+  (completion/search--dir nil (thing-at-point 'symbol)))
+
+(defun completion/search-current-dir ()
+  "Search current directory."
+  (interactive)
+  (completion/search--dir default-directory nil))
+
+(defun completion/search-current-dir-at ()
+  "Search current directory at point."
+  (interactive)
+  (completion/search--dir default-directory (thing-at-point 'symbol)))
 
 (use-package corfu
   :ensure t

@@ -116,8 +116,11 @@
   "pp" 'projectile-switch-project
   ;; Searching
   "si" #'imenu
-  "sp" #'consult-ripgrep
+  "sp" #'completion/search-project
+  "sP" #'completion/search-project-at
   "ss" #'consult-line
+  "sd" #'completion/search-current-dir
+  "sD" #'completion/search-current-dir-at
   ;; Flycheck
   "en" 'flycheck-next-error
   "ep" 'flycheck-previous-error
