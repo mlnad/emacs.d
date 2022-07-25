@@ -107,6 +107,13 @@
    consult-bookmark consult-recent-file
    consult--source-recent-file consult--source-project-recent-file))
 
+(use-package consult-xref
+  :defer t
+  :after xref
+  :init
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref))
+
 (defun completion/search--dir (&optional dir initial)
   "Search directory.
 
