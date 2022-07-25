@@ -69,6 +69,8 @@
   (setq vertico-resize nil
         vertico-scroll-margin 0
         vertico-cycle t)
+  :bind (:map vertico-map
+              ("DEL" . vertico-directory-delete-char))
   :config
   (cl-defun vetico/search-files (&key query path all-files (recursive t) prompt args)
     "Conduct a file search using ripgrep.
@@ -100,31 +102,29 @@ If prefix ARG is set, include ignored/hidden files."
                default-directory)))
       ()))
   ;; Bind directory delete
-  (add-hook 'minibuffer-setup-hook #'vertico-repeat-save)
-  (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-char))
+  (add-hook 'minibuffer-setup-hook #'vertico-repeat-save))
 
 (use-package consult
   :ensure t
   :defer t
   :after (projectile vertico)
+  :bind (([remap apropos]                       . consult-apropos)
+         ([remap bookmark-jump]                 . consult-bookmark)
+         ([remap evil-show-marks]               . consult-mark)
+         ([remap evil-show-registers]           . consult-register)
+         ;;([remap evil-show-jumps]             . consult-xref)
+         ([remap goto-line]                     . consult-goto-line)
+         ([remap imenu]                         . consult-imenu)
+         ([remap locate]                        . consult-locate)
+         ([remap load-theme]                    . consult-theme)
+         ([remap man]                           . consult-man)
+         ([remap recentf-open-files]            . consult-recent-file)
+         ([remap switch-to-buffer]              . consult-buffer)
+         ([remap switch-to-buffer-other-window] . consult-buffer-other-window)
+         ([remap switch-to-buffer-other-frame]  . consult-buffer-other-frame)
+         ([remap projectile-switch-to-buffer]   . consult-project-buffer)
+         ([remap yank-pop]                      . consult-yank-pop))
   :preface
-  (general-def
-    [remap apropos]                       #'consult-apropos
-    [remap bookmark-jump]                 #'consult-bookmark
-    [remap evil-show-marks]               #'consult-mark
-    [remap evil-show-registers]           #'consult-register
-    ;; [remap evil-show-jumps]               #'consult-xref
-    [remap goto-line]                     #'consult-goto-line
-    [remap imenu]                         #'consult-imenu
-    [remap locate]                        #'consult-locate
-    [remap load-theme]                    #'consult-theme
-    [remap man]                           #'consult-man
-    [remap recentf-open-files]            #'consult-recent-file
-    [remap switch-to-buffer]              #'consult-buffer
-    [remap switch-to-buffer-other-window] #'consult-buffer-other-window
-    [remap switch-to-buffer-other-frame]  #'consult-buffer-other-frame
-    [remap projectile-switch-to-buffer]   #'consult-project-buffer
-    [remap yank-pop]                      #'consult-yank-pop)
   (advice-add #'multi-occur :override #'consult-multi-occur)
   :config
   (setq consult-line-numbers-widen t
