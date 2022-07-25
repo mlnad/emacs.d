@@ -102,6 +102,7 @@ If prefix ARG is set, include ignored/hidden files."
   )
 
 (use-package consult
+  :ensure t
   :defer t
   :after (projectile vertico)
   :preface
@@ -136,8 +137,8 @@ If prefix ARG is set, include ignored/hidden files."
 
 (use-package corfu
   :ensure t
-    ;; Optional customizations
-    :custom
+  ;; Optional customizations
+  :custom
     (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
     (corfu-auto t)                 ;; Enable auto completion
     (corfu-separator ?\s)          ;; Orderless field separator

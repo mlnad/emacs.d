@@ -57,8 +57,8 @@
   :commands lsp-ivy-workspace-symbol)
 
 (use-package dap-mode
-  :after (lsp-mode)
-  :ensure t)
+  :ensure t
+  :after (lsp-mode))
 
 ;;; Completion
 (use-package yasnippet

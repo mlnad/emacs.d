@@ -18,21 +18,21 @@
 
 ;;; Magit for git
 (use-package magit
+  :ensure t)
+
+(use-package forge
+  :ensure t)
+
+(use-package magit-gitflow
   :ensure t
-  :init
-  (use-package forge
-    :ensure t)
+  :hook (maigt-mode . turn-on-magit-gitflow))
 
-  (use-package magit-gitflow
-    :ensure t
-    :hook (maigt-mode . turn-on-magit-gitflow))
-
-  (use-package git-gutter
-    :ensure t
-    :custom
-    (git-gutter:update-interval 2)
-    :config
-    (global-git-gutter-mode +1)))
+(use-package git-gutter
+  :ensure t
+  :custom
+  (git-gutter:update-interval 2)
+  :config
+  (global-git-gutter-mode +1))
 
 ;;; Rime
 (use-package rime
