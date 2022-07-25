@@ -6,8 +6,6 @@
 ;;
 ;;; Commentary:
 ;;
-;;
-;;
 ;;; Code:
 (use-package projectile
   :ensure t
@@ -51,9 +49,7 @@
 
   ;; Per-project compilation buffers
   (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
-        compilation-save-buffers-predicate #'projectile-current-project-buffer-p)
-
-  :diminish projectile-mode)
+        compilation-save-buffers-predicate #'projectile-current-project-buffer-p))
 
 (use-package orderless
   :ensure t
