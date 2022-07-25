@@ -1,8 +1,11 @@
-;;; early-init.el ---
+;;; early-init.el --- early initilize Emacs -*- lexical-binding: t; -*-
 ;;
 ;; Author: Liu Miao
 ;;
+;;; Commentary:
 ;; This file is not part of GNU Emacs
+;;
+;;; Code:
 (setq gc-cons-threshold most-positive-fixnum)
 
 ;; Before Emacs 27, the init file was responsible for initializing the package
@@ -18,3 +21,6 @@
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
 
+(load (concat user-emacs-directory "lisp/configs") nil 'nomessage)
+
+;;; early-init.el ends here

@@ -4,7 +4,7 @@
 ;; License: See the LICENSE in the root directory.
 ;;
 ;;; Commentary:
-;; This file is
+;; This file is not a part of Emacs
 
 ;;; Code:
 ;; (setq debug-on-error t)
@@ -26,36 +26,23 @@
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 
-;; AutoGC
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (if (boundp 'after-focus-change-function)
-                (add-function :after after-focus-change-function
-                              (lambda ()
-                                (unless (frame-focus-state)
-                                  (garbage-collect))))
-              (add-hook 'after-focus-change-function 'garbage-collect))
-            (defun gc-minibuffer-setup-hook ()
-              (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
-
-            (defun gc-minibuffer-exit-hook ()
-              (garbage-collect)
-              (setq gc-cons-threshold better-gc-cons-threshold))
-            (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup-hook)
-            (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
-
 ;; add `lisp' to `load-path'.
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
 
 ;; load user configs.
-(require 'configs)
 (or (file-exists-p configs/cache-directory)
     (make-directory configs/cache-directory))
 (or (file-exists-p configs/userconfig-file)
     (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
                configs/userconfig-file))
 (load configs/userconfig-file)
+
+(require 'core)
+
+;; AutoGC
+(add-hook 'emacs-startup-hook
+          #'core/garbage-collect-h)
 
 ;; Config before init
 (user/config-before-init)
@@ -68,8 +55,6 @@
 (require 'cl-lib)
 ;; Language and coding
 (set-language-environment "utf-8")
-;; (set-keyboard-coding-system 'utf-8)
-;; (set-default-coding-systems 'utf-8)
 
 ;;; Packages
 (require 'package)
@@ -106,7 +91,6 @@
 (setq quelpa-checkout-melpa-p nil
       quelpa-dir configs/quelpa-dir)
 
-(require 'core-libs)
 (require 'editor)
 (require 'completion)
 
