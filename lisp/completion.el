@@ -99,7 +99,9 @@ If prefix ARG is set, include ignored/hidden files."
                    (user-error "There are no known projects"))
                default-directory)))
       ()))
-  )
+  ;; Bind directory delete
+  (add-hook 'minibuffer-setup-hook #'vertico-repeat-save)
+  (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-char))
 
 (use-package consult
   :ensure t
