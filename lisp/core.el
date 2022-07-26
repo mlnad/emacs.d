@@ -34,5 +34,16 @@
   (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
   (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
 
+(defun core/elpa-package-dir ()
+  "Generate the elpa package directory."
+  (file-name-as-directory
+   (if (not configs/elpa-subdirectory)
+       configs/elpa-pack-dir
+     (let ((subdir (format "%d%s%d"
+                           emacs-major-version
+                           version-separator
+                           emacs-minor-version)))
+       (expand-file-name subdir configs/elpa-pack-dir)))))
+
 (provide 'core)
 ;;; core-libs.el ends here

@@ -60,15 +60,7 @@
       package-archives configs/package-mirror)
 
 ;; Evaluate the correct package subdirectory of packages.
-(setq package-user-dir
-	  (file-name-as-directory
-	   (if (not elpa-subdirectory)
-	       elpa-pack-dir
-	     (let ((subdir (format "%d%s%d"
-				               emacs-major-version
-				               version-separator
-				               emacs-minor-version)))
-	       (expand-file-name subdir elpa-pack-dir)))))
+(setq package-user-dir (core/elpa-package-dir))
 
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)

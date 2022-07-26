@@ -66,11 +66,11 @@
 (defvar configs/rime-data-dir
   (expand-file-name "rime/" configs/cache-directory))
 
-(defvar elpa-pack-dir
+(defvar configs/elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
-(defvar elpa-subdirectory 'emacs-version)
+(defvar configs/elpa-subdirectory 'emacs-version)
 
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
                                  ("gnu" . "https://elpa.gnu.org/packages/")))
