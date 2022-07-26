@@ -2,7 +2,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar roam/default-capture
+(defvar org/default-roam-capture
   '("d" "default" plain "%?"
    	:if-new (file+head "${slug}.org"
                        "#+title: ${title}\n\n#+startup: indent\n")
@@ -56,15 +56,35 @@
 (use-package org-roam
   :if (and configs/enable-org-roam configs/enable-org)
   :ensure org-roam
-  :hook (after-init . org-roam-setup)
+  :hook (after-init . org-roam-db-autosync-enable)
   :custom
   (org-roam-directory configs/org-roam-dir)
   :commands (org-roam-buffer-toggle-display
              org-roam-tag-add
              org-roam-tag-delete)
   :config
-  (add-to-list 'configs/roam-templates roam/default-capture)
-  (setq org-roam-capture-templates configs/roam-templates))
+
+  (cl-defmethod org-roam-node-org-hierarchy ((node org-roam-node))
+    "Return hierarchy for NODE, constructed of its file title, OLP and direct title.
+If some elements are missing, the will be stripped out."
+    (let* ((title (org-roam-node-title node))
+          (olp (org-roam-node-olp node))
+          (level (org-roam-node-level node))
+          (filetitle (or (if (= level 0)
+                             title
+                           (org-roam-node-file-title node))))
+          (separator (propertize ":" 'face 'shadow)))
+      (cl-case level
+        (0 filetitle)
+        (1 (concat (propertize filetitle 'face '(shadow italic))
+                   separator title))
+        (t (concat (propertize filetitle 'face '(shadow italic))
+                   separator (propertize (string-join olp separator) 'face '(shadow italic))
+                   separator title)))))
+
+  (add-to-list 'configs/roam-templates org/default-roam-capture)
+  (setq org-roam-capture-templates configs/roam-templates
+        org-roam-node-display-template "${org-hierarchy}"))
 
 (use-package gnuplot
   :ensure gnuplot
