@@ -169,5 +169,11 @@ INITIAL for the initial input."
     :init
     (global-corfu-mode))
 
+(use-package marginalia
+  :ensure t
+  :hook (after-init . marginalia-mode)
+  :init
+  (marginalia-mode))
+
 (provide 'completion)
 ;;; completion.el ends here
