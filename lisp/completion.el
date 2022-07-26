@@ -12,17 +12,7 @@
   :commands (projectile-project-root
              projectile-project-name
              projectile-project-p
-             projectile-compile-project
-             projectile-dired
-             projectile-find-dir
-             projectile-find-file
-             projectile-invalidate-cache
-             projectile-kill-buffers
-             projectile-multi-occur
-             projectile-recentf
-             projectile-switch-project
-             projectile-switch-to-buffer
-             projectile-vc)
+             projectile-relevant-known-projects)
   :init
   (progn
     (setq projectile-ignored-projects '("~/" "/tmp")
