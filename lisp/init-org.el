@@ -30,14 +30,6 @@
         org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-imenu-depth 8)
-  (setq org-src-block-faces
-        `(("emacs-lisp" ,configs/org-src-block-face)
-          ("c" ,configs/org-src-block-face)
-          ("c++" ,configs/org-src-block-face)
-          ("shell" ,configs/org-src-block-face)
-          ("rust" ,configs/org-src-block-face)
-          ("python" ,configs/org-src-block-face)
-          ("haskell" ,configs/org-src-block-face)))
 
   (with-eval-after-load 'org-agenda
     (add-to-list 'org-modules 'org-habit)))
