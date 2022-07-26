@@ -60,14 +60,14 @@
 
 (use-package vertico
   :ensure t
+  :bind (:map vertico-map
+              ("DEL" . vertico-directory-delete-char))
   :init
   (vertico-mode)
   (setq vertico-resize nil
-        vertico-scroll-margin 0
         vertico-cycle t)
-  :bind (:map vertico-map
-              ("DEL" . vertico-directory-delete-char))
   :config
+  (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy)
   (add-hook 'minibuffer-setup-hook #'vertico-repeat-save))
 
 (use-package consult
