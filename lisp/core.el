@@ -18,6 +18,13 @@
   (interactive)
   (find-file configs/userconfig-file))
 
+(defun gc-minibuffer-setup ()
+  (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
+
+(defun gc-minibuffer-exit ()
+  (garbage-collect)
+  (setq gc-cons-threshold better-gc-cons-threshold))
+
 (defun core/garbage-collect-h ()
   (if (boundp 'after-focus-change-function)
       (add-function :after after-focus-change-function
@@ -25,12 +32,7 @@
                       (unless (frame-focus-state)
                         (garbage-collect))))
     (add-hook 'after-focus-change-function 'garbage-collect))
-  (defun gc-minibuffer-setup ()
-    (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
-  
-  (defun gc-minibuffer-exit ()
-    (garbage-collect)
-    (setq gc-cons-threshold better-gc-cons-threshold))
+ 
   (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
   (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
 
