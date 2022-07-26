@@ -17,18 +17,15 @@
             (setq gc-cons-threshold better-gc-cons-threshold)
             (setq gc-cons-percentage 0.6)))
 
-;; Use a hook so the messages doesn't get clobbered by other messages.
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (message "Emacs ready in %s with %d garbage collections."
-                     (format "%.2f seconds"
-                             (float-time
-                              (time-subtract after-init-time before-init-time)))
-                     gcs-done)))
-
 ;; add `lisp' to `load-path'.
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
+
+(when-let (realhome
+           (and *sys/win32*
+                (getenv "USERPROFILE")))
+  (setenv "HOME" realhome)
+  (setq abbreviated-home-dir nil))
 
 ;; load user configs.
 (or (file-exists-p configs/cache-directory)
