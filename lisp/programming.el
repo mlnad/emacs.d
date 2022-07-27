@@ -104,6 +104,22 @@
   :mode "\\.nasm\\'")
 
 ;;; Emacs Lisp
+(use-package elisp-mode
+  :mode ("\\.Cask\\'" . emacs-lisp-mode)
+  :config
+  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
+
+(use-package flycheck-package
+  :ensure t
+  :after flycheck
+  :config
+  (flycheck-package-setup))
+
+(use-package buttercup
+  :ensure t
+  :defer t
+  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
+
 (use-package ielm
   :defer t)
 
