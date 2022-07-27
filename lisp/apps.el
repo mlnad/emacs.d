@@ -37,6 +37,11 @@
 ;;; Rime
 (use-package rime
   :ensure t
+  :if (not *sys/win32*)
+  :commands (rime-lib-get-input
+             rime-lib-clear-composition
+             rime-lib-process-key
+             rime-lib-get-context)
   :config
   (setq rime-show-candidate 'posframe
         default-input-method "rime"
