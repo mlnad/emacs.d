@@ -8,15 +8,15 @@
  ;; configs/save-place-file
 
  ;; configs/notes-dir
- configs/package-mirror emacs-china-package-mirror
+ configs/package-mirror emacs-tuna-package-mirror
 
  ;; configs/lsp-client
 
  ;; font
- ;; configs/default-font '("Source Code Pro"
- ;;                     :size 15
- ;;                     :weight normal
- ;;                     :width normal)
+ configs/default-font '("Source Code Pro"
+                        :size 15
+                        :weight normal
+                        :width normal)
  )
 
 ;;; Custom configures

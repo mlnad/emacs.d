@@ -79,6 +79,10 @@
                                      ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
                                      ("nongnu"   . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
 
+(defvar emacs-tuna-package-mirror '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                                     ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+                                     ("nongnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
+
 (defvar configs/package-mirror default-package-mirror)
 
 (defvar configs/enable-org nil)
