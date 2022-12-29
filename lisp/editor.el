@@ -104,6 +104,7 @@
 (defun editor/init-theme ()
   "Initialize Emacs theme."
   (when (and configs/theme (not (custom-theme-enabled-p configs/theme)))
+    (disable-theme custom-enabled-themes)
     (load-theme configs/theme t)))
 
 ;;; Build-in packages
@@ -129,12 +130,13 @@
 (use-package recentf
   :commands (recentf-save-list)
   :init
-  (add-hook 'find-file-hook (lambda () (unless recentf-mode
-					                     (recentf-mode)
-					                     (recentf-track-opened-file))))
+  (add-hook 'find-file-hook (lambda ()
+                              (unless recentf-mode
+                                (recentf-mode)
+                                (recentf-track-opened-file))))
   (setq recentf-save-file configs/recentf-save-file
-	    recentf-max-saved-items 1000
-	    recentf-auto-cleanup 'never)
+        recentf-max-saved-items 1000
+        recentf-auto-cleanup 'never)
 
   (recentf-mode 1))
 
@@ -179,8 +181,7 @@
   :defer t)
 
 (when (>= emacs-major-version 27)
-  (use-package display-fill-column-indicator
-    :ensure nil))
+  (use-package display-fill-column-indicator))
 
 (use-package compile
   :config
@@ -257,15 +258,10 @@
 
 (use-package all-the-icons
   :ensure t
-  :commands (all-the-icons-oction
-             all-the-icons-faicon
-             all-the-icons-fileicon
-             all-the-icons-wicon
-             all-the-icons-material
-             all-the-icons-alltheicon)
+  :if (display-graphic-p)
   :preface
   (add-hook 'after-setting-font-hook
-            (defun editor/init-all-the-icons-fonts-h ()
+            (lambda ()
               (when (fboundp 'set-fontset-font)
                 (dolist (font (list "Weather Icons"
                                     "github-octicons"
@@ -273,7 +269,7 @@
                                     "all-the-icons"
                                     "file-icons"
                                     "Material Icons"))
-                  (set-fontset-font t 'unicode font nil 'append))))))
+                  (set-fontset-font t 'unicode (font-spec :family font) nil 'append))))))
 
 (let ((hook (if (daemonp)
                 'server-after-make-frame-hook

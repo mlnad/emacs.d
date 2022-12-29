@@ -27,13 +27,14 @@
   (setenv "HOME" realhome)
   (setq abbreviated-home-dir nil))
 
-;; load user configs.
-(or (file-exists-p configs/cache-directory)
+;; make cache directory
+(unless (file-exists-p configs/cache-directory)
     (make-directory configs/cache-directory))
-(or (file-exists-p configs/userconfig-file)
+;; load user configs.
+(unless (file-exists-p configs/userconfig-file)
     (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
                configs/userconfig-file))
-(load configs/userconfig-file)
+(load-file configs/userconfig-file)
 
 (require 'core)
 
@@ -55,36 +56,25 @@
 
 ;;; Packages
 (require 'package)
-(setq package--init-file-ensured t
-      package-enable-at-startup nil
-      package-archives configs/package-mirror)
-
-;; Evaluate the correct package subdirectory of packages.
-(setq package-user-dir (core/elpa-package-dir))
+(setq package-enable-at-startup nil
+      package-archives configs/package-mirror
+      package-user-dir (core/elpa-package-dir))
 
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)
   (package-initialize))
 
 ;; Install use-package from melpa
-(unless (package-installed-p 'use-package)
-  (progn
+(when (< emacs-major-version 29)
+  (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package)))
-
-;; Install quelpa from melpa
-(unless (package-installed-p 'quelpa)
-  (progn
-    (package-refresh-contents)
-    (package-install 'quelpa)))
-(setq quelpa-checkout-melpa-p nil
-      quelpa-dir configs/quelpa-dir)
 
 (require 'editor)
 (require 'completion)
 
-(require 'programming)
-(require 'init-org)
+(require 'program)
+(require 'writting)
 (require 'apps)
 (require 'keybinds)
 
