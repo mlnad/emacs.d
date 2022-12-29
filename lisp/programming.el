@@ -5,45 +5,25 @@
 ;;
 ;;; Code:
 ;;; Language server protocol
-(defvar lsp-company-backends
-  '(:separate company-capf company-yasnippet))
 
-(defvar python/pyvenv-modes nil)
+;;; Project
+(use-package project)
 
-(use-package lsp-mode
+;;; lsp
+(use-package eglot
+  :ensure t
+  :hook (prog-mode . eglot-ensure)
+  :init
+  (setq eglot-connect-timeout 10
+        eglot-autoshutdown t
+        eglot-send-changes-idle-time 0.5))
+
+(use-package consult-eglot
   :ensure t
   :init
-  (setq lsp-keymap-prefix "C-c l")
-  :commands (lsp lsp-deferred)
-  :hook ((c-mode c++-mode python-mode rust-mode) . lsp-deferred)
-  :config
-  (setq lsp-modeline-diagnostics-enable nil
-        lsp-keep-workspace-alive nil)
+  (define-key eglot-mode-map [remap xref-find-apropos] #'consult-eglot-symbols))
 
-  :commands (lsp-install-server))
-
-(use-package lsp-ui
-  :ensure t
-  :hook (lsp-mode . lsp-ui-mode)
-  :config
-  (setq lsp-ui-doc-enable nil
-        lsp-ui-peek-enable nil
-        lsp-ui-doc-show-with-mouse nil
-        lsp-ui-doc-position 'at-point
-        lsp-ui-sideline-ignore-duplicate t
-        lsp-ui-sideline-show-hover nil
-        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)
-  :commands lsp-ui-mode)
-
-(use-package lsp-ivy
-  :ensure t
-  :commands lsp-ivy-workspace-symbol)
-
-(use-package dap-mode
-  :ensure t
-  :after (lsp-mode))
-
-;;; Completion
+;;; Snippet
 (use-package yasnippet
   :ensure t
   :commands (yas-minor-mode-on
@@ -65,17 +45,6 @@
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all))
-
-(use-package yasnippet-snippets
-  :ensure t)
-
-;;; Flycheck
-(use-package flycheck
-  :ensure t
-  :defer t
-  :hook (prog-mode . flycheck-mode)
-  :init
-  :config)
 
 ;;; C/C++
 (use-package cc-mode
@@ -109,26 +78,14 @@
   :config
   (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
 
-(use-package flycheck-package
-  :ensure t
-  :after flycheck
-  :config
-  (flycheck-package-setup))
-
 (use-package buttercup
   :ensure t
   :defer t
   :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
 
-(use-package ielm
-  :defer t)
+(use-package debug)
 
-(use-package debug
-  :defer t)
-
-(use-package edebug
-  :ensure nil
-  :defer t)
+(use-package edebug)
 
 (use-package emr
   :ensure t)
@@ -158,24 +115,11 @@
               (t (message ".venv is not a directory")))))))
 
 (use-package python
-  :after flycheck
   :mode (("\\.py\\'" . python-mode))
   :custom
   (python-indent-offset 4)
-  (flycheck-python-pycompile-executable "python3")
   :config
   (setq python-shell-interpreter "python3"))
-
-(use-package lsp-pyright
-  :ensure t
-  :init (when (and *sys/linux* (executable-find "python3")
-                   (setq lsp-pyright-python-executable-cmd "python3")))
-  
-  :hook (python-mode . (lambda () (require 'lsp-pyright))))
-
-(use-package yapfify
-  :ensure t
-  :hook (python-mode . yapf-mode))
 
 (use-package pyvenv
   :ensure t
@@ -198,8 +142,6 @@
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
 
-  (remove-hook 'rustic-mode-hook #'flycheck-mode)
-  (remove-hook 'rustic-mode-hook #'flycheck-mode-off)
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.

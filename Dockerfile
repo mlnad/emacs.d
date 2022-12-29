@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:latest AS emacs.d
     MAINTAINER Liu <liumiaogemini@foxmail.com>
 
 RUN sed -i 's/dl-cnd.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && apk update \
@@ -8,6 +8,6 @@ RUN sed -i 's/dl-cnd.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositorie
 RUN git clone -b master --depth 1 git://git.sv.gnu.org/emacs.git ~/emacs
 RUN cd ~/emacs && ./autogen.sh && ./configure --without-mailutils && bear -- make && make install
 
-ADD . $HOME/.emacs.d
-
 EXPOSE 22
+
+ADD ./ $HOME/.emacs.d

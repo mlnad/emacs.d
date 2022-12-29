@@ -7,40 +7,6 @@
 ;;; Commentary:
 ;;
 ;;; Code:
-(use-package projectile
-  :ensure t
-  :commands (projectile-project-root
-             projectile-project-name
-             projectile-project-p
-             projectile-relevant-known-projects)
-  :init
-  (progn
-    (setq projectile-ignored-projects '("~/" "/tmp")
-          projectile-globally-ignored-files '(".DS_Store" "TAGS")
-          projectile-kill-buffers-filter 'kill-all)
-    (setq projectile-mode-line-function
-          (lambda ()
-            (if (file-remote-p default-directory) ""
-              (projectile-default-mode-line))))
-
-    (setq projectile-sort-order 'recentf
-          projectile-cache-file configs/projectile-cache-file
-          projectile-known-projects-file configs/projectile-known-projects-file))
-  :config
-  (projectile-mode +1)
-
-  (setq projectile-project-root-files-bottom-up
-        (append '(".projectile"         ; projctiles's root marker
-                  ".project"            ; doom project marker
-                  ".git"))              ; Git
-        ;; This will be filled by other pakages
-        projectile-project-root-files '()
-        projectile-project-root-files-top-down-recurring '("Makefile" "CMakeLists.txt"))
-
-  ;; Per-project compilation buffers
-  (setq compilation-buffer-name-function #'projectile-compilation-buffer-name
-        compilation-save-buffers-predicate #'projectile-current-project-buffer-p))
-
 (use-package orderless
   :ensure t
   :init
