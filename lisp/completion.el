@@ -5,8 +5,24 @@
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
+;;; vertico + orderless + consult
+;;; corfu for completion
 ;;
 ;;; Code:
+(defvar completion/search-map (make-sparse-keymap)
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "i" 'imenu
+                         "s" 'consult-line)
+    map)
+  "Searching in Emacs")
+
+(defvar ripgrep-p
+  (executable-find "rg"))
+
+(defvar grep-p
+  (executable-find "grep"))
+
 (use-package orderless
   :ensure t
   :init
@@ -73,9 +89,9 @@ DIR for the search directory.
 INITIAL for the initial input."
   (require 'consult)
   (let ()
-    (cond ((executable-find "rg")
+    (cond (ripgrep-p
            (consult-ripgrep dir initial))
-          ((executable-find "grep")
+          (grep-p
            (consult-grep dir initial))
           (t (user-error "Couldn't find ripgrep or grep in PATH")))))
 
@@ -83,21 +99,25 @@ INITIAL for the initial input."
   "Search current project."
   (interactive)
   (completion/search--dir nil nil))
+(define-key completion/search-map (kbd "p") #'completion/search-project)
 
 (defun completion/search-project-at ()
   "Search current project at point."
   (interactive)
   (completion/search--dir nil (thing-at-point 'symbol)))
+(define-key completion/search-map (kbd "P") #'completion/search-project-at)
 
 (defun completion/search-current-dir ()
   "Search current directory."
   (interactive)
   (completion/search--dir default-directory nil))
+(define-key completion/search-map (kbd "d") #'completion/search-current-dir)
 
 (defun completion/search-current-dir-at ()
   "Search current directory at point."
   (interactive)
   (completion/search--dir default-directory (thing-at-point 'symbol)))
+(define-key completion/search-map (kbd "D") #'completion/search-current-dir-at)
 
 (use-package corfu
   :ensure t

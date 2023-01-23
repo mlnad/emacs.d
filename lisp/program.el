@@ -9,6 +9,24 @@
 ;;; Project
 (use-package project)
 
+;;; Emacs Lisp
+(use-package elisp-mode
+  :mode ("\\.Cask\\'" . emacs-lisp-mode)
+  :config
+  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
+
+(use-package buttercup
+  :ensure t
+  :defer t
+  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
+
+(use-package debug)
+
+(use-package edebug)
+
+(use-package emr
+  :ensure t)
+
 ;;; lsp
 (use-package eglot
   :ensure t
@@ -67,29 +85,6 @@
 (use-package cmake-mode
   :ensure t)
 
-;;; Assembly
-(use-package nasm-mode
-  :ensure t
-  :mode "\\.nasm\\'")
-
-;;; Emacs Lisp
-(use-package elisp-mode
-  :mode ("\\.Cask\\'" . emacs-lisp-mode)
-  :config
-  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
-
-(use-package buttercup
-  :ensure t
-  :defer t
-  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
-
-(use-package debug)
-
-(use-package edebug)
-
-(use-package emr
-  :ensure t)
-
 ;;; Scheme
 (use-package geiser
   :ensure t
@@ -100,37 +95,12 @@
   :ensure t
   :mode "\\.hs\\'")
 
-
 ;;; Python
-(defun python/pyvenv-set-local-virtualenv ()
-  "Set pyvenv virtualenv from \".venv\" by looking in parent directories."
-  (interactive)
-  (let ((root-path (locate-dominating-file default-directory ".venv")))
-    (when root-path
-      (let ((file-path (expand-file-name ".venv" root-path)))
-        (cond ((file-directory-p file-path)
-               (pyvenv-activate file-path)
-               ;; (setq pyvenv-activate file-path)
-               (message "Activated local virtualenv"))
-              (t (message ".venv is not a directory")))))))
-
 (use-package python
   :mode (("\\.py\\'" . python-mode))
   :custom
   (python-indent-offset 4)
-  :config
-  (setq python-shell-interpreter "python3"))
-
-(use-package pyvenv
-  :ensure t
-  :init
-  (add-hook 'python-mode-hook #'pyvenv-tracking-mode)
-  (add-to-list 'python/pyvenv-modes 'python-mode)
-  ;; Set for auto active virtual env
-  (dolist (m python/pyvenv-modes)
-    (add-hook (intern (format "%s-hook" m))
-              'python/pyvenv-set-local-virtualenv())))
-
+  :config)
 
 ;;; Rust
 (use-package rustic

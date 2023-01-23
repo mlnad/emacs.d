@@ -1,10 +1,8 @@
 ;;; keybindings.el --- other keybindings for Emacs.
 ;;; Commentary:
+;;; evil + leader key + keymap + whichkey
 
 ;;; Code:
-(defvar keybinds/leader-map (make-sparse-keymap)
-  "Base keymap for all Emacs leader key commands.")
-
 (defvar keybinds/leader-key "SPC"
   "The leader prefix key.")
 
@@ -58,6 +56,13 @@
   (setq evil-collection-setup-minibuffer t)
   (evil-collection-init))
 
+(defun keybinds/define-key (keymap key op &rest key-ops)
+  "Define KEY-OPs at KEYMAP."
+  (while key
+    (define-key keymap (kbd key) op)
+    (setq key (pop key-ops)
+          op  (pop key-ops))))
+
 (defmacro keybinds/set-leader-key (states keymap key op)
   "Bind KEY to OP at STATES and KEYMAP."
   `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
@@ -70,175 +75,72 @@
           op (pop key-ops))))
 (put 'keybinds/set-leader-key* 'lisp-indent-function 'defun)
 
-(defmacro keybinds/set-global-leader-key (key op)
-  "Bind KEY to OP globally for all evil states."
-  `(keybinds/set-leader-key nil 'global ,key ,op))
+(defvar keybinds/window-manage-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         ;; Jump
+                         "h" 'evil-window-left
+                         "l" 'evil-window-right
+                         "j" 'evil-window-down
+                         "k" 'evil-window-up
+                         ;; Split
+                         "v" 'evil-window-vsplit
+                         "-" 'evil-window-split
+                         "d" 'evil-window-delete
+                         "m" 'delete-other-windows
+                         "0" 'delete-window)
+    map)
+  "Emacs window management commands.")
 
-(defun keybinds/set-global-leader-key* (key op &rest key-ops)
-  "Bind KEY to OP."
-  (while key
-    (evil-define-key nil 'global (kbd (concat "<leader>" key)) op)
-    (setq key (pop key-ops)
-          op (pop key-ops))))
-(put 'keybinds/set-global-leader-key* 'lisp-indent-function 'defun)
+(defvar keybinds/file-manage-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "f" 'find-file
+                         "s" 'save-buffer
+                         "S" 'write-file
+                         "r" 'recentf-open-files)
+    map)
+  "Emacs file management commands.")
+
+(defvar keybinds/buffer-manage-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "b" 'consult-buffer
+                         "d" 'kill-current-buffer
+                         "]" 'next-buffer
+                         "[" 'previous-buffer
+                         "x" 'kill-buffer-and-window)
+    map)
+  "Emacs buffer management commands.")
+
+(defvar keybinds/git-and-goto-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "g" 'magit-status
+                         "l" 'goto-line)
+    map)
+  "Version control and goto line")
+
+(defvar keybinds/notes-manage-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "a" 'org-agenda
+                         "c" 'org-capture
+                         "r" 'org-roam-node-find
+                         "n" 'org-roam-capture)))
 
 ;;; Define key
-(keybinds/set-global-leader-key*
- ;; windows jump
-  "wh" 'evil-window-left
-  "wl" 'evil-window-right
-  "wj" 'evil-window-down
-  "wk" 'evil-window-up
-  "wc" 'writeroom-mode
-  ;; window split
-  "wv" 'evil-window-vsplit
-  "w-" 'evil-window-split
-  "wd" 'evil-window-delete
-  "w1" 'delete-other-windows
-  "w0" 'delete-window
-  ;;
+(keybinds/set-leader-key* nil 'global
   "<SPC>" 'execute-extended-command
-  ;; Files
-  "ff" 'find-file
-  "fs" 'save-buffer
-  "fS" 'evil-write-all
-  "fr" 'recentf-open-files
-  ;; Buffers
-  "bb" 'ivy-switch-buffer
-  "bd" 'kill-this-buffer
-  "bn" 'next-buffer
-  "bp" 'previous-buffer
-  "bx" 'kill-buffer-and-window
-  ;; Projects
-  "pk" 'projectile-kill-buffers
-  "pf" 'projectile-find-file
-  "pb" 'projectile-switch-to-buffer
-  "pp" 'projectile-switch-project
+  "w" keybinds/window-manage-map
+  "f" keybinds/file-manage-map
+  "b" keybinds/buffer-manage-map
+  "p" project-prefix-map
   ;; Searching
-  "si" #'imenu
-  "sp" #'completion/search-project
-  "sP" #'completion/search-project-at
-  "ss" #'consult-line
-  "sd" #'completion/search-current-dir
-  "sD" #'completion/search-current-dir-at
-  ;; Flycheck
-  "en" 'flycheck-next-error
-  "ep" 'flycheck-previous-error
-  "eb" 'flycheck-buffer
-  "ec" 'flycheck-clear
-  "eh" 'flycheck-describe-checker
-  "es" 'flycheck-select-checker
-  "ex" 'flycheck-explain-error-at-point
-  ;; Magit
-  "gg" 'magit-status
-  "gd" 'magit-diff-range
-  ;; Aweshell
-  "'" 'aweshell-dedicated-toggle
-  "ts" 'aweshell-toggle
-  ;; Notes
-  "nrf" 'org-roam-node-find
-  ;; Operations
-  "oy" 'youdao-dictionary-search-at-point+)
-
-(keybinds/set-leader-key* nil lsp-mode-map
-  ;; format
-  "=b" #'lsp-format-buffer
-  "=r" #'lsp-format-region
-  "=o" #'lsp-organize-imports
-  ;; code
-  "cr" #'lsp-rename)
-
-(when configs/enable-org
-  (keybinds/set-leader-key* 'normal org-mode-map
-    ;; basic
-    "RET" 'org-open-at-point
-    "oc" 'org-capture
-    "Cc" 'org-clock-cancel
-    "Cd" 'org-clock-display
-    "Ci" 'org-clock-in
-
-    "dd" 'org-deadline
-    "ds" 'org-schedule
-    "dt" 'org-time-stamp
-    "dT" 'org-time-stamp-inactive
-    "ee" 'org-export-dispatch
-
-    ;; roam
-    "mia" 'org-id-get-create
-
-    ;; Subtree
-    "msa" 'org-toggle-archive-tag
-    "msA" 'org-archive-subtree-default
-    "msd" 'org-cut-subtree
-    "msj" 'org-move-subtree-down
-    "msk" 'org-move-subtree-up
-    "msn" 'org-narrow-to-subtree
-    "msw" 'widen
-    "msr" 'org-refile
-    "mss" 'org-sparse-tree
-    
-    ;; Table
-    "mta" 'org-table-align
-    "mtb" 'org-table-blank-field
-    "mtc" 'org-table-convert
-    "mtdc" 'org-table-delete-column
-    "mtdr" 'org-table-kill-row
-    "mte" 'org-table-eval-formula
-    "mtE" 'org-table-export
-    "mtf" 'org-table-field-info
-    "mth" 'org-table-previous-field
-    "mtH" 'org-table-move-column-left
-    "mtic" 'org-table-insert-column
-    "mtih" 'org-table-insert-hline
-    "mtiH" 'org-table-hline-and-move
-    "mtir" 'org-table-insert-row
-    "mtI" 'org-table-import
-    "mtj" 'org-table-next-row
-    "mtJ" 'org-table-move-row-down
-    "mtK" 'org-table-move-row-up
-    "mtl" 'org-table-next-field
-    "mtL" 'org-table-move-column-right
-    "mtn" 'org-table-create
-    "mtN" 'org-table-create-with-table.el
-    "mtr" 'org-table-recalculate
-    "mtR" 'org-table-recalculate-buffer-tables
-    "mts" 'org-table-sort-lines
-    "mttf" 'org-table-toggle-formula-debugger
-    "mtto" 'org-table-toggle-coordinate-overlays
-    "tmw" 'org-table-wrap-region
-
-    ;; Source blocks
-    "mbp"     'org-babel-previous-src-block
-    "mbn"     'org-babel-next-src-block
-    "mbe"     'org-babel-execute-maybe
-    "mbo"     'org-babel-open-src-block-result
-    "mbv"     'org-babel-expand-src-block
-    "mbu"     'org-babel-goto-src-block-head
-    "mbg"     'org-babel-goto-named-src-block
-    "mbr"     'org-babel-goto-named-result
-    "mbb"     'org-babel-execute-buffer
-    "mbs"     'org-babel-execute-subtree
-    "mbd"     'org-babel-demarcate-block
-    "mbt"     'org-babel-tangle
-    "mbf"     'org-babel-tangle-file
-    "mbc"     'org-babel-check-src-block
-    "mbj"     'org-babel-insert-header-arg
-    "mbl"     'org-babel-load-in-session
-    "mbi"     'org-babel-lob-ingest
-    "mbI"     'org-babel-view-src-block-info
-    "mbz"     'org-babel-switch-to-session
-    "mbZ"     'org-babel-switch-to-session-with-code
-    "mba"     'org-babel-sha1-hash
-    "mbx"     'org-babel-do-key-sequence-in-edit-buffer
-    ))
-
-(when (and configs/enable-org-roam configs/enable-org)
-  (keybinds/set-leader-key* nil org-mode-map
-    "mrg" 'org-roam-graph
-    "mri" 'org-roam-node-insert
-    "mrf" 'org-roam-node-find
-    "mrta" 'org-roam-tag-add
-    "mrtd" 'org-roam-tag-remove))
+  "s" completion/search-map
+  "e" flymake-mode-map
+  "g" keybinds/git-and-goto-map
+  "n" keybinds/notes-manage-map)
 
 (provide 'keybinds)
 ;;; keybindings.el ends here
