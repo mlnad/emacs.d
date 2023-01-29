@@ -30,7 +30,6 @@
 ;;; lsp
 (use-package eglot
   :ensure t
-  :hook (prog-mode . eglot-ensure)
   :init
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t
@@ -38,8 +37,7 @@
 
 (use-package consult-eglot
   :ensure t
-  :init
-  (define-key eglot-mode-map [remap xref-find-apropos] #'consult-eglot-symbols))
+  :bind (([remap xref-find-apropos] . consult-eglot-symbols)))
 
 ;;; Snippet
 (use-package yasnippet
@@ -118,5 +116,5 @@
   (setq rustic-lsp-client 'lsp-mode))
 
 
-(provide 'programming)
+(provide 'program)
 ;;; programming.el ends here

@@ -3,20 +3,25 @@
 ;;; evil + leader key + keymap + whichkey
 
 ;;; Code:
-(defvar keybinds/leader-key "SPC"
+(defvar keybinds/leader-key "<SPC>"
   "The leader prefix key.")
 
-(defvar keybinds/localleader-key "SPC m"
+(defvar keybinds/localleader-key "M-m"
   "The localleader prefix key.")
 
 ;;; Whichkey
 (use-package which-key
   :ensure t
   :hook (after-init . which-key-mode)
+  :init
+  (setq which-key-sort-order #'which-key-key-order-alpha
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 5)
   :config
-  (setq which-key-show-early-on-C-h t)
-;;  (which-key-show-major-mode)
-  :diminish which-key-mode)
+  (which-key-setup-side-window-bottom)
+  (setq which-key-show-early-on-C-h t))
 
 ;;; Keybinding
 (use-package evil
@@ -27,27 +32,14 @@
   :config
   (evil-mode 1)
   (evil-set-undo-system 'undo-tree)
-  (evil-set-leader '(normal motion visual) (kbd "SPC"))
-  (evil-set-leader '(insert replace emacs) (kbd "M-m"))
-  (evil-set-initial-state 'ivy-occur-grep-mode 'normal))
+  (evil-set-leader '(normal motion visual) (kbd keybinds/leader-key))
+  (evil-set-leader '(insert replace emacs) (kbd keybinds/localleader-key)))
 
 (use-package evil-anzu
     :ensure t
     :defer t
     :config
     (global-anzu-mode +1))
-
-(use-package evil-org
-  :if configs/enable-org
-  :ensure evil-org
-  :defer t
-  :hook (org-mode . evil-org-mode)
-  :config
-  (setq evil-org-use-additional-insert t
-        evil-org-key-theme `(textobjects
-                             navigation
-                             additional))
-  :diminish evil-org-mode)
 
 (use-package evil-collection
   :after evil
@@ -56,24 +48,18 @@
   (setq evil-collection-setup-minibuffer t)
   (evil-collection-init))
 
-(defun keybinds/define-key (keymap key op &rest key-ops)
+(defun keybinds/define-key (keymap &rest binds)
   "Define KEY-OPs at KEYMAP."
-  (while key
-    (define-key keymap (kbd key) op)
-    (setq key (pop key-ops)
-          op  (pop key-ops))))
+  (while (length> binds 1)
+    (define-key keymap (kbd (pop binds)) (pop binds))))
 
-(defmacro keybinds/set-leader-key (states keymap key op)
-  "Bind KEY to OP at STATES and KEYMAP."
-  `(evil-define-key ,states ,keymap (kbd ,(concat "<leader>" key)) ,op))
-
-(defun keybinds/set-leader-key* (states keymap key op &rest key-ops)
-  "Bind KEY-OPS lists at states and KEYMAP."
-  (while key
-    (evil-define-key states keymap (kbd (concat "<leader>" key)) op)
-    (setq key (pop key-ops)
-          op (pop key-ops))))
-(put 'keybinds/set-leader-key* 'lisp-indent-function 'defun)
+(defmacro keybinds/set-leader (states keymap &rest binds)
+  `(evil-define-key ,states ,keymap
+     ,@(let ((binds-list))
+         (while (length> binds 1)
+           (add-to-list 'binds-list `(kbd ,(concat "<leader>" (pop binds))) t)
+           (add-to-list 'binds-list (pop binds) t))
+         binds-list)))
 
 (defvar keybinds/window-manage-map
   (let ((map (make-sparse-keymap)))
@@ -127,20 +113,20 @@
                          "a" 'org-agenda
                          "c" 'org-capture
                          "r" 'org-roam-node-find
-                         "n" 'org-roam-capture)))
+                         "n" 'org-roam-capture)
+    map))
 
 ;;; Define key
-(keybinds/set-leader-key* nil 'global
-  "<SPC>" 'execute-extended-command
-  "w" keybinds/window-manage-map
-  "f" keybinds/file-manage-map
-  "b" keybinds/buffer-manage-map
-  "p" project-prefix-map
-  ;; Searching
-  "s" completion/search-map
-  "e" flymake-mode-map
-  "g" keybinds/git-and-goto-map
-  "n" keybinds/notes-manage-map)
+(keybinds/set-leader nil 'global
+                     "<SPC>" '("Exec" . execute-extended-command)
+                     "w" (cons "Window" keybinds/window-manage-map)
+                     "f" (cons "File" keybinds/file-manage-map)
+                     "b" (cons "Buffer" keybinds/buffer-manage-map)
+                     "p" (cons "Projects" project-prefix-map)
+                     ;; Searching
+                     "s" (cons "Searching" completion/search-map)
+                     "g" (cons "Git/Goto" keybinds/git-and-goto-map)
+                     "n" (cons "Notes" keybinds/notes-manage-map))
 
 (provide 'keybinds)
 ;;; keybindings.el ends here

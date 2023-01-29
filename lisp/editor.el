@@ -303,11 +303,6 @@
           writeroom-set-vertical-scroll-bars
           writeroom-set-bottom-divider-width)))
 
-;;; General - for keybindings
-(use-package general
-  :ensure t
-  :init)
-
 (use-package restart-emacs
   :ensure t)
 

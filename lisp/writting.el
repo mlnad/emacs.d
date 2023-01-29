@@ -88,5 +88,5 @@ If some elements are missing, the will be stripped out."
   (add-hook 'org-mode-hook #'valign-mode)
   :diminish valign-mode)
 
-(provide 'init-org)
+(provide 'writting)
 ;;; init-org.el ends here

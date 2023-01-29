@@ -9,11 +9,10 @@
 ;;; corfu for completion
 ;;
 ;;; Code:
-(defvar completion/search-map (make-sparse-keymap)
+(defvar completion/search-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
-                         "i" 'imenu
-                         "s" 'consult-line)
+    (define-key map "i" 'imenu)
+    (define-key map "s" 'consult-line)
     map)
   "Searching in Emacs")
 
