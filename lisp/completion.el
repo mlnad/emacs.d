@@ -9,13 +9,6 @@
 ;;; corfu for completion
 ;;
 ;;; Code:
-(defvar completion/search-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "i" 'imenu)
-    (define-key map "s" 'consult-line)
-    map)
-  "Searching in Emacs")
-
 (defvar ripgrep-p
   (executable-find "rg"))
 
@@ -49,7 +42,6 @@
          ([remap bookmark-jump]                 . consult-bookmark)
          ([remap evil-show-marks]               . consult-mark)
          ([remap evil-show-registers]           . consult-register)
-         ;;([remap evil-show-jumps]             . consult-xref)
          ([remap goto-line]                     . consult-goto-line)
          ([remap imenu]                         . consult-imenu)
          ([remap locate]                        . consult-locate)
@@ -81,42 +73,37 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref))
 
-(defun completion/search--dir (&optional dir initial)
+(defun completion/search--dir (dir &optional initial)
   "Search directory.
 
 DIR for the search directory.
 INITIAL for the initial input."
   (require 'consult)
-  (let ()
-    (cond (ripgrep-p
-           (consult-ripgrep dir initial))
-          (grep-p
-           (consult-grep dir initial))
-          (t (user-error "Couldn't find ripgrep or grep in PATH")))))
+  (cond (ripgrep-p
+         (consult-ripgrep dir initial))
+        (grep-p
+         (consult-grep dir initial))
+        (t (user-error "Couldn't find ripgrep or grep in PATH"))))
 
-(defun completion/search-project ()
-  "Search current project."
-  (interactive)
-  (completion/search--dir nil nil))
-(define-key completion/search-map (kbd "p") #'completion/search-project)
+(defun completion/search-project (&optional dir)
+  "Search current project in DIR."
+  (interactive "P")
+  (completion/search--dir dir nil))
 
-(defun completion/search-project-at ()
+(defun completion/search-project-at (&optional dir)
   "Search current project at point."
-  (interactive)
-  (completion/search--dir nil (thing-at-point 'symbol)))
-(define-key completion/search-map (kbd "P") #'completion/search-project-at)
+  (interactive "P")
+  (completion/search--dir dir (thing-at-point 'symbol)))
 
-(defun completion/search-current-dir ()
+(defun completion/search-cwd ()
   "Search current directory."
   (interactive)
   (completion/search--dir default-directory nil))
-(define-key completion/search-map (kbd "d") #'completion/search-current-dir)
 
-(defun completion/search-current-dir-at ()
+(defun completion/search-cwd-at ()
   "Search current directory at point."
   (interactive)
   (completion/search--dir default-directory (thing-at-point 'symbol)))
-(define-key completion/search-map (kbd "D") #'completion/search-current-dir-at)
 
 (use-package corfu
   :ensure t

@@ -296,8 +296,7 @@
   :config
   (setq writeroom-width 100)
   (setq writeroom-global-effects
-        '(;; writeroom-set-fullscreen
-          writeroom-set-alpha
+        '(writeroom-set-alpha
           writeroom-set-menu-bar-lines
           writeroom-set-tool-bar-lines
           writeroom-set-vertical-scroll-bars
