@@ -114,13 +114,23 @@
     map)
   "Searching in Emacs.")
 
-(defvar keybinds/git-and-goto-map
+(defvar keybinds/git-actions-map
   (let ((map (make-sparse-keymap)))
     (keybinds/define-key map
                          "g" #'magit-status
-                         "l" #'goto-line)
+                         "b" #'magit-branch-checkout
+                         "t" #'git-timemachine-toggle
+                         "C" #'magit-clone
+                         "S" #'magit-stage-file
+                         "U" #'magit-unstage-file
+                         "R" #'vc-revert)
     map)
-  "Version control and goto line")
+  "Version control")
+
+(defvar keybinds/goto-actions-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "l" #'goto-line)))
 
 (defvar keybinds/notes-manage-map
   (let ((map (make-sparse-keymap)))
@@ -153,7 +163,8 @@
                      "p" (cons "projects" project-prefix-map)
                      ;; Searching
                      "s" (cons "searching" keybinds/search-map)
-                     "g" (cons "git/goto" keybinds/git-and-goto-map)
+                     "g" (cons "git" keybinds/git-actions-map)
+                     "G" (cons "goto" keybinds/goto-actions-map)
                      "n" (cons "notes" keybinds/notes-manage-map)
                      "o" (cons "open" keybinds/open-map))
 
