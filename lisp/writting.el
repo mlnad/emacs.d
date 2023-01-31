@@ -2,6 +2,8 @@
 ;;; Commentary:
 
 ;;; Code:
+;;;
+;;; Org
 (defvar org/default-roam-capture
   '("d" "default" plain "%?"
    	:if-new (file+head "${slug}.org"

@@ -47,5 +47,16 @@
                            emacs-minor-version)))
        (expand-file-name subdir configs/elpa-pack-dir)))))
 
+(defvar core/profiler nil)
+;;;autoload
+(defun core/toggle-profiler ()
+  "Toggle the Emacs profiler"
+  (interactive)
+  (if (not core/profiler)
+      (profiler-start 'cpu+mem)
+    (profiler-report)
+    (profiler-stop))
+  (setq core/profiler (not core/profiler)))
+
 (provide 'core)
 ;;; core-libs.el ends here

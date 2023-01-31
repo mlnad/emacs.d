@@ -87,14 +87,7 @@
 
 (defvar configs/enable-org nil)
 
-(defvar configs/enable-org-roam nil)
-
-(defvar configs/enable-eaf nil)
-
 (defvar configs/org-journal-type 'daily)
-
-(defvar configs/org-src-block-face '(:family "Jetbrains Mono")
-  "Face for org source block.")
 
 (defvar configs/roam-templates nil)
 

@@ -147,8 +147,9 @@
                          "a" #'org-agenda
                          "f" #'make-frame
                          "F" #'select-frame-by-name
+                         "s" #'toggle-shell
                          "t" #'org-todo-list
-                         "s" #'toggle-shell)
+                         "T" #'core/toggle-profiler)
     map)
   "Open someting")
 
@@ -158,7 +159,10 @@
                      "A" #'apropos-documentation
                      "F" #'describe-face
                      "t" #'load-theme
-                     "p" #'find-library)
+                     "p" #'find-library
+                     "C-l" #'describe-language-environment
+                     "C-m" #'info-emacs-manual
+                     "C-c" #'describe-coding-system)
 
 ;;; Define key
 (keybinds/set-leader nil 'global
