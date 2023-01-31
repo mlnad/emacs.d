@@ -152,21 +152,29 @@
     map)
   "Open someting")
 
+(keybinds/define-key help-map
+                     "'" #'describe-char
+                     "a" #'apropos
+                     "A" #'apropos-documentation
+                     "F" #'describe-face
+                     "t" #'load-theme
+                     "p" #'find-library)
+
 ;;; Define key
 (keybinds/set-leader nil 'global
                      "<SPC>" '("Exec" . execute-extended-command)
                      "a" '("Actions" . embark-act)
-                     "c" (cons "code" keybinds/code-actions-map)
-                     "w" (cons "window" evil-window-map)
-                     "f" (cons "file" keybinds/file-manage-map)
                      "b" (cons "buffer" keybinds/buffer-manage-map)
-                     "p" (cons "projects" project-prefix-map)
-                     ;; Searching
-                     "s" (cons "searching" keybinds/search-map)
+                     "c" (cons "code" keybinds/code-actions-map)
+                     "f" (cons "file" keybinds/file-manage-map)
                      "g" (cons "git" keybinds/git-actions-map)
                      "G" (cons "goto" keybinds/goto-actions-map)
+                     "h" (cons "help" help-map)
                      "n" (cons "notes" keybinds/notes-manage-map)
-                     "o" (cons "open" keybinds/open-map))
+                     "p" (cons "projects" project-prefix-map)
+                     "o" (cons "open" keybinds/open-map)
+                     "s" (cons "searching" keybinds/search-map)
+                     "w" (cons "window" evil-window-map))
 
 (provide 'keybinds)
 ;;; keybindings.el ends here
