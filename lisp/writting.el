@@ -11,7 +11,6 @@
     :unnarrowed t))
 
 (use-package org
-  :if configs/enable-org
   :ensure org
   :commands (orgtbl-mode)
   :init
@@ -31,21 +30,11 @@
         org-image-actual-width nil
         org-src-fontify-natively t
         org-src-tab-acts-natively t
-        org-imenu-depth 8)
+        org-imenu-depth 8
+        org-agenda-restore-windows-after-quit t)
 
   (with-eval-after-load 'org-agenda
     (add-to-list 'org-modules 'org-habit)))
-
-(use-package ob
-  :init
-  (add-hook 'org-mode-hook
-            (lambda ()
-               (org-babel-do-load-languages 'org-babel-load-languages
-                                            org-babel-load-languages))))
-
-(use-package org-agenda
-  :init
-  (setq org-agenda-restore-windows-after-quit t))
 
 (use-package org-roam
   :if (and configs/enable-org-roam configs/enable-org)

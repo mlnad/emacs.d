@@ -85,8 +85,6 @@
 
 (defvar configs/package-mirror default-package-mirror)
 
-(defvar configs/enable-org nil)
-
 (defvar configs/org-journal-type 'daily)
 
 (defvar configs/roam-templates nil)
