@@ -37,7 +37,6 @@
     (add-to-list 'org-modules 'org-habit)))
 
 (use-package org-roam
-  :if (and configs/enable-org-roam configs/enable-org)
   :ensure org-roam
   :hook (after-init . org-roam-db-autosync-enable)
   :custom
