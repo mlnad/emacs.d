@@ -62,18 +62,6 @@
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all))
 
-;;; C/C++
-(use-package cc-mode
-  :ensure t
-  :defer t
-  :config
-  (setq c-basic-offset tab-width
-        c-backspace-function #'delete-backward-char))
-
-(use-package clang-format
-  :ensure t
-  :defer t)
-
 (use-package bison-mode
   :ensure t
   :mode (("\\.lex\\'" . flex-mode)

@@ -137,5 +137,15 @@ INITIAL for the initial input."
   :init
   (marginalia-mode))
 
+(use-package embark
+  :ensure t
+  :init
+  (setq prefix-help-command #'embark-prefix-help-command))
+
+(use-package embark-consult
+  :ensure t
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 (provide 'completion)
 ;;; completion.el ends here

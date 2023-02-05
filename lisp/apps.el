@@ -11,6 +11,9 @@
   :ensure t
   :hook (maigt-mode . turn-on-magit-gitflow))
 
+(use-package magit-todos
+  :ensure t)
+
 (use-package git-gutter
   :ensure t
   :config
@@ -31,13 +34,6 @@
                 (make-directory configs/rime-data-dir)
                 (copy-file (concat user-emacs-directory "lisp/templates/user.yaml")
                            (concat configs/rime-data-dir "user.yaml"))))))
-
-;;; Docker
-(use-package docker
-  :ensure t)
-
-(use-package docker-tramp
-  :ensure t)
 
 (provide 'apps)
 ;;; apps.el ends here

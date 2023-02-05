@@ -305,5 +305,15 @@
 (use-package restart-emacs
   :ensure t)
 
+(use-package popper
+  :ensure t
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
+
 (provide 'editor)
 ;;; editor.el ends here

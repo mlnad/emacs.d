@@ -11,16 +11,12 @@
     :unnarrowed t))
 
 (use-package org
-  :ensure org
-  :commands (orgtbl-mode)
   :init
   (defvar org-face-font nil)
   :config
   (require 'org-tempo)
 
-  (setq org-clock-persist-file (concat configs/cache-directory
-                                       "org-clock-save.el")
-        org-id-locations-file (concat configs/cache-directory
+  (setq org-id-locations-file (concat configs/cache-directory
                                       "org-id-locations")
         org-publish-timestamp-directory (concat configs/cache-directory
                                                 "org-timestamps/")

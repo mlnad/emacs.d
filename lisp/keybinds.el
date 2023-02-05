@@ -107,10 +107,10 @@
     (keybinds/define-key map
                          "i" #'imenu
                          "s" #'consult-line
+                         "S" #'consult-mark
                          "p" #'completion/search-project
-                         "P" #'completion/search-project-at
                          "d" #'completion/search-cwd
-                         "D" #'completion/search-cwd-at)
+                         "M" #'consult-man)
     map)
   "Searching in Emacs.")
 
