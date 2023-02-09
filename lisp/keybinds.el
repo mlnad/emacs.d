@@ -147,7 +147,7 @@
                          "a" #'org-agenda
                          "f" #'make-frame
                          "F" #'select-frame-by-name
-                         "s" #'toggle-shell
+                         "s" #'eshell
                          "t" #'org-todo-list
                          "T" #'core/toggle-profiler)
     map)

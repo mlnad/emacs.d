@@ -10,6 +10,8 @@
                        "#+title: ${title}\n\n#+startup: indent\n")
     :unnarrowed t))
 
+(defvar org/roam-templates nil)
+
 (use-package org
   :init
   (defvar org-face-font nil)
@@ -60,8 +62,8 @@ If some elements are missing, the will be stripped out."
                    separator (propertize (string-join olp separator) 'face '(shadow italic))
                    separator title)))))
 
-  (add-to-list 'configs/roam-templates org/default-roam-capture)
-  (setq org-roam-capture-templates configs/roam-templates
+  (add-to-list 'org/roam-templates org/default-roam-capture)
+  (setq org-roam-capture-templates org/roam-templates
         org-roam-node-display-template "${org-hierarchy}"))
 
 (use-package gnuplot

@@ -307,13 +307,22 @@
 
 (use-package popper
   :ensure t
+  :bind (("C-`"    . popper-toggle-latest)
+         ("M-`"    . popper-cycle))
   :init
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "Output\\*$"
+          "^\\*eshell.*\\*$" eshell-mode
+          "^\\*vc-diff"
+          "^\\*Python"
+          "^\\*Completions"
+          help-mode
           compilation-mode))
   (popper-mode +1)
-  (popper-echo-mode +1))
+  (popper-echo-mode +1)
+  :config
+  (setq popper-group-function #'popper-group-by-prjecte))
 
 (provide 'editor)
 ;;; editor.el ends here

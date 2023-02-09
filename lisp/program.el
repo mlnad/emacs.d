@@ -7,7 +7,8 @@
 ;;; Language server protocol
 
 ;;; Project
-(use-package project)
+(use-package project
+  :bind(([remap project-shell] . project-eshell)))
 
 ;;; Emacs Lisp
 (use-package elisp-mode

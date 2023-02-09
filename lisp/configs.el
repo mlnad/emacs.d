@@ -87,8 +87,6 @@
 
 (defvar configs/org-journal-type 'daily)
 
-(defvar configs/roam-templates nil)
-
 (defvar configs/theme 'doom-one)
 
 (provide 'configs)
