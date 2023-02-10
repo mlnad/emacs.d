@@ -313,7 +313,7 @@
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "Output\\*$"
-          "^\\*eshell.*\\*$" eshell-mode
+          "\\.*eshell.*\\*$" eshell-mode
           "^\\*vc-diff"
           "^\\*Python"
           "^\\*Completions"
@@ -322,7 +322,7 @@
   (popper-mode +1)
   (popper-echo-mode +1)
   :config
-  (setq popper-group-function #'popper-group-by-prjecte))
+  (setq popper-group-function #'popper-group-by-project))
 
 (provide 'editor)
 ;;; editor.el ends here
