@@ -1,8 +1,8 @@
 ;; use-org.el --- the org mode file
 ;;; Commentary:
-
+;;; Org Mode + Markdown
 ;;; Code:
-;;;
+
 ;;; Org
 (defvar org/default-roam-capture
   '("d" "default" plain "%?"
@@ -111,6 +111,19 @@ If some elements are missing, the will be stripped out."
   :config
   (add-hook 'org-mode-hook #'valign-mode)
   :diminish valign-mode)
+
+
+;;; Markdown
+(use-package markdown-mode
+  :ensure t
+  :mode ("/README\\(?:\\.md\\)?\\" . gfm-mode)
+  :init
+  (setq markdown-enable-math t
+        markdown-enable-wiki-links t
+        markdown-italic-underscore t
+        markdown-asymmetric-header t
+        markdown-make-gfm-checkboxes-buttons t
+        markdown-fontify-whole-heading-line t))
 
 (provide 'writting)
 ;;; init-org.el ends here
