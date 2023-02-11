@@ -12,27 +12,63 @@
 
 (defvar org/roam-templates nil)
 
+(defun org/find-in-notes-dir ()
+  "Find file in notes directory."
+  (find-file))
+
 (use-package org
-  :init
-  (defvar org-face-font nil)
-  :config
-  (require 'org-tempo)
-
-  (setq org-id-locations-file (concat configs/cache-directory
-                                      "org-id-locations")
-        org-publish-timestamp-directory (concat configs/cache-directory
-                                                "org-timestamps/")
+  :preface
+  ;; org files
+  (setq-default org-directory configs/notes-dir)
+  (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
+        org-preview-latex-image-directory (concat configs/cache-directory "org/latex/")
+        org-list-allow-alphabetical t)
+  ;; org faces
+  (setq org-indirect-buffer-display 'current-window
         org-log-done 'time
-        org-startup-with-inline-images t
-        org-latex-prefer-user-labels t
+        org-enforce-todo-dependencies t
+        org-fontify-done-headline t
+        org-fontify-quote-and-verse-blocks t
+        org-hide-leading-stars t
         org-image-actual-width nil
-        org-src-fontify-natively t
-        org-src-tab-acts-natively t
-        org-imenu-depth 8
-        org-agenda-restore-windows-after-quit t)
-
-  (with-eval-after-load 'org-agenda
-    (add-to-list 'org-modules 'org-habit)))
+        org-startup-with-inline-images t
+        org-imenu-depth 6
+        org-startup-indented t
+        org-tags-column 0
+        org-startup-folded nil)
+  (setq org-todo-keywords
+        '((sequence
+           "TODO(t)"  ; A task that needs doing & is ready to do
+           "PROJ(p)"  ; A project, which usually contains other tasks
+           "LOOP(r)"  ; A recurring task
+           "STRT(s)"  ; A task that is in progress
+           "WAIT(w)"  ; Something external is holding up this task
+           "HOLD(h)"  ; This task is paused/on hold because of me
+           "IDEA(i)"  ; An unconfirmed and unapproved task or notion
+           "|"
+           "DONE(d)"  ; Task successfully completed
+           "KILL(k)") ; Task was cancelled, aborted or is no longer applicable
+          (sequence
+           "[ ](T)"   ; A task that needs doing
+           "[-](S)"   ; Task is in progress
+           "[?](W)"   ; Task is being held up or paused
+           "|"
+           "[X](D)")  ; Task was completed
+          (sequence
+           "|"
+           "OKAY(o)"
+           "YES(y)"
+           "NO(n)")))
+  ;; org agenda
+  (setq-default org-agenda-files (list (concat "agendas/" configs/notes-dir))
+                org-agenda-skip-unavailable-files t
+                org-agenda-span 20
+                org-agenda-start-on-weekday nil
+                org-agenda-start-day "-5d"
+                org-agenda-inhibit-startup t)
+  ;; attachements
+  (setq org-attach-store-link-p t
+        org-attach-use-inheritance t))
 
 (use-package org-roam
   :ensure org-roam

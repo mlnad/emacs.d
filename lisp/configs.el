@@ -55,7 +55,7 @@
 (defvar configs/quelpa-dir
   (expand-file-name "quelpa/" configs/cache-directory))
 
-(defvar configs/notes-dir "~/org"
+(defvar configs/notes-dir "~/org/"
   "User defined notes directory.")
 
 (defvar configs/org-roam-dir configs/notes-dir

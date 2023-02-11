@@ -167,6 +167,7 @@
 ;;; Define key
 (keybinds/set-leader nil 'global
                      "<SPC>" '("Exec" . execute-extended-command)
+                     "." '("Find file" . find-file)
                      "a" '("Actions" . embark-act)
                      "b" (cons "buffer" keybinds/buffer-manage-map)
                      "c" (cons "code" keybinds/code-actions-map)
