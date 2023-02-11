@@ -125,5 +125,29 @@ If some elements are missing, the will be stripped out."
         markdown-make-gfm-checkboxes-buttons t
         markdown-fontify-whole-heading-line t))
 
+;;; Latex
+(setq TeX-parse-self t
+      TeX-auto-save t
+      TeX-auto-local ".auctex-auto"
+      TeX-style-local ".auctex-style"
+      TeX-source-correlate-mode t
+      TeX-source-correlate-method 'synctex
+      TeX-save-query nil)
+
+(use-package auctex-latexmk
+  :ensure t
+  :after latex
+  :init
+  (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+  :config
+  (auctex-latexmk-setup))
+
+(use-package auctex
+  :ensure t)
+
+(with-eval-after-load 'bibtex
+  (setq bibtex-align-at-equal-sign t
+        bibtex-text-indentation 20))
+
 (provide 'writting)
 ;;; init-org.el ends here
