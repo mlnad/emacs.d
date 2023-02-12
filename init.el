@@ -71,6 +71,7 @@
     (package-install 'use-package)))
 
 (require 'editor)
+(require 'ui)
 (require 'completion)
 
 (require 'program)
