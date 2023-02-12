@@ -58,5 +58,14 @@
     (profiler-stop))
   (setq core/profiler (not core/profiler)))
 
+(defun core/create-if-not-found ()
+  "Create file if not found"
+  (unless (file-remote-p buffer-file-name)
+    (let ((parent-dir (file-name-directory buffer-file-name)))
+      (and (not (file-directory-p parent-dir))
+           (y-or-n-p (format "Directory `%s' does not exist! Create it? "
+                             parent-dir))
+           (make-directory parent-dir)))))
+
 (provide 'core)
 ;;; core-libs.el ends here

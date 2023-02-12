@@ -142,8 +142,8 @@ If some elements are missing, the will be stripped out."
   :config
   (auctex-latexmk-setup))
 
-(use-package auctex
-  :ensure t)
+(use-package tex
+  :ensure auctex)
 
 (with-eval-after-load 'bibtex
   (setq bibtex-align-at-equal-sign t

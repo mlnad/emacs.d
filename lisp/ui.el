@@ -46,6 +46,12 @@
   (add-hook hook #'editor/init-font -100)
   (add-hook hook #'editor/init-theme -99))
 
+(add-hook 'emacs-startup-hook #'window-divider-mode)
+
+;; Don't display floating tooltips;
+(when (bound-and-true-p tooltip-mode)
+  (tooltip-mode -1))
+
 ;;; Line numbers
 (use-package display-line-numbers
   :hook

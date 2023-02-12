@@ -5,24 +5,9 @@
 ;;; Code:
 ;; Resolve symlinks when opening files
 (setq find-file-visit-truename t
-      vc-follow-symlinks t)
-
-(setq find-file-suppress-same-file-warnings t)
-
-;; Create missing directory when we open a file that doesn't exist under
-;; a directory tree tha may not exist.
-(add-hook 'find-file-not-found-functions
-	  (lambda ()
-	    (unless (file-remote-p buffer-file-name)
-	      (let ((parent-directory (file-name-directory buffer-file-name)))
-		(and (not (file-directory-p parent-directory))
-		     (y-or-n-p (format "Directory `%s' does not exist! Create it? "
-				       parent-directory))
-		     (progn (make-directory parent-directory)
-			    t))))))
-
-;; Don't generate backups or lockfiles.
-(setq create-lockfiles nil
+      vc-follow-symlinks t
+      find-file-suppress-same-file-warnings t
+      create-lockfiles nil
       make-backup-files nil
       ring-bell-function 'ignore
       ;; build-in packages
@@ -32,58 +17,45 @@
       kept-old-versions 5
       kept-new-versions 5
       backup-directory-alist configs/backup-directory-alist
-      tramp-backup-directory-alist backup-directory-alist)
-
-;;; Scrolling
-(setq hscroll-margin 2
+      tramp-backup-directory-alist backup-directory-alist
+      hscroll-margin 2
       hscroll-step 1
       scroll-conservatively 101
       scroll-margin 0
       scroll-preserve-screen-position t
       auto-window-vscroll nil
       mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
-      mouse-wheel-scroll-amount-horizontal 2)
+      mouse-wheel-scroll-amount-horizontal 2
+      auto-save-list-file-prefix configs/auto-save-list-prefix
+      tabify-regexp "^\t* [ \t]+")
 
-(setq-default auto-image-file-mode t)
-
-(setq auto-save-list-file-prefix configs/auto-save-list-prefix)
-
-(setq-default initial-scratch-message nil
+(setq-default auto-image-file-mode t
+              initial-scratch-message nil
               inhibit-splash-screen t
               initial-major-mode 'text-mode
-              frame-title-format "%b")
+              frame-title-format "%b"
+              tab-width 4
+	      indent-tabs-mode nil
+              fill-column 80
+              word-wrap t
+              truncate-lines t)
 
-;;; Formatting
-(setq-default tab-width 4
-	      indent-tabs-mode nil)
-;; Make `tabify' and `untabify' only affect indentation. Not tabs/spaces in the
-;; middle of a line.
-(setq tabify-regexp "^\t* [ \t]+")
-
-(setq-default fill-column 80)
-
-;; Word wrap by category. Break up for CJK.
-(setq-default word-wrap t)
 (when (>= emacs-major-version 28)
   (setq-default word-wrap-by-category t))
+
+(push '(menu-bar-lines . 0) default-frame-alist)
+(push '(tool-bar-lines . 0) default-frame-alist)
+(push '(vertical-scroll-bars) default-frame-alist)
+(setq menu-bar-mode nil
+      tool-bar-mode nil
+      scroll-bar-mode nil)
 
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
 
-;; truncate-lines only on prog mode. Then it will not break lines.
-(setq-default truncate-lines t)
-(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
-
-(unless (assq 'menu-bar-lines default-frame-alist)
-  (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
-  (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
-  (add-to-list 'default-frame-alist '(vertical-scroll-bars)))
-
-(add-hook 'emacs-startup-hook #'window-divider-mode)
-
-;; Don't display floating tooltips;
-(when (bound-and-true-p tooltip-mode)
-  (tooltip-mode -1))
+;; Create missing directory when we open a file that doesn't exist under
+;; a directory tree tha may not exist.
+(add-hook 'find-file-not-found-functions #'core/create-if-not-found)
 
 ;;; Build-in packages
 ;;; tramp
@@ -195,15 +167,6 @@
         echo-keystrokes 0.02
         resize-mini-windows 'grow-only
         max-mini-window-height 0.15))
-
-;;; Minibuffers
-
-;; Try really hard to keep the cursor from getting stuce in the read-only prompt
-;; portion of the minibuffer.
-(setq minibuffer-prompt-properties
-      '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
-(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
 
 ;;; Undo tree mode
 (use-package undo-tree
