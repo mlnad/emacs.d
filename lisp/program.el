@@ -77,11 +77,6 @@
   :ensure t
   :commands run-geiser)
 
-;;; Haskell
-(use-package haskell-mode
-  :ensure t
-  :mode "\\.hs\\'")
-
 ;;; Python
 (use-package python
   :mode (("\\.py\\'" . python-mode))

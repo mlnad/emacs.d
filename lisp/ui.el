@@ -60,23 +60,27 @@
 ;;; Modeline
 (use-package doom-modeline
   :ensure t
-  :hook (window-setup . doom-modeline-mode)
+  :hook (after-init . doom-modeline-mode)
+  :hook (doom-modeline-mode . size-indication-mode)
+  :hook (doom-modeline-mode . column-number-mode)
   :init
-  (unless after-init-time
-    (setq-default mode-line-format nil))
-  :config
+  (when (daemonp)
+    (setq doom-modeline-icon t))
   (setq doom-modeline-bar-width 3
         doom-modeline-github nil
         doom-modeline-mu4e nil
-        doom-modeline-persp-name t
+        doom-modeline-persp-name nil
         doom-modeline-minor-modes nil
-        doom-modeline-major-mode-icon t
-        doom-modeline-buffer-file-name-style 'relative-from-project)
+        doom-modeline-major-mode-icon nil
+        doom-modeline-buffer-file-name-style 'relative-from-project
+        doom-modeline-buffer-encoding 'nondefault)
 
+  :config
   (use-package anzu
     :ensure t
-    :defer t
-    :hook (isearch-mode . anzu-mode)))
+    :after isearch-mode)
+  (use-package evil-anzu
+    :config (global-anzu-mode +1)))
 
 ;;; doom themes
 (use-package doom-themes
