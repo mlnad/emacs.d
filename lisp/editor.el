@@ -168,20 +168,6 @@
         resize-mini-windows 'grow-only
         max-mini-window-height 0.15))
 
-;;; Undo tree mode
-(use-package undo-tree
-  :ensure t
-  :hook (after-init . global-undo-tree-mode)
-  :custom (undo-tree-history-directory-alist `(("." . ,(concat configs/cache-directory "undo-tree-hist/"))))
-  :config
-  (setq undo-tree-visualizer-timestamps t
-        undo-tree-visualizer-diff t
-        ;; 10X bump of the undo limits to avoid issues with premature
-        ;; Emacs GC which truncages the undo history very aggresively
-        undo-limit 800000
-        undo-strong-limit 12000000
-        undo-outer-limit 120000000))
-
 (use-package restart-emacs
   :ensure t)
 

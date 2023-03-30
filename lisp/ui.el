@@ -61,24 +61,19 @@
 (use-package doom-modeline
   :ensure t
   :hook (after-init . doom-modeline-mode)
-  :hook (doom-modeline-mode . size-indication-mode)
-  :hook (doom-modeline-mode . column-number-mode)
-  :init
-  (when (daemonp)
-    (setq doom-modeline-icon t))
-  (setq doom-modeline-bar-width 3
-        doom-modeline-github nil
-        doom-modeline-mu4e nil
-        doom-modeline-persp-name nil
-        doom-modeline-minor-modes nil
-        doom-modeline-major-mode-icon nil
-        doom-modeline-buffer-file-name-style 'relative-from-project
-        doom-modeline-buffer-encoding 'nondefault)
-
+  :custom
+  (doom-modeline-bar-width 3)
+  (doom-modeline-github nil)
+  (doom-modeline-mu4e nil)
+  (doom-modeline-persp-name t)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-major-mode-icon t)
+  (doom-modeline-buffer-file-name-style 'relative-from-project)
+  (doom-modeline-buffer-encoding t)
+  (doom-modeline-icon t)
   :config
   (use-package anzu
-    :ensure t
-    :after isearch-mode)
+    :ensure t)
   (use-package evil-anzu
     :config (global-anzu-mode +1)))
 

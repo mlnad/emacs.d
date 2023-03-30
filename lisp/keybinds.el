@@ -38,6 +38,8 @@
   (which-key-setup-side-window-bottom)
   (setq which-key-show-early-on-C-h t))
 
+(use-package undo-fu)
+
 ;;; Keybinding
 (use-package evil
   :ensure t
@@ -46,7 +48,7 @@
   (setq evil-want-keybinding nil)
   :config
   (evil-mode 1)
-  (evil-set-undo-system 'undo-tree)
+  (evil-set-undo-system 'undo-fu)
   (evil-set-leader '(normal motion visual) (kbd keybinds/leader-key))
   (evil-set-leader '(insert replace emacs) (kbd keybinds/localleader-key))
   (keybinds/define-key evil-window-map
