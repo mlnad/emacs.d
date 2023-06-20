@@ -129,7 +129,8 @@ INITIAL for the initial input."
     ;; This is recommended since Dabbrev can be used globally (M-/).
     ;; See also `corfu-excluded-modes'.
     :init
-    (global-corfu-mode))
+    (global-corfu-mode 1)
+    (corfu-popupinfo-mode 1))
 
 (use-package marginalia
   :ensure t

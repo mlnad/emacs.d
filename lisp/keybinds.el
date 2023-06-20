@@ -57,11 +57,6 @@
                        "d" #'evil-window-delete
                        "T" #'tear-off-window))
 
-(use-package evil-anzu
-  :ensure t
-  :config
-  (global-anzu-mode +1))
-
 (use-package evil-collection
   :after evil
   :ensure t
