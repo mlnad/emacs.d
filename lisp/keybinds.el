@@ -38,7 +38,8 @@
   (which-key-setup-side-window-bottom)
   (setq which-key-show-early-on-C-h t))
 
-(use-package undo-fu)
+(use-package undo-fu
+  :ensure t)
 
 ;;; Keybinding
 (use-package evil

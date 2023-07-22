@@ -7,9 +7,7 @@
 ;; Created: Feb 12, 2023
 ;; Modified: Feb 12, 2023
 ;; Version: 0.0.1
-;; Keywords: Symbol’s value as variable is void: finder-known-keywords
-;; Homepage: https://github.com/liu/ui
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "28.2"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
