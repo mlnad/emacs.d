@@ -116,7 +116,7 @@ If some elements are missing, the will be stripped out."
 ;;; Markdown
 (use-package markdown-mode
   :ensure t
-  :mode ("/README\\(?:\\.md\\)?\\" . gfm-mode)
+  :mode ("/README\\(?:\\.md\\)?\\'" . gfm-mode)
   :init
   (setq markdown-enable-math t
         markdown-enable-wiki-links t
