@@ -89,5 +89,7 @@
 
 (defvar configs/theme 'doom-one)
 
+(defvar configs/profile-eln-caches-dir (expand-file-name "eln-caches" configs/cache-directory))
+
 (provide 'configs)
 ;;; configs.el ends here

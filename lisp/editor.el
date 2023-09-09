@@ -166,7 +166,10 @@
   (setq enable-recursive-minibuffers t
         echo-keystrokes 0.02
         resize-mini-windows 'grow-only
-        max-mini-window-height 0.15))
+        max-mini-window-height 0.15)
+
+  (when (boundp 'native-comp-eln-load-path)
+    (add-to-list 'native-comp-eln-load-path configs/cache-directory)))
 
 (use-package restart-emacs
   :ensure t)

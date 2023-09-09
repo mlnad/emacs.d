@@ -4,7 +4,7 @@
 ;; This file is not a part of Emacs
 ;;
 ;;; Code:
-;;; Language server protocol
+(defvar program/lsp-client 'eglot)
 
 ;;; Project
 (use-package project
@@ -24,9 +24,6 @@
 (use-package debug)
 
 (use-package edebug)
-
-(use-package emr
-  :ensure t)
 
 ;;; lsp
 (use-package eglot
@@ -88,16 +85,14 @@
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
-  :after (projectile)
   :config
-  (add-to-list 'projectile-project-root-files "Cargo.toml")
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
 
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.
-  (setq rustic-lsp-client 'lsp-mode))
+  (setq rustic-lsp-client program/lsp-client))
 
 
 (provide 'program)

@@ -59,20 +59,26 @@
 (use-package doom-modeline
   :ensure t
   :hook (after-init . doom-modeline-mode)
-  :custom
-  (doom-modeline-bar-width 3)
-  (doom-modeline-github nil)
-  (doom-modeline-mu4e nil)
-  (doom-modeline-persp-name t)
-  (doom-modeline-minor-modes nil)
-  (doom-modeline-major-mode-icon t)
-  (doom-modeline-buffer-file-name-style 'relative-from-project)
-  (doom-modeline-buffer-encoding t)
-  (doom-modeline-icon t)
+  :init
+  (setq doom-modeline-bar-width 3
+        doom-modeline-github nil
+        doom-modeline-mu4e nil
+        doom-modeline-persp-name nil
+        doom-modeline-minor-modes nil
+        doom-modeline-major-mode-icon t
+        doom-modeline-buffer-file-name-style 'relative-from-project
+        doom-modeline-buffer-encoding t)
+
+  (when (daemonp)
+    (setq doom-modeline-icon t))
+
   :config
+  (setq doom-modeline-project-detection 'project)
+
   (use-package anzu
     :ensure t)
   (use-package evil-anzu
+    :ensure t
     :config (global-anzu-mode +1)))
 
 ;;; doom themes

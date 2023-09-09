@@ -45,8 +45,8 @@
 (use-package evil
   :ensure t
   :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
+  (setq evil-want-keybinding nil
+        evil-want-integration t)
   :config
   (evil-mode 1)
   (evil-set-undo-system 'undo-fu)

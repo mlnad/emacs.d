@@ -8,6 +8,11 @@
 ;;; Code:
 (setq gc-cons-threshold most-positive-fixnum)
 
+(setq load-prefer-newer noninteractive)
+
+(when (getenv-internal "DEBUG")
+  (setq init-file-debug t
+        debug-on-error t))
 ;; Before Emacs 27, the init file was responsible for initializing the package
 ;; manager by calling `package-initialize'. Emacs 27 changed the default
 ;; behavior: It now calls `package-initialize' before loading the init file.
