@@ -69,6 +69,37 @@
         tramp-completion-reread-directory-timeout 60
         tramp-verbose 1))
 
+(use-package emacs
+  :config
+  (delete-selection-mode 1)
+  (electric-pair-mode 1)
+  (size-indication-mode t)
+
+  :init
+  ;; TAB cycle if there are only few candidates
+  (setq completion-cycle-threshold 3)
+  (defun crm-indicator (args)
+    (cons (concat "[CRM]" (car args)) (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  (fset #'yes-or-no-p #'y-or-n-p)
+
+  ;; Enable indentation+completion using the TAB key.
+  (setq tab-always-indent t)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t
+        echo-keystrokes 0.02
+        resize-mini-windows 'grow-only
+        max-mini-window-height 0.15)
+
+  (when (boundp 'native-comp-eln-load-path)
+    (add-to-list 'native-comp-eln-load-path configs/profile-eln-caches-dir)))
+
 (use-package paren
   :hook (after-init . show-paren-mode)
   :config
@@ -134,42 +165,6 @@
   (setq compilation-always-kill t
         compilation-ask-about-save nil
         compilation-scroll-output 'first-error))
-
-(use-package emacs
-  :config
-  (delete-selection-mode 1)
-  (electric-pair-mode 1)
-  (size-indication-mode t)
-
-  :init
-  ;; TAB cycle if there are only few candidates
-  (setq completion-cycle-threshold 3)
-  (defun crm-indicator (args)
-    (cons (concat "[CRM]" (car args)) (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-  ;; Do not allow the cursor in the minibuffer prompt
-  (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
-  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-  (fset #'yes-or-no-p #'y-or-n-p)
-
-  ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
-  ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
-  ;; (setq read-extended-command-predicate
-  ;;       #'command-completion-default-include-p)
-
-  ;; Enable indentation+completion using the TAB key.
-  (setq tab-always-indent t)
-
-  ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t
-        echo-keystrokes 0.02
-        resize-mini-windows 'grow-only
-        max-mini-window-height 0.15)
-
-  (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path configs/cache-directory)))
 
 (use-package restart-emacs
   :ensure t)

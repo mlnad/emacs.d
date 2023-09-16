@@ -40,11 +40,8 @@
 (defvar configs/backup-directory-alist
   (expand-file-name "backup/" configs/cache-directory))
 
-(defvar configs/projectile-known-projects-file
-  (expand-file-name "projectile-bookmarks.eld" configs/cache-directory))
-
-(defvar configs/projectile-cache-file
-  (expand-file-name "projectile.cache" configs/cache-directory))
+(defvar configs/project-list-file
+  (expand-file-name "projects" configs/cache-directory))
 
 (defvar configs/auto-save-list-prefix
   (expand-file-name "auto-save-list/.saves-" configs/cache-directory))

@@ -8,7 +8,9 @@
 
 ;;; Project
 (use-package project
-  :bind(([remap project-shell] . project-eshell)))
+  :bind(([remap project-shell] . project-eshell))
+  :init
+  (setq project-list-file configs/project-list-file))
 
 ;;; Emacs Lisp
 (use-package elisp-mode

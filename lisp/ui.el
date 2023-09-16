@@ -65,7 +65,7 @@
         doom-modeline-mu4e nil
         doom-modeline-persp-name nil
         doom-modeline-minor-modes nil
-        doom-modeline-major-mode-icon t
+        doom-modeline-major-mode-icon nil
         doom-modeline-buffer-file-name-style 'relative-from-project
         doom-modeline-buffer-encoding t)
 
@@ -128,8 +128,8 @@
   (popper-mode +1)
   (popper-echo-mode +1)
   :config
-  (setq popper-group-function #'popper-group-by-project))
-
+  (setq popper-group-function #'popper-group-by-project
+        popper-mode-line-position 2))
 
 (provide 'ui)
 ;;; ui.el ends here
