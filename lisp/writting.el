@@ -14,7 +14,7 @@
 
 (defun org/find-in-notes-dir ()
   "Find file in notes directory."
-  (find-file))
+  (project-find-regexp))
 
 (use-package org
   :preface

@@ -6,9 +6,24 @@
 ;;; Code:
 (defvar program/lsp-client 'eglot)
 
+(defvar program/build-actions-map (make-sparse-keymap))
+
+(defvar program/debug-actions-map (make-sparse-keymap))
+
+(defun program/re-search-for (regexp)
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (widen)
+        (goto-char (point-min))
+        (re-search-forward regexp magic-mode-regexp-match-limit t)))))
+
+(defun program/c-c++-mode ()
+  )
+
 ;;; Project
 (use-package project
-  :bind(([remap project-shell] . project-eshell))
+  :bind (([remap project-shell] . project-eshell))
   :init
   (setq project-list-file configs/project-list-file))
 
@@ -29,7 +44,7 @@
 
 ;;; lsp
 (use-package eglot
-  :ensure t
+  :hook (prog-mode-hook . eglot-ensure)
   :init
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t
@@ -67,6 +82,8 @@
   :mode (("\\.lex\\'" . flex-mode)
          ("\\.y\\'" . bison-mode)
          ("\\.grm\\'" . bison-mode)))
+
+(use-package cc-mode)
 
 (use-package cmake-mode
   :ensure t)

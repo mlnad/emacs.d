@@ -32,7 +32,7 @@
 (setq-default auto-image-file-mode t
               initial-scratch-message nil
               inhibit-splash-screen t
-              initial-major-mode 'text-mode
+              initial-major-mode 'org-mode
               frame-title-format "%b"
               tab-width 4
 	      indent-tabs-mode nil

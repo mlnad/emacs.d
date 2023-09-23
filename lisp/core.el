@@ -67,5 +67,9 @@
                              parent-dir))
            (make-directory parent-dir)))))
 
+(defmacro core/file-exists-p (files &optional directory)
+  "Return non-nil if the FILES in DIRECTORY all exist."
+  `(let ((p))))
+
 (provide 'core)
 ;;; core-libs.el ends here

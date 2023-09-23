@@ -96,7 +96,8 @@
                          "r" #'eglot-rename
                          "a" #'eglot-code-actions
                          "c" #'compile
-                         "C" #'recompile)
+                         "C" #'recompile
+                         "b" (cons "build" program/build-actions-map))
     map)
   "Code actions.")
 

@@ -24,7 +24,7 @@
   :ensure t
   :if (not *sys/win32*)
   :custom
-  (srime-show-candidate 'posframe)
+  (rime-show-candidate 'posframe)
   (default-input-method "rime")
   (rime-user-data-dir configs/rime-data-dir)
   :config
