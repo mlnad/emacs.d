@@ -36,7 +36,8 @@
         which-key-min-display-lines 5)
   :config
   (which-key-setup-side-window-bottom)
-  (setq which-key-show-early-on-C-h t))
+  (setq which-key-show-early-on-C-h t
+        which-key-max-description-length nil))
 
 (use-package undo-fu
   :ensure t)
@@ -137,13 +138,14 @@
                          "c" #'org-capture
                          "r" #'org-roam-node-find
                          "n" #'org-roam-capture
-                         "v" #'org-search-view)
+                         "v" #'org-search-view
+                         "d" (cons "daily" org/roam-dailies-map))
     map))
 
 (defvar keybinds/open-map
   (let ((map (make-sparse-keymap)))
     (keybinds/define-key map
-                         "a" #'org-agenda
+                         "a" (cons "Agenda" #'org-agenda)
                          "f" #'make-frame
                          "F" #'select-frame-by-name
                          "s" #'eshell

@@ -12,6 +12,8 @@
 
 (defvar org/roam-templates nil)
 
+(defvar org/roam-dailies-map (make-sparse-keymap))
+
 (defun org/find-in-notes-dir ()
   "Find file in notes directory."
   (project-find-regexp))
@@ -78,29 +80,30 @@
   :commands (org-roam-buffer-toggle-display
              org-roam-tag-add
              org-roam-tag-delete)
+  :init
+  (require 'org-roam-dailies)
   :config
-
-  (cl-defmethod org-roam-node-org-hierarchy ((node org-roam-node))
-    "Return hierarchy for NODE, constructed of its file title, OLP and direct title.
-If some elements are missing, the will be stripped out."
-    (let* ((title (org-roam-node-title node))
-          (olp (org-roam-node-olp node))
-          (level (org-roam-node-level node))
-          (filetitle (or (if (= level 0)
-                             title
-                           (org-roam-node-file-title node))))
-          (separator (propertize ":" 'face 'shadow)))
-      (cl-case level
-        (0 filetitle)
-        (1 (concat (propertize filetitle 'face '(shadow italic))
-                   separator title))
-        (t (concat (propertize filetitle 'face '(shadow italic))
-                   separator (propertize (string-join olp separator) 'face '(shadow italic))
-                   separator title)))))
-
   (add-to-list 'org/roam-templates org/default-roam-capture)
   (setq org-roam-capture-templates org/roam-templates
         org-roam-node-display-template "${org-hierarchy}"))
+
+(cl-defmethod org-roam-node-org-hierarchy ((node org-roam-node))
+  "Return hierarchy for NODE, constructed of its file title, OLP and direct title.
+If some elements are missing, the will be stripped out."
+  (let* ((title (org-roam-node-title node))
+         (olp (org-roam-node-olp node))
+         (level (org-roam-node-level node))
+         (filetitle (or (if (= level 0)
+                            title
+                          (org-roam-node-file-title node))))
+         (separator (propertize ":" 'face 'shadow)))
+    (cl-case level
+      (0 filetitle)
+      (1 (concat (propertize filetitle 'face '(shadow italic))
+                 separator title))
+      (t (concat (propertize filetitle 'face '(shadow italic))
+                 separator (propertize (string-join olp separator) 'face '(shadow italic))
+                 separator title)))))
 
 (use-package gnuplot
   :ensure gnuplot
@@ -109,8 +112,7 @@ If some elements are missing, the will be stripped out."
 (use-package valign
   :ensure t
   :config
-  (add-hook 'org-mode-hook #'valign-mode)
-  :diminish valign-mode)
+  (add-hook 'org-mode-hook #'valign-mode))
 
 
 ;;; Markdown
