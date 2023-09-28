@@ -139,6 +139,7 @@
                          "r" #'org-roam-node-find
                          "n" #'org-roam-capture
                          "v" #'org-search-view
+                         "f" #'org/find-in-notes
                          "d" (cons "daily" org/roam-dailies-map))
     map))
 

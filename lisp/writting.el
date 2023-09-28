@@ -14,10 +14,6 @@
 
 (defvar org/roam-dailies-map (make-sparse-keymap))
 
-(defun org/find-in-notes-dir ()
-  "Find file in notes directory."
-  (project-find-regexp))
-
 (use-package org
   :preface
   ;; org files
@@ -104,6 +100,12 @@ If some elements are missing, the will be stripped out."
       (t (concat (propertize filetitle 'face '(shadow italic))
                  separator (propertize (string-join olp separator) 'face '(shadow italic))
                  separator title)))))
+
+;;;###autoload
+(defun org/find-in-notes ()
+  "Find file in notes directory."
+  (interactive)
+  (completion/search--dir configs/notes-dir))
 
 (use-package gnuplot
   :ensure gnuplot

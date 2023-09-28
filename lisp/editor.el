@@ -70,11 +70,6 @@
         tramp-verbose 1))
 
 (use-package emacs
-  :config
-  (delete-selection-mode 1)
-  (electric-pair-mode 1)
-  (size-indication-mode t)
-
   :init
   ;; TAB cycle if there are only few candidates
   (setq completion-cycle-threshold 3)
@@ -98,7 +93,12 @@
         max-mini-window-height 0.15)
 
   (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path configs/profile-eln-caches-dir)))
+    (add-to-list 'native-comp-eln-load-path configs/profile-eln-caches-dir))
+
+  :config
+  (delete-selection-mode 1)
+  (electric-pair-mode 1)
+  (size-indication-mode t))
 
 (use-package paren
   :hook (after-init . show-paren-mode)
