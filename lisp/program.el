@@ -21,12 +21,6 @@
 (defun program/c-c++-mode ()
   )
 
-;;; Project
-(use-package project
-  :bind (([remap project-shell] . project-eshell))
-  :init
-  (setq project-list-file configs/project-list-file))
-
 ;;; Emacs Lisp
 (use-package elisp-mode
   :mode ("\\.Cask\\'" . emacs-lisp-mode)

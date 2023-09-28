@@ -104,6 +104,30 @@ INITIAL for the initial input."
   (interactive)
   (completion/search--dir default-directory (thing-at-point 'symbol)))
 
+;;; Project
+(use-package project
+  :bind (([remap project-shell] . project-eshell))
+  :init
+  (setq project-list-file configs/project-list-file))
+
+;;;###autoload
+(defun completion/find-file (dir &optional include-all)
+  "Find file in DIR."
+  (unless (file-directory-p dir)
+    (error "Directory %S does note exist" dir))
+  (unless (file-readable-p dir)
+    (error "Directory %S isn't readable" dir))
+  (require 'project)
+  (let* ((default-directory (file-truename dir))
+         (project--list (list `(,dir)))
+         (pr `(transient . ,dir))
+         (root (project-root pr))
+         (dirs (list root)))
+    (project-find-file-in
+     (or (thing-at-point 'filename)
+         (and buffer-file-name (file-relative-name buffer-file-name root)))
+     dirs pr include-all)))
+
 (use-package corfu
   :ensure t
   ;; Optional customizations

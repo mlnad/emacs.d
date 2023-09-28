@@ -105,7 +105,7 @@ If some elements are missing, the will be stripped out."
 (defun org/find-in-notes ()
   "Find file in notes directory."
   (interactive)
-  (completion/search--dir configs/notes-dir))
+  (completion/find-file configs/notes-dir))
 
 (use-package gnuplot
   :ensure gnuplot
