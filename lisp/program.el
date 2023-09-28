@@ -38,7 +38,6 @@
 
 ;;; lsp
 (use-package eglot
-  :hook (prog-mode-hook . eglot-ensure)
   :init
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t

@@ -7,8 +7,7 @@
 ;; This file is not a part of Emacs
 
 ;;; Code:
-;; (setq debug-on-error t)
-
+(setq debug-on-error t)
 
 ;; adjust garbage collection at startup
 (defvar better-gc-cons-threshold (* 128 1024 1024))

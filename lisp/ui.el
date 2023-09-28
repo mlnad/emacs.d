@@ -113,16 +113,18 @@
 
 (use-package popper
   :ensure t
-  :bind (("C-`"    . popper-toggle-latest)
+  :bind (("C-`"    . popper-toggle)
          ("M-`"    . popper-cycle))
   :init
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "Output\\*$"
           "\\.*eshell.*\\*$" eshell-mode
+          "\\.*-shell.*\\*$" shell-mode
           "^\\*vc-diff"
           "^\\*Python"
           "^\\*Completions"
+          "^\\*cargo-.*\\*$"
           help-mode
           compilation-mode))
   (popper-mode +1)
