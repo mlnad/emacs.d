@@ -77,8 +77,8 @@
                                      ("nongnu"   . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
 
 (defvar emacs-tuna-package-mirror '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                                     ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
-                                     ("nongnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
+                                    ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+                                    ("nongnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
 
 (defvar configs/package-mirror default-package-mirror)
 
@@ -87,6 +87,9 @@
 (defvar configs/theme 'doom-one)
 
 (defvar configs/profile-eln-caches-dir (expand-file-name "eln-caches" configs/cache-directory))
+
+(defvar configs/env-file
+  (expand-file-name "env" configs/cache-directory))
 
 (provide 'configs)
 ;;; configs.el ends here

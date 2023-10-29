@@ -36,6 +36,7 @@
 (load-file configs/userconfig-file)
 
 (require 'core)
+(require 'env)
 
 ;; AutoGC
 (add-hook 'emacs-startup-hook

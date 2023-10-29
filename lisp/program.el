@@ -38,7 +38,16 @@
 
 ;;; lsp
 (use-package eglot
+  :ensure t
   :init
+  (advice-add #'eglot-ensure :around
+              (lambda (fn)
+                (when (alist-get major-mode eglot-server-programs nil nil
+                                 (lambda (modes key)
+                                   (if (listp modes)
+                                       (member key modes)
+                                     (eq key modes))))
+                  (funcall fn))))
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t
         eglot-send-changes-idle-time 0.5))
@@ -90,8 +99,7 @@
 (use-package python
   :mode (("\\.py\\'" . python-mode))
   :custom
-  (python-indent-offset 4)
-  :config)
+  (python-indent-offset 4))
 
 ;;; Rust
 (use-package rustic
