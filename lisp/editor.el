@@ -58,17 +58,6 @@
 (add-hook 'find-file-not-found-functions #'core/create-if-not-found)
 
 ;;; Build-in packages
-;;; tramp
-(unless *sys/win32*
-  (setq tramp-default-method "ssh"
-        tramp-auto-save-directory (expand-file-name "tramp-autosave/" configs/cache-directory)
-        tramp-backup-directory-alist (expand-file-name "backup/" configs/cache-directory)))
-
-(with-eval-after-load 'tramp
-  (setq remote-file-name-inihibit-cache 60
-        tramp-completion-reread-directory-timeout 60
-        tramp-verbose 1))
-
 (use-package emacs
   :init
   ;; TAB cycle if there are only few candidates
@@ -80,8 +69,6 @@
   (setq minibuffer-prompt-properties
         '(read-only t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-  (fset #'yes-or-no-p #'y-or-n-p)
 
   ;; Enable indentation+completion using the TAB key.
   (setq tab-always-indent t)
@@ -95,10 +82,23 @@
   (when (boundp 'native-comp-eln-load-path)
     (add-to-list 'native-comp-eln-load-path configs/profile-eln-caches-dir))
 
+  (fset #'yes-or-no-p #'y-or-n-p)
+
   :config
   (delete-selection-mode 1)
   (electric-pair-mode 1)
   (size-indication-mode t))
+
+;;; tramp
+(unless *sys/win32*
+  (setq tramp-default-method "ssh"
+        tramp-auto-save-directory (expand-file-name "tramp-autosave/" configs/cache-directory)
+        tramp-backup-directory-alist (expand-file-name "backup/" configs/cache-directory)))
+
+(with-eval-after-load 'tramp
+  (setq remote-file-name-inihibit-cache 60
+        tramp-completion-reread-directory-timeout 60
+        tramp-verbose 1))
 
 (use-package paren
   :hook (after-init . show-paren-mode)
