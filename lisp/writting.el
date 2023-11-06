@@ -78,6 +78,7 @@
              org-roam-tag-delete)
   :init
   (require 'org-roam-dailies)
+  (setq org-roam-db-location configs/org-roam-db-location)
   :config
   (add-to-list 'org/roam-templates org/default-roam-capture)
   (setq org-roam-capture-templates org/roam-templates

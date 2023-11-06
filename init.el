@@ -67,13 +67,13 @@
     (package-install 'use-package)))
 
 (require 'editor)
-(require 'ui)
 (require 'completion)
 
 (require 'program)
 (require 'writting)
 (require 'apps)
 (require 'keybinds)
+(require 'ui)
 
 (provide 'init)
 ;;; init.el ends here

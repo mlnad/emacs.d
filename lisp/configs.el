@@ -58,6 +58,9 @@
 (defvar configs/org-roam-dir configs/notes-dir
   "User defined org roam directory.")
 
+(defvar configs/org-roam-db-location
+  (expand-file-name "org-roam.db" configs/cache-directory))
+
 (defvar configs/notes-extensions '("org" "md" "markdown"))
 
 (defvar configs/rime-data-dir
