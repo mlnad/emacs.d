@@ -94,5 +94,8 @@
 (defvar configs/env-file
   (expand-file-name "env" configs/cache-directory))
 
+(defvar configs/transient-history-file
+  (expand-file-name "transient/history.el" configs/cache-directory))
+
 (provide 'configs)
 ;;; configs.el ends here
