@@ -18,11 +18,3 @@
                         :weight normal
                         :width normal)
  )
-
-;;; Custom configures
-(defun user/config-after-init ()
-  )
-
-
-(defun user/config-before-init ()
-  )

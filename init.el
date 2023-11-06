@@ -36,14 +36,10 @@
 (load-file configs/userconfig-file)
 
 (require 'core)
-(require 'env)
 
 ;; AutoGC
 (add-hook 'emacs-startup-hook
           #'core/garbage-collect-h)
-
-;; Config before init
-(user/config-before-init)
 
 ;; load `custom-file'
 (setq custom-file configs/custom-file)
@@ -78,9 +74,6 @@
 (require 'writting)
 (require 'apps)
 (require 'keybinds)
-
-;; Configurations after init
-(user/config-after-init)
 
 (provide 'init)
 ;;; init.el ends here
