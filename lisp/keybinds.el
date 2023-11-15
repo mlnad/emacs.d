@@ -155,6 +155,16 @@
     map)
   "Open someting")
 
+(defvar keybinds/quit-map
+  (let ((map (make-sparse-keymap)))
+    (keybinds/define-key map
+                         "d" #'core/restart-server
+                         "K" #'kill-emacs
+                         "R" #'restart-emacs
+                         "f" #'delete-frame)
+    map)
+  "Quit Emacs")
+
 (keybinds/define-key help-map
                      "'" #'describe-char
                      "a" #'apropos
@@ -179,6 +189,7 @@
                      "h" (cons "help" help-map)
                      "n" (cons "notes" keybinds/notes-manage-map)
                      "p" (cons "projects" project-prefix-map)
+                     "q" (cons "quit/restart" keybinds/quit-map)
                      "o" (cons "open" keybinds/open-map)
                      "s" (cons "searching" keybinds/search-map)
                      "w" (cons "window" evil-window-map))

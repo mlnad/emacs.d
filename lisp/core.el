@@ -90,6 +90,7 @@
   "Return non-nil if the FILES in DIRECTORY all exist."
   `(let ((p))))
 
+;;;###autoload
 (defun core/genreate-env-file ()
   "Generate enviroment file"
   (interactive)
@@ -110,6 +111,15 @@
         (insert (prin1-to-string env) "\n "))
       (insert ")"))
     t))
+
+;;;###autoload
+(defun core/restart-server ()
+  "Restart the Emacs server."
+  (interactive)
+  (server-force-delete)
+  (while (server-running-p)
+    (sleep-for 1))
+  (server-start))
 
 (provide 'core)
 ;;; core-libs.el ends here
