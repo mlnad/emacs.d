@@ -72,7 +72,8 @@
                          "f" #'find-file
                          "s" #'save-buffer
                          "S" #'write-file
-                         "r" #'recentf-open-files)
+                         "r" #'recentf-open-files
+                         "P" #'open-userconfig-file)
     map)
   "Emacs file management commands.")
 
