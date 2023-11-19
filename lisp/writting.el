@@ -21,6 +21,12 @@
   (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
         org-preview-latex-image-directory (concat configs/cache-directory "org/latex/")
         org-list-allow-alphabetical t)
+  ;; org babels
+  (setq org-src-preserve-indentation t
+        org-src-tab-acts-natively t
+        org-confirm-babel-evaluate nil
+        org-link-elisp-confirm-function nil
+        org-src-window-setup 'other-window)
   ;; org faces
   (setq org-indirect-buffer-display 'current-window
         org-log-done 'time
