@@ -128,13 +128,7 @@
 
 * Start Up
 ** Configure
-#+begin_src emacs-lisp
-(require 'core)
-(require 'cl-lib)
-(require 'package)
-#+end_src
-
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 ;; add `lisp' to `load-path'.
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
@@ -163,8 +157,14 @@
 (set-language-environment "utf-8")
 #+end_src
 
+#+begin_src emacs-lisp :tangle yes
+(require 'core)
+(require 'cl-lib)
+(require 'package)
+#+end_src
+
 ** GC
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 ;; adjust garbage collection at startup
 (defvar better-gc-cons-threshold (* 128 1024 1024))
 (add-hook 'emacs-startup-hook
@@ -178,7 +178,7 @@
 #+END_SRC
 
 ** Packages
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (setq package-enable-at-startup nil
       package-archives configs/package-mirror
       package-user-dir (core/elpa-package-dir))
@@ -196,7 +196,7 @@
 
 * Editor
 ** Emacs
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package emacs
   :init
   ;; TAB cycle if there are only few candidates
@@ -230,7 +230,6 @@
         kept-old-versions 5
         kept-new-versions 5
         backup-directory-alist configs/backup-directory-alist
-        tramp-backup-directory-alist backup-directory-alist
         hscroll-margin 2
         hscroll-step 1
         scroll-conservatively 101
@@ -250,17 +249,14 @@
   :config
   (delete-selection-mode 1)
   (electric-pair-mode 1)
-  (size-indication-mode t)
-
-  (setq menu-bar-mode nil
-        tool-bar-mode nil
-        scroll-bar-mode nil))
+  (size-indication-mode t))
 #+end_src
 
 ** Tramp
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (unless *sys/win32*
   (setq tramp-default-method "ssh"
+        tramp-backup-directory-alist backup-directory-alist
         tramp-auto-save-directory (expand-file-name "tramp-autosave/" configs/cache-directory)
         tramp-backup-directory-alist (expand-file-name "backup/" configs/cache-directory)))
 
@@ -272,7 +268,7 @@
 
 ** Build-in Pacakges
 *** paren
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package paren
   :hook (after-init . show-paren-mode)
   :config
@@ -283,7 +279,7 @@
 #+end_src
 
 *** recentf
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package recentf
   :commands (recentf-save-list)
   :init
@@ -299,7 +295,7 @@
 #+end_src
 
 *** savehist
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package savehist
   :init
   ;; Minibuffer history
@@ -318,7 +314,7 @@
 #+end_src
 
 *** saveplace
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
@@ -326,31 +322,31 @@
 #+end_src
 
 *** subword
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package subword
   :hook (after-init . global-subword-mode))
 #+end_src
 
 *** autorevert
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package autorevert
   :ensure nil
   :hook (after-init . global-auto-revert-mode))
 #+end_src
 
 *** imenu
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package imenu)
 #+end_src
 
 *** display-fill-column-indicator
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (when (>= emacs-major-version 27)
   (use-package display-fill-column-indicator))
 #+end_src
 
 *** compile
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package compile
   :config
   (setq compilation-always-kill t
@@ -358,8 +354,17 @@
         compilation-scroll-output 'first-error))
 #+end_src
 
+** Smartparens
+#+begin_src emacs-lisp :tangle yes
+(use-package smartparens-mode
+  :ensure smartparens
+  :hook (prog-mode text-mode markdown-mode org-mode)
+  :config
+  (require 'smartparens-config))
+#+end_src
+
 ** Restart
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package restart-emacs
   :ensure t)
 #+end_src
@@ -367,7 +372,7 @@
 * Completion
 ** Vertico based
 *** orderless
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package orderless
   :ensure t
   :init
@@ -377,7 +382,7 @@
 #+end_src
 
 *** vertico
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package vertico
   :ensure t
   :bind (:map vertico-map
@@ -392,7 +397,7 @@
 #+end_src
 
 *** consult
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package consult
   :ensure t
   :after (vertico)
@@ -431,7 +436,7 @@
 #+end_src
 
 *** corfu
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package corfu
   :ensure t
   ;; Optional customizations
@@ -461,7 +466,7 @@
 #+end_src
 
 *** marginalia
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package marginalia
   :ensure t
   :hook (after-init . marginalia-mode)
@@ -470,7 +475,7 @@
 #+end_src
 
 *** embark
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package embark
   :ensure t
   :init
@@ -484,7 +489,7 @@
 
 ** Projects
 *** project
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package project
   :bind (([remap project-shell] . project-eshell))
   :init
@@ -493,7 +498,7 @@
 
 * Programming
 ** Configs
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defvar program/lsp-client 'eglot)
 
 (defvar program/build-actions-map (make-sparse-keymap))
@@ -502,7 +507,7 @@
 #+end_src
 
 ** LSP
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package eglot
   :ensure t
   :init
@@ -525,7 +530,7 @@
 
 ** Debug
 ** Snippet
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package yasnippet
   :ensure t
   :commands (yas-minor-mode-on
@@ -551,7 +556,7 @@
 
 ** Elisp
 *** elisp-mode
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package elisp-mode
   :mode ("\\.Cask\\'" . emacs-lisp-mode)
   :config
@@ -559,7 +564,7 @@
 #+end_src
 
 *** buttercup
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package buttercup
   :ensure t
   :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
@@ -567,7 +572,7 @@
 
 ** Rust
 *** rustic
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
@@ -582,7 +587,7 @@
 #+end_src
 
 ** Python
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode (("\\.py\\'" . python-mode))
   :custom
@@ -593,7 +598,7 @@
 
 ** Scheme
 *** geiser
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package geiser
   :ensure t
   :commands run-geiser)
@@ -607,7 +612,7 @@
 
 ** Org
 *** variables
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defvar org/default-roam-capture
   '("d" "default" plain "%?"
     :if-new (file+head "${slug}.org"
@@ -623,7 +628,7 @@
 #+end_src
 
 *** org-mode
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package org
   :preface
   ;; org files
@@ -664,7 +669,7 @@
 #+end_src
 
 *** org-roam
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package org-roam
   :ensure org-roam
   :hook (after-init . org-roam-db-autosync-enable)
@@ -707,7 +712,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** valign
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package valign
   :ensure t
   :config
@@ -715,13 +720,13 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** gnuplot
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package gnuplot
   :ensure gnuplot)
 #+end_src
 
 ** Markdown
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package markdown-mode
   :ensure t
   :mode ("/README\\(?:\\.md\\)?\\'" . gfm-mode)
@@ -735,7 +740,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Tex
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (setq TeX-parse-self t
       TeX-auto-save t
       TeX-auto-local ".auctex-auto"
@@ -766,7 +771,7 @@ If some elements are missing, the will be stripped out."
 * Applications
 ** Version control
 *** magit
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package magit
   :ensure t)
 
@@ -779,7 +784,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** git-gutter
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package git-gutter
   :ensure t
   :config
@@ -787,7 +792,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Rime
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package rime
   :ensure t
   :if (not *sys/win32*)
@@ -805,7 +810,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Eshell
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (with-eval-after-load 'eshell
   (setq eshell-banner-message '(format "%s %s\n"
                                 (propertize (format " %s " (string-trim (buffer-name)))
@@ -822,7 +827,7 @@ If some elements are missing, the will be stripped out."
 
 * Keybindings
 ** Configs
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defvar keybinds/leader-key "<SPC>"
   "The leader prefix key.")
 
@@ -844,7 +849,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Which-key
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package which-key
   :ensure t
   :hook (after-init . which-key-mode)
@@ -861,7 +866,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Evil
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package undo-fu
   :ensure t)
 
@@ -886,7 +891,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Keymaps
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defvar keybinds/file-manage-map
   (let ((map (make-sparse-keymap)))
     (keybinds/define-key map
@@ -1005,7 +1010,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Leader emacs
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (keybinds/set-leader nil 'global
                      "<SPC>" '("Exec" . execute-extended-command)
                      "." '("Find file" . find-file)
@@ -1026,7 +1031,7 @@ If some elements are missing, the will be stripped out."
 
 * UI
 ** Font
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defun editor/init-font ()
   "Initialize Emacs font."
   (when (find-font (font-spec :name (car configs/default-font)))
@@ -1048,7 +1053,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Theme
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (defun editor/init-theme ()
   "Initialize Emacs theme."
   (when (and configs/theme (not (custom-theme-enabled-p configs/theme)))
@@ -1062,7 +1067,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Modeline
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package doom-modeline
   :ensure t
   :hook (after-init . doom-modeline-mode)
@@ -1091,7 +1096,7 @@ If some elements are missing, the will be stripped out."
 
 ** Window
 *** Display
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package display-line-numbers
   :hook
   (prog-mode . display-line-numbers-mode))
@@ -1104,7 +1109,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** writeroom-mode
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package writeroom-mode
   :ensure t
   :config
@@ -1118,7 +1123,7 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** popper
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package popper
   :ensure t
   :bind (("C-`"    . popper-toggle)
