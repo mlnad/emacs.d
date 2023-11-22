@@ -53,3 +53,7 @@ org-roam.db
 
 savehist
 smex-items
+
+# generated elisp files
+init.el
+early-init.el
