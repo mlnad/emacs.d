@@ -575,6 +575,10 @@
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :config
   (add-hook 'prog-mode-hook 'yas-reload-all))
+
+(use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet)
 #+end_src
 
 ** Elisp
