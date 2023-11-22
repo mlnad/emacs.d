@@ -259,7 +259,6 @@
 
   :config
   (delete-selection-mode 1)
-  (electric-pair-mode 1)
   (size-indication-mode t))
 #+end_src
 
@@ -613,7 +612,7 @@
   (setq rustic-lsp-client program/lsp-client))
 #+end_src
 
-** Python
+** TODO Python
 #+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode (("\\.py\\'" . python-mode))
@@ -621,7 +620,8 @@
   (python-indent-offset 4))
 #+end_src
 
-** C/C++
+** TODO C/C++
+use =cc-mode= and =cmake-mode=
 
 ** Scheme
 *** geiser
@@ -654,7 +654,7 @@
   '((sequence "TODO(t)" "LOOP(r)" "START(s)" "WAIT(w)" "HOLD(h)" "IDEA(i)" "|" "DONE(d)" "KILL(k)")))
 #+end_src
 
-*** org-mode
+*** TODO org-mode
 #+begin_src emacs-lisp :tangle yes
 (use-package org
   :preface
