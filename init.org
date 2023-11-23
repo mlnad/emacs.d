@@ -131,6 +131,9 @@
 
 (defvar configs/transient-history-file
   (expand-file-name "transient/history.el" configs/cache-directory))
+
+(defvar popper-buffers
+  (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" 'compilation-mode 'help-mode))
 #+end_src
 
 * Start Up
@@ -584,6 +587,8 @@
 (use-package rustic
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
+  :init
+  (add-to-list 'popper-buffers "^\\*cargo-.*\\*$")
   :config
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
@@ -599,7 +604,9 @@
 (use-package python
   :mode (("\\.py\\'" . python-mode))
   :custom
-  (python-indent-offset 4))
+  (python-indent-offset 4)
+  :init
+  (add-to-list 'popper-buffers "^\\*Python"))
 #+end_src
 
 ** TODO C/C++
@@ -614,7 +621,6 @@ use =cc-mode= and =cmake-mode=
 #+end_src
 
 ** Haskell
-
 
 * Writting
 ** Configs
@@ -776,7 +782,6 @@ If some elements are missing, the will be stripped out."
 
 ** Typst
 
-
 * Applications
 ** Version control
 *** magit
@@ -832,6 +837,11 @@ If some elements are missing, the will be stripped out."
         eshell-hist-ignoredups t
         eshell-glob-case-insensitive t
         eshell-error-if-no-glob t))
+
+(add-to-list 'popper-buffers "\\.*eshell.*\\*$")
+(add-to-list 'popper-buffers 'eshell-mode)
+(add-to-list 'popper-buffers "\\.*-shell.*\\*$")
+(add-to-list 'popper-buffers 'shell-mode)
 #+end_src
 
 * Keybindings
@@ -1162,17 +1172,7 @@ If some elements are missing, the will be stripped out."
   :bind (("C-`"    . popper-toggle)
          ("M-`"    . popper-cycle))
   :init
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "Output\\*$"
-          "\\.*eshell.*\\*$" eshell-mode
-          "\\.*-shell.*\\*$" shell-mode
-          "^\\*vc-diff"
-          "^\\*Python"
-          "^\\*Completions"
-          "^\\*cargo-.*\\*$"
-          help-mode
-          compilation-mode))
+  (setq popper-reference-buffers popper-buffers)
   (popper-mode +1)
   (popper-echo-mode +1)
   :config
