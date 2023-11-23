@@ -3,6 +3,8 @@
 ;;; Commentary:
 
 ;;; Code:
+(defvar core/profiler nil)
+
 (defvar env/deny
   '(;; Unix/shell state that shouldn't be persisted
     "^HOME$" "^\\(OLD\\)?PWD$" "^SHLVL$" "^PS1$" "^R?PROMPT$" "^TERM\\(CAP\\)?$"
@@ -25,7 +27,7 @@
 (defun open-init-file()
   "Find and open the init.el."
   (interactive)
-  (find-file (concat user-emacs-directory "init.el")))
+  (find-file (concat user-emacs-directory "init.org")))
 
 (defun load-init-file()
   "Load init.el."
@@ -66,8 +68,7 @@
                            emacs-minor-version)))
        (expand-file-name subdir configs/elpa-pack-dir)))))
 
-(defvar core/profiler nil)
-;;;autoload
+;;;###autoload
 (defun core/toggle-profiler ()
   "Toggle the Emacs profiler"
   (interactive)
@@ -120,6 +121,57 @@
   (while (server-running-p)
     (sleep-for 1))
   (server-start))
+
+;;;###autoload
+(defun completion/search--dir (dir &optional initial)
+  "Search directory.
+
+DIR for the search directory.
+INITIAL for the initial input."
+  (require 'consult)
+  (cond (ripgrep-p
+         (consult-ripgrep dir initial))
+        (grep-p
+         (consult-grep dir initial))
+        (t (user-error "Couldn't find ripgrep or grep in PATH"))))
+
+(defun completion/search-project (&optional dir)
+  "Search current project in DIR."
+  (interactive "P")
+  (completion/search--dir dir nil))
+
+(defun completion/search-project-at (&optional dir)
+  "Search current project at point."
+  (interactive "P")
+  (completion/search--dir dir (thing-at-point 'symbol)))
+
+(defun completion/search-cwd ()
+  "Search current directory."
+  (interactive)
+  (completion/search--dir default-directory nil))
+
+(defun completion/search-cwd-at ()
+  "Search current directory at point."
+  (interactive)
+  (completion/search--dir default-directory (thing-at-point 'symbol)))
+
+;;;###autoload
+(defun completion/find-file (dir &optional include-all)
+  "Find file in DIR."
+  (unless (file-directory-p dir)
+    (error "Directory %S does note exist" dir))
+  (unless (file-readable-p dir)
+    (error "Directory %S isn't readable" dir))
+  (require 'project)
+  (let* ((default-directory (file-truename dir))
+         (project--list (list `(,dir)))
+         (pr `(transient . ,dir))
+         (root (project-root pr))
+         (dirs (list root)))
+    (project-find-file-in
+     (or (thing-at-point 'filename)
+         (and buffer-file-name (file-relative-name buffer-file-name root)))
+     dirs pr include-all)))
 
 (provide 'core)
 ;;; core-libs.el ends here

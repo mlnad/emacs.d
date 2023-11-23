@@ -3,25 +3,29 @@
 
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
-(setq gc-cons-threshold most-positive-fixnum)
-
-(setq load-prefer-newer noninteractive)
+(setq gc-cons-threshold (* 128 1024 1024)
+      load-prefer-newer noninteractive
+      package-enable-at-startup nil
+      auto-mode-case-fold nil
+      fast-but-imprecise-scrolling t
+      ffap-machine-p-known 'reject
+      idle-update-delay 1.0
+      inhibit-compacting-font-caches t
+      read-process-output-max (* 64 1024)
+      redisplay-skip-fontification-on-input t)
 
 (when (getenv-internal "DEBUG")
   (setq init-file-debug t
         debug-on-error t))
-;; Before Emacs 27, the init file was responsible for initializing the package
-;; manager by calling `package-initialize'. Emacs 27 changed the default
-;; behavior: It now calls `package-initialize' before loading the init file.
-;; Earlier Emacs versions do not load the early init file and do not initialize
-;; the package manager before loading the init file, so this file is neither
-;; needed nor loaded on those versions.
-;; (setq package-enable-at-startup nil)
 
-;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early
 (push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
+(setq menu-bar-mode nil
+      tool-bar-mode nil
+      scroll-bar-mode nil)
+
+(set-language-environment "UTF-8")
 #+end_src
 
 * Default variables
@@ -43,6 +47,8 @@
 
 (defvar grep-p
   (executable-find "grep"))
+
+(defvar configs/lsp-client 'eglot)
 
 (defvar configs/default-font '("Consolas"
                                :size 10
@@ -153,9 +159,6 @@
 (setq custom-file configs/custom-file)
 (when (file-exists-p custom-file)
   (load custom-file))
-
-;; Language and coding
-(set-language-environment "utf-8")
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -166,16 +169,8 @@
 
 ** GC
 #+BEGIN_SRC emacs-lisp :tangle yes
-;; adjust garbage collection at startup
-(defvar better-gc-cons-threshold (* 128 1024 1024))
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq gc-cons-threshold better-gc-cons-threshold)
-            (setq gc-cons-percentage 0.6)))
-
-;; AutoGC
-(add-hook 'emacs-startup-hook
-          #'core/garbage-collect-h)
+(add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
+(add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit)
 #+END_SRC
 
 ** Packages
@@ -215,12 +210,9 @@
 
   ;; Enable recursive minibuffers
   (setq enable-recursive-minibuffers t
-        echo-keystrokes 0.02
         resize-mini-windows 'grow-only
-        max-mini-window-height 0.15
         find-file-visit-truename t
         vc-follow-symlinks t
-        find-file-suppress-same-file-warnings t
         create-lockfiles nil
         make-backup-files nil
         ring-bell-function 'ignore
@@ -230,14 +222,6 @@
         kept-old-versions 5
         kept-new-versions 5
         backup-directory-alist configs/backup-directory-alist
-        hscroll-margin 2
-        hscroll-step 1
-        scroll-conservatively 101
-        scroll-margin 0
-        scroll-preserve-screen-position t
-        auto-window-vscroll nil
-        mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
-        mouse-wheel-scroll-amount-horizontal 2
         auto-save-list-file-prefix configs/auto-save-list-prefix
         tabify-regexp "^\t* [ \t]+")
 
@@ -258,8 +242,7 @@
   (fset #'yes-or-no-p #'y-or-n-p)
 
   :config
-  (delete-selection-mode 1)
-  (size-indication-mode t))
+  (delete-selection-mode 1))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -521,7 +504,6 @@
 * Programming
 ** Configs
 #+begin_src emacs-lisp :tangle yes
-(defvar program/lsp-client 'eglot)
 
 (defvar program/build-actions-map (make-sparse-keymap))
 
@@ -609,7 +591,7 @@
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.
-  (setq rustic-lsp-client program/lsp-client))
+  (setq rustic-lsp-client configs/lsp-client))
 #+end_src
 
 ** TODO Python
@@ -1098,6 +1080,8 @@ If some elements are missing, the will be stripped out."
 (use-package doom-modeline
   :ensure t
   :hook (after-init . doom-modeline-mode)
+  :hook (doom-modeline . size-indication-mode)
+  :hook (doom-modeline . column-number-mode)
   :init
   (setq doom-modeline-bar-width 3
         doom-modeline-github nil
@@ -1119,6 +1103,28 @@ If some elements are missing, the will be stripped out."
   (use-package evil-anzu
     :ensure t
     :config (global-anzu-mode +1)))
+#+end_src
+
+** Scrolling
+#+begin_src emacs-lisp :tangle yes
+(setq hscroll-margin 2
+      hscroll-step 1
+      ;; Emacs spends too much effort recentering the screen if you scroll the
+      ;; cursor more than N lines past window edges (where N is the settings of
+      ;; `scroll-conservatively'). This is especially slow in larger files
+      ;; during large-scale scrolling commands. If kept over 100, the window is
+      ;; never automatically recentered. The default (0) triggers this too
+      ;; aggressively, so I've set it to 10 to recenter if scrolling too far
+      ;; off-screen.
+      scroll-conservatively 10
+      scroll-margin 0
+      scroll-preserve-screen-position t
+      ;; Reduce cursor lag by a tiny bit by not auto-adjusting `window-vscroll'
+      ;; for tall lines.
+      auto-window-vscroll nil
+      ;; mouse
+      mouse-wheel-scroll-amount '(2 ((shift) . hscroll))
+      mouse-wheel-scroll-amount-horizontal 2)
 #+end_src
 
 ** Window
