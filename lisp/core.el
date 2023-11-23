@@ -5,6 +5,8 @@
 ;;; Code:
 (defvar core/profiler nil)
 
+(defvar better-gc-cons-threshold (* 16 1024 1024))
+
 (defvar env/deny
   '(;; Unix/shell state that shouldn't be persisted
     "^HOME$" "^\\(OLD\\)?PWD$" "^SHLVL$" "^PS1$" "^R?PROMPT$" "^TERM\\(CAP\\)?$"
