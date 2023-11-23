@@ -154,8 +154,17 @@
   (make-directory configs/cache-directory))
 ;; load user configs.
 (unless (file-exists-p configs/userconfig-file)
-  (copy-file (concat user-emacs-directory "lisp/templates/userconfig.template")
-             configs/userconfig-file))
+  (with-temp-file configs/userconfig-file
+    (setq-local coding-system-for-write 'utf-8)
+    (goto-char (point-min))
+    (insert
+     ";; -*- mode: emacs-lisp -*-
+
+(setq configs/package-mirror emacs-tuna-package-mirror
+      configs/default-font '(\"Source Code Pro\"
+                             :size 15
+                             :weight normal
+                             :width normal))")))
 (load-file configs/userconfig-file)
 
 ;; load `custom-file'
@@ -823,13 +832,17 @@ If some elements are missing, the will be stripped out."
   (rime-show-candidate 'posframe)
   (default-input-method "rime")
   (rime-user-data-dir configs/rime-data-dir)
-  :config
+  :init
   (add-hook 'after-init-hook
             (lambda ()
+              (let ((rime-user-file (concat configs/rime-data-dir "user.yaml")))
               (unless (file-exists-p configs/rime-data-dir)
                 (make-directory configs/rime-data-dir)
-                (copy-file (concat user-emacs-directory "lisp/templates/user.yaml")
-                           (concat configs/rime-data-dir "user.yaml"))))))
+                (with-temp-file rime-user-file
+                  (setq-local coding-system-for-write 'utf-8)
+                  (insert
+                   "var:\n  previously_selected_schema: luna_pinyin_simp\n")))
+              t))))
 #+end_src
 
 ** Eshell

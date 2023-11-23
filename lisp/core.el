@@ -99,7 +99,7 @@
   (interactive)
   (let ((env-file configs/env-file))
     (with-temp-file env-file
-      (setq-local coding-system-for-write 'utf-8-unix)
+      (setq-local coding-system-for-write 'utf-8)
       (goto-char (point-min))
       (insert
        ";; -*- mode: lisp-interaction; coding: utf-8-unix; -*-\n"
