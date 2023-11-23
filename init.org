@@ -617,7 +617,11 @@ use =cc-mode= and =cmake-mode=
 #+begin_src emacs-lisp :tangle yes
 (use-package geiser
   :ensure t
-  :commands run-geiser)
+  :commands run-geiser
+  :init
+  (add-to-list 'popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\)\\*$")
+  (add-to-list 'popper-buffers "^\\*Geiser documentation\\*$")
+  (add-to-list 'popper-buffers "^\\*Geiser .+ REPL"))
 #+end_src
 
 ** Haskell
@@ -754,7 +758,7 @@ If some elements are missing, the will be stripped out."
         markdown-fontify-whole-heading-line t))
 #+end_src
 
-** Tex
+** TeX
 #+begin_src emacs-lisp :tangle yes
 (setq TeX-parse-self t
       TeX-auto-save t
@@ -773,7 +777,10 @@ If some elements are missing, the will be stripped out."
   (auctex-latexmk-setup))
 
 (use-package tex
-  :ensure auctex)
+  :ensure auctex
+  :init
+  (add-to-list 'popper-buffers " output\\*$")
+  (add-to-list 'popper-buffers "^\\*TeX \\(?:Help\\|errors\\)"))
 
 (with-eval-after-load 'bibtex
   (setq bibtex-align-at-equal-sign t
@@ -787,7 +794,9 @@ If some elements are missing, the will be stripped out."
 *** magit
 #+begin_src emacs-lisp :tangle yes
 (use-package magit
-  :ensure t)
+  :ensure t
+  :init
+  (add-to-list 'popper-buffers "^\\(?:\\*magit\\|magit:\\| \\*transient\\*\\)"))
 
 (use-package magit-gitflow
   :ensure t
@@ -1033,6 +1042,7 @@ If some elements are missing, the will be stripped out."
 (keybinds/set-leader nil 'global
                      "<SPC>" '("Exec" . execute-extended-command)
                      "." '("Find file" . find-file)
+                     "'" '("Popper" . popper-toggle)
                      "a" '("Actions" . embark-act)
                      "b" (cons "buffer" keybinds/buffer-manage-map)
                      "c" (cons "code" keybinds/code-actions-map)
@@ -1170,7 +1180,7 @@ If some elements are missing, the will be stripped out."
 (use-package popper
   :ensure t
   :bind (("C-`"    . popper-toggle)
-         ("M-`"    . popper-cycle))
+         ("M-'"    . popper-cycle))
   :init
   (setq popper-reference-buffers popper-buffers)
   (popper-mode +1)
