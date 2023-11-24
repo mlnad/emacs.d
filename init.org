@@ -939,7 +939,8 @@ If some elements are missing, the will be stripped out."
                          "f" #'find-file
                          "s" #'save-buffer
                          "S" #'write-file
-                         "r" #'recentf-open-files)
+                         "r" #'recentf-open-files
+                         "P" #'open-init-file)
     map)
   "Emacs file management commands.")
 
