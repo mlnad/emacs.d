@@ -1,6 +1,10 @@
 #+AUTHOR: Liu
 #+EMAIL: liumiaogemini@gmail.com
 
+* Preface
+Org mode can be used to manage Emacs configuration file conviently by
+=ob-tangle= module.
+
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
 (setq gc-cons-threshold (* 128 1024 1024)
@@ -513,6 +517,7 @@
   (setq project-list-file configs/project-list-file))
 #+end_src
 
+* Workspace
 * Programming
 ** Configs
 #+begin_src emacs-lisp :tangle yes
@@ -579,15 +584,32 @@
 #+begin_src emacs-lisp :tangle yes
 (use-package elisp-mode
   :mode ("\\.Cask\\'" . emacs-lisp-mode)
+  :hook (emacs-lisp-mode . flymake-mode-on)
   :config
-  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
+  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode)
+  (add-hook 'emacs-lisp-mode-hook #'emacs-lisp-extend-imenu-help)
+
+  (define-advice elisp-get-var-docstring (:around (fn sym))
+    (when-let (ret (funcall fn sym))
+      (if (boundp sym)
+          (concat ret " "
+                  (let* ((truncated " [...]")
+                         (print-escape-newlines t)
+                         (str (prin1-to-string (symbol-value sym)))
+                         (limit (- (frame-width) (length ret) (length truncated) 1)))
+                    (format (format "%%0.%ds%%s" (max limit 0))
+                            (propertize str 'face 'warning)
+                            (if (< (length str) limit) "" truncated))))
+        ret))))
 #+end_src
 
 *** buttercup
 #+begin_src emacs-lisp :tangle yes
 (use-package buttercup
   :ensure t
-  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
+  :mode ("/test[/-].+\.el$" . buttercup-minor-mode)
+  :init
+  (add-to-list 'popper-buffers "^\\*Buttercup\\*$")
 #+end_src
 
 ** Rust
