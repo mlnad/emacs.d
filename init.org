@@ -593,10 +593,11 @@ Org mode can be used to manage Emacs configuration file conviently by
     (when-let (ret (funcall fn sym))
       (if (boundp sym)
           (concat ret " "
-                  (let* ((truncated " [...]")
+                  (let* ((truncated "[...]")
                          (print-escape-newlines t)
                          (str (prin1-to-string (symbol-value sym)))
-                         (limit (- (frame-width) (length ret) (length truncated) 1)))
+                         (fn-str (prin1-to-string (symbol-function (quote fn))))
+                         (limit (- (frame-width) (length fn-str) (length ret) (length truncated) 2)))
                     (format (format "%%0.%ds%%s" (max limit 0))
                             (propertize str 'face 'warning)
                             (if (< (length str) limit) "" truncated))))
@@ -609,7 +610,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   :ensure t
   :mode ("/test[/-].+\.el$" . buttercup-minor-mode)
   :init
-  (add-to-list 'popper-buffers "^\\*Buttercup\\*$")
+  (add-to-list 'popper-buffers "^\\*Buttercup\\*$"))
 #+end_src
 
 ** Rust
@@ -641,7 +642,18 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 ** TODO C/C++
-use =cc-mode= and =cmake-mode=
+#+begin_src emacs-lisp :tangle yes
+(use-package cc-mode
+  :config
+  (setq c-basic-offset tab-width
+        c-backspace-function #'delete-backward-char))
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+(use-package modern-cpp-font-lock
+  :ensure t
+  :hook (c++-mode . modern-c++-font-lock-mode))
+#+end_src
 
 ** Scheme
 *** geiser
@@ -791,14 +803,6 @@ If some elements are missing, the will be stripped out."
 
 ** TeX
 #+begin_src emacs-lisp :tangle yes
-(setq TeX-parse-self t
-      TeX-auto-save t
-      TeX-auto-local ".auctex-auto"
-      TeX-style-local ".auctex-style"
-      TeX-source-correlate-mode t
-      TeX-source-correlate-method 'synctex
-      TeX-save-query nil)
-
 (use-package auctex-latexmk
   :ensure t
   :after latex
@@ -811,7 +815,15 @@ If some elements are missing, the will be stripped out."
   :ensure auctex
   :init
   (add-to-list 'popper-buffers " output\\*$")
-  (add-to-list 'popper-buffers "^\\*TeX \\(?:Help\\|errors\\)"))
+  (add-to-list 'popper-buffers "^\\*TeX \\(?:Help\\|errors\\)")
+  :config
+  (setq TeX-parse-self t
+      TeX-auto-save t
+      TeX-auto-local ".auctex-auto"
+      TeX-style-local ".auctex-style"
+      TeX-source-correlate-mode t
+      TeX-source-correlate-method 'synctex
+      TeX-save-query nil))
 
 (with-eval-after-load 'bibtex
   (setq bibtex-align-at-equal-sign t
