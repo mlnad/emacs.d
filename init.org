@@ -1,3 +1,4 @@
+#+TITLE: MoYu Emacs configuration
 #+AUTHOR: Liu
 #+EMAIL: liumiaogemini@gmail.com
 
@@ -34,8 +35,8 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 * Default variables
 #+begin_src emacs-lisp :tangle yes
-(defvar config/full-name "Liu Miao")
-(defvar config/email-address "liumiaogemini@foxmail.com")
+(defvar moyu/full-name "Liu Miao")
+(defvar moyu/email-address "liumiaogemini@foxmail.com")
 
 (defconst *sys/win32*
   (eq system-type 'windows-nt))
@@ -52,64 +53,64 @@ Org mode can be used to manage Emacs configuration file conviently by
 (defvar grep-p
   (executable-find "grep"))
 
-(defvar configs/lsp-client 'eglot)
+(defvar moyu/lsp-client 'eglot)
 
-(defvar configs/default-font '("Consolas"
+(defvar moyu/default-font '("Consolas"
                                :size 10
                                :weight normal
                                :width normal))
 
-(defvar configs/unicode-font '("Noto Sans Mono CJK SC"))
+(defvar moyu/unicode-font '("Noto Sans Mono CJK SC"))
 
-(defvar configs/cache-directory
+(defvar moyu/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))
 
-(defvar configs/userconfig-file
-  (expand-file-name "userconfig" configs/cache-directory))
+(defvar moyu/userconfig-file
+  (expand-file-name "userconfig" moyu/cache-directory))
 
-(defvar configs/custom-file
-  (expand-file-name "custom.el" configs/cache-directory))
+(defvar moyu/custom-file
+  (expand-file-name "custom.el" moyu/cache-directory))
 
-(defvar configs/recentf-save-file
-  (expand-file-name "recentf" configs/cache-directory))
+(defvar moyu/recentf-save-file
+  (expand-file-name "recentf" moyu/cache-directory))
 
-(defvar configs/save-place-file
-  (expand-file-name "places" configs/cache-directory))
+(defvar moyu/save-place-file
+  (expand-file-name "places" moyu/cache-directory))
 
-(defvar configs/backup-directory-alist
-  (expand-file-name "backup/" configs/cache-directory))
+(defvar moyu/backup-directory-alist
+  (expand-file-name "backup/" moyu/cache-directory))
 
-(defvar configs/project-list-file
-  (expand-file-name "projects" configs/cache-directory))
+(defvar moyu/project-list-file
+  (expand-file-name "projects" moyu/cache-directory))
 
-(defvar configs/auto-save-list-prefix
-  (expand-file-name "auto-save-list/.saves-" configs/cache-directory))
+(defvar moyu/auto-save-list-prefix
+  (expand-file-name "auto-save-list/.saves-" moyu/cache-directory))
 
-(defvar configs/layouts-directory
-  (expand-file-name "layouts/" configs/cache-directory))
+(defvar moyu/layouts-directory
+  (expand-file-name "layouts/" moyu/cache-directory))
 
-(defvar configs/quelpa-dir
-  (expand-file-name "quelpa/" configs/cache-directory))
+(defvar moyu/quelpa-dir
+  (expand-file-name "quelpa/" moyu/cache-directory))
 
-(defvar configs/notes-dir "~/org/"
+(defvar moyu/notes-dir "~/org/"
   "User defined notes directory.")
 
-(defvar configs/org-roam-dir configs/notes-dir
+(defvar moyu/org-roam-dir moyu/notes-dir
   "User defined org roam directory.")
 
-(defvar configs/org-roam-db-location
-  (expand-file-name "org-roam.db" configs/cache-directory))
+(defvar moyu/org-roam-db-location
+  (expand-file-name "org-roam.db" moyu/cache-directory))
 
-(defvar configs/notes-extensions '("org" "md" "markdown"))
+(defvar moyu/notes-extensions '("org" "md" "markdown"))
 
-(defvar configs/rime-data-dir
-  (expand-file-name "rime/" configs/cache-directory))
+(defvar moyu/rime-data-dir
+  (expand-file-name "rime/" moyu/cache-directory))
 
-(defvar configs/elpa-pack-dir
+(defvar moyu/elpa-pack-dir
   (expand-file-name "elpa" user-emacs-directory )
   "Packages install by package-initilize.")
 
-(defvar configs/elpa-subdirectory 'emacs-version)
+(defvar moyu/elpa-subdirectory 'emacs-version)
 
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
                                  ("gnu" . "https://elpa.gnu.org/packages/")))
@@ -122,21 +123,21 @@ Org mode can be used to manage Emacs configuration file conviently by
                                     ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
                                     ("nongnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
 
-(defvar configs/package-mirror default-package-mirror)
+(defvar moyu/package-mirror default-package-mirror)
 
-(defvar configs/org-journal-type 'daily)
+(defvar moyu/org-journal-type 'daily)
 
-(defvar configs/theme 'doom-one)
+(defvar moyu/theme 'doom-one)
 
-(defvar configs/profile-eln-caches-dir (expand-file-name "eln-caches" configs/cache-directory))
+(defvar moyu/profile-eln-caches-dir (expand-file-name "eln-caches" moyu/cache-directory))
 
-(defvar configs/env-file
-  (expand-file-name "env" configs/cache-directory))
+(defvar moyu/env-file
+  (expand-file-name "env" moyu/cache-directory))
 
-(defvar configs/transient-history-file
-  (expand-file-name "transient/history.el" configs/cache-directory))
+(defvar moyu/transient-history-file
+  (expand-file-name "transient/history.el" moyu/cache-directory))
 
-(defvar popper-buffers
+(defvar moyu/popper-buffers
   (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" 'compilation-mode 'help-mode))
 #+end_src
 
@@ -154,25 +155,25 @@ Org mode can be used to manage Emacs configuration file conviently by
   (setq abbreviated-home-dir nil))
 
 ;; make cache directory
-(unless (file-exists-p configs/cache-directory)
-  (make-directory configs/cache-directory))
+(unless (file-exists-p moyu/cache-directory)
+  (make-directory moyu/cache-directory))
 ;; load user configs.
-(unless (file-exists-p configs/userconfig-file)
-  (with-temp-file configs/userconfig-file
+(unless (file-exists-p moyu/userconfig-file)
+  (with-temp-file moyu/userconfig-file
     (setq-local coding-system-for-write 'utf-8)
     (goto-char (point-min))
     (insert
      ";; -*- mode: emacs-lisp -*-
 
-(setq configs/package-mirror emacs-tuna-package-mirror
-      configs/default-font '(\"Source Code Pro\"
+(setq moyu/package-mirror emacs-tuna-package-mirror
+      moyu/default-font '(\"Source Code Pro\"
                              :size 15
                              :weight normal
                              :width normal))")))
-(load-file configs/userconfig-file)
+(load-file moyu/userconfig-file)
 
 ;; load `custom-file'
-(setq custom-file configs/custom-file)
+(setq custom-file moyu/custom-file)
 (when (file-exists-p custom-file)
   (load custom-file))
 #+end_src
@@ -192,8 +193,15 @@ Org mode can be used to manage Emacs configuration file conviently by
 ** Packages
 #+begin_src emacs-lisp :tangle yes
 (setq package-enable-at-startup nil
-      package-archives configs/package-mirror
-      package-user-dir (core/elpa-package-dir))
+      package-archives moyu/package-mirror
+      package-user-dir (file-name-as-directory
+                        (if (not moyu/elpa-subdirectory)
+                            moyu/elpa-pack-dir
+                          (let ((subdir (format "%d%s%d"
+                                                emacs-major-version
+                                                version-separator
+                                                emacs-minor-version)))
+                            (expand-file-name subdir moyu/elpa-pack-dir)))))
 
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)
@@ -237,8 +245,8 @@ Org mode can be used to manage Emacs configuration file conviently by
         delete-old-versions t
         kept-old-versions 5
         kept-new-versions 5
-        backup-directory-alist configs/backup-directory-alist
-        auto-save-list-file-prefix configs/auto-save-list-prefix
+        backup-directory-alist moyu/backup-directory-alist
+        auto-save-list-file-prefix moyu/auto-save-list-prefix
         tabify-regexp "^\t* [ \t]+")
 
   (setq-default auto-image-file-mode t
@@ -253,7 +261,7 @@ Org mode can be used to manage Emacs configuration file conviently by
                 truncate-lines t)
 
   (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path configs/profile-eln-caches-dir))
+    (add-to-list 'native-comp-eln-load-path moyu/profile-eln-caches-dir))
 
   (fset #'yes-or-no-p #'y-or-n-p)
 
@@ -270,7 +278,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 ;; Create missing directory when we open a file that doesn't exist under
 ;; a directory tree tha may not exist.
-(add-hook 'find-file-not-found-functions #'core/create-if-not-found)
+(add-hook 'find-file-not-found-functions #'create-if-not-found)
 #+end_src
 
 ** Tramp
@@ -278,8 +286,8 @@ Org mode can be used to manage Emacs configuration file conviently by
 (unless *sys/win32*
   (setq tramp-default-method "ssh"
         tramp-backup-directory-alist backup-directory-alist
-        tramp-auto-save-directory (expand-file-name "tramp-autosave/" configs/cache-directory)
-        tramp-backup-directory-alist (expand-file-name "backup/" configs/cache-directory)))
+        tramp-auto-save-directory (expand-file-name "tramp-autosave/" moyu/cache-directory)
+        tramp-backup-directory-alist (expand-file-name "backup/" moyu/cache-directory)))
 
 (with-eval-after-load 'tramp
   (setq remote-file-name-inihibit-cache 60
@@ -308,7 +316,7 @@ Org mode can be used to manage Emacs configuration file conviently by
                               (unless recentf-mode
                                 (recentf-mode)
                                 (recentf-track-opened-file))))
-  (setq recentf-save-file configs/recentf-save-file
+  (setq recentf-save-file moyu/recentf-save-file
         recentf-max-saved-items 1000
         recentf-auto-cleanup 'never)
 
@@ -320,7 +328,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package savehist
   :init
   ;; Minibuffer history
-  (setq savehist-file (expand-file-name "savehist" configs/cache-directory))
+  (setq savehist-file (expand-file-name "savehist" moyu/cache-directory))
   (savehist-mode)
   :config
   (setq savehist-save-minibuffer-history t
@@ -339,7 +347,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
-  (setq save-place-file configs/save-place-file))
+  (setq save-place-file moyu/save-place-file))
 #+end_src
 
 *** subword
@@ -422,6 +430,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package consult
   :ensure t
   :after (vertico)
+  :commands (consult-ripgrep consult-grep)
   :bind (([remap apropos]                       . consult-apropos)
          ([remap bookmark-jump]                 . consult-bookmark)
          ([remap evil-show-marks]               . consult-mark)
@@ -514,7 +523,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package project
   :bind (([remap project-shell] . project-eshell))
   :init
-  (setq project-list-file configs/project-list-file))
+  (setq project-list-file moyu/project-list-file))
 #+end_src
 
 * Workspace
@@ -522,9 +531,9 @@ Org mode can be used to manage Emacs configuration file conviently by
 ** Configs
 #+begin_src emacs-lisp :tangle yes
 
-(defvar program/build-actions-map (make-sparse-keymap))
+(defvar moyu/build-actions-map (make-sparse-keymap))
 
-(defvar program/debug-actions-map (make-sparse-keymap))
+(defvar moyu/debug-actions-map (make-sparse-keymap))
 #+end_src
 
 ** LSP
@@ -611,7 +620,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   :ensure t
   :mode ("/test[/-].+\.el$" . buttercup-minor-mode)
   :init
-  (add-to-list 'popper-buffers "^\\*Buttercup\\*$"))
+  (add-to-list 'moyu/popper-buffers "^\\*Buttercup\\*$"))
 #+end_src
 
 ** Rust
@@ -621,7 +630,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   :ensure t
   :mode ("\\.rs$" . rustic-mode)
   :init
-  (add-to-list 'popper-buffers "^\\*cargo-.*\\*$")
+  (add-to-list 'moyu/popper-buffers "^\\*cargo-.*\\*$")
   :config
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
@@ -629,7 +638,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.
-  (setq rustic-lsp-client configs/lsp-client))
+  (setq rustic-lsp-client moyu/lsp-client))
 #+end_src
 
 ** TODO Python
@@ -639,11 +648,10 @@ Org mode can be used to manage Emacs configuration file conviently by
   :custom
   (python-indent-offset 4)
   :init
-  (add-to-list 'popper-buffers "^\\*Python"))
+  (add-to-list 'moyu/popper-buffers "^\\*Python"))
 #+end_src
 
 ** C/C++
-CLOSED: [2023-11-28 二 18:16]
 #+begin_src emacs-lisp :tangle yes
 (use-package cc-mode
   :config
@@ -664,9 +672,7 @@ CLOSED: [2023-11-28 二 18:16]
   :ensure t
   :commands run-geiser
   :init
-  (add-to-list 'popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\)\\*$")
-  (add-to-list 'popper-buffers "^\\*Geiser documentation\\*$")
-  (add-to-list 'popper-buffers "^\\*Geiser .+ REPL"))
+  (add-to-list 'moyu/popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\|documentation\\|REPL\\)\\*$"))
 #+end_src
 
 ** Haskell
@@ -696,9 +702,9 @@ CLOSED: [2023-11-28 二 18:16]
 (use-package org
   :preface
   ;; org files
-  (setq-default org-directory configs/notes-dir)
+  (setq-default org-directory moyu/notes-dir)
   (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
-        org-preview-latex-image-directory (concat configs/cache-directory "org/latex/")
+        org-preview-latex-image-directory (concat moyu/cache-directory "org/latex/")
         org-list-allow-alphabetical t)
   ;; org babels
   (setq org-src-preserve-indentation t
@@ -721,7 +727,7 @@ CLOSED: [2023-11-28 二 18:16]
         org-startup-folded nil)
   (setq org-todo-keywords org/todo-keywords)
   ;; org agenda
-  (setq-default org-agenda-files (list (concat "agendas/" configs/notes-dir))
+  (setq-default org-agenda-files (list (concat "agendas/" moyu/notes-dir))
                 org-agenda-skip-unavailable-files t
                 org-agenda-span 20
                 org-agenda-start-on-weekday nil
@@ -738,13 +744,13 @@ CLOSED: [2023-11-28 二 18:16]
   :ensure org-roam
   :hook (after-init . org-roam-db-autosync-enable)
   :custom
-  (org-roam-directory configs/org-roam-dir)
+  (org-roam-directory moyu/org-roam-dir)
   :commands (org-roam-buffer-toggle-display
              org-roam-tag-add
              org-roam-tag-delete)
   :init
   (require 'org-roam-dailies)
-  (setq org-roam-db-location configs/org-roam-db-location)
+  (setq org-roam-db-location moyu/org-roam-db-location)
   :config
   (add-to-list 'org/roam-templates org/default-roam-capture)
   (setq org-roam-capture-templates org/roam-templates
@@ -772,7 +778,7 @@ If some elements are missing, the will be stripped out."
 (defun org/find-in-notes ()
   "Find file in notes directory."
   (interactive)
-  (completion/find-file configs/notes-dir))
+  (find--file-in-dir moyu/notes-dir))
 #+end_src
 
 *** valign
@@ -816,8 +822,8 @@ If some elements are missing, the will be stripped out."
 (use-package tex
   :ensure auctex
   :init
-  (add-to-list 'popper-buffers " output\\*$")
-  (add-to-list 'popper-buffers "^\\*TeX \\(?:Help\\|errors\\)")
+  (add-to-list 'moyu/popper-buffers " output\\*$")
+  (add-to-list 'moyu/popper-buffers "^\\*TeX \\(?:Help\\|errors\\)")
   :config
   (setq TeX-parse-self t
       TeX-auto-save t
@@ -841,7 +847,7 @@ If some elements are missing, the will be stripped out."
 (use-package magit
   :ensure t
   :init
-  (add-to-list 'popper-buffers "^\\(?:\\*magit\\|magit:\\| \\*transient\\*\\)"))
+  (add-to-list 'moyu/popper-buffers "^\\(?:\\*magit\\|magit:\\| \\*transient\\*\\)"))
 
 (use-package magit-gitflow
   :ensure t
@@ -867,13 +873,13 @@ If some elements are missing, the will be stripped out."
   :custom
   (rime-show-candidate 'posframe)
   (default-input-method "rime")
-  (rime-user-data-dir configs/rime-data-dir)
+  (rime-user-data-dir moyu/rime-data-dir)
   :init
   (add-hook 'after-init-hook
             (lambda ()
-              (let ((rime-user-file (concat configs/rime-data-dir "user.yaml")))
-              (unless (file-exists-p configs/rime-data-dir)
-                (make-directory configs/rime-data-dir)
+              (let ((rime-user-file (concat moyu/rime-data-dir "user.yaml")))
+              (unless (file-exists-p moyu/rime-data-dir)
+                (make-directory moyu/rime-data-dir)
                 (with-temp-file rime-user-file
                   (setq-local coding-system-for-write 'utf-8)
                   (insert
@@ -896,27 +902,27 @@ If some elements are missing, the will be stripped out."
         eshell-glob-case-insensitive t
         eshell-error-if-no-glob t))
 
-(add-to-list 'popper-buffers "\\.*eshell.*\\*$")
-(add-to-list 'popper-buffers 'eshell-mode)
-(add-to-list 'popper-buffers "\\.*-shell.*\\*$")
-(add-to-list 'popper-buffers 'shell-mode)
+(add-to-list 'moyu/popper-buffers "\\.*eshell.*\\*$")
+(add-to-list 'moyu/popper-buffers 'eshell-mode)
+(add-to-list 'moyu/popper-buffers "\\.*-shell.*\\*$")
+(add-to-list 'moyu/popper-buffers 'shell-mode)
 #+end_src
 
 * Keybindings
 ** Configs
 #+begin_src emacs-lisp :tangle yes
-(defvar keybinds/leader-key "<SPC>"
+(defvar moyu/leader-key "<SPC>"
   "The leader prefix key.")
 
-(defvar keybinds/localleader-key "M-m"
+(defvar moyu/localleader-key "M-m"
   "The localleader prefix key.")
 
-(defun keybinds/define-key (keymap &rest binds)
+(defun moyu/define-key (keymap &rest binds)
   "Define KEY-OPs at KEYMAP."
   (while (length> binds 1)
     (define-key keymap (kbd (pop binds)) (pop binds))))
 
-(defmacro keybinds/set-leader (states keymap &rest binds)
+(defmacro moyu/set-leader (states keymap &rest binds)
   `(evil-define-key ,states ,keymap
      ,@(let ((binds-list))
          (while (length> binds 1)
@@ -956,8 +962,8 @@ If some elements are missing, the will be stripped out."
   :config
   (evil-mode 1)
   (evil-set-undo-system 'undo-fu)
-  (evil-set-leader '(normal motion visual) (kbd keybinds/leader-key))
-  (evil-set-leader '(insert replace emacs) (kbd keybinds/localleader-key)))
+  (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
+  (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key)))
 
 (use-package evil-collection
   :after evil
@@ -969,9 +975,9 @@ If some elements are missing, the will be stripped out."
 
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
-(defvar keybinds/file-manage-map
+(defvar moyu/file-manage-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "f" #'find-file
                          "s" #'save-buffer
                          "S" #'write-file
@@ -980,9 +986,9 @@ If some elements are missing, the will be stripped out."
     map)
   "Emacs file management commands.")
 
-(defvar keybinds/buffer-manage-map
+(defvar moyu/buffer-manage-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "b" #'consult-buffer
                          "d" #'kill-current-buffer
                          "i" #'ibuffer
@@ -995,32 +1001,32 @@ If some elements are missing, the will be stripped out."
     map)
   "Emacs buffer management commands.")
 
-(defvar keybinds/code-actions-map
+(defvar moyu/code-actions-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "r" #'eglot-rename
                          "a" #'eglot-code-actions
                          "c" #'compile
                          "C" #'recompile
-                         "b" (cons "build" program/build-actions-map))
+                         "b" (cons "build" moyu/build-actions-map))
     map)
   "Code actions.")
 
-(defvar keybinds/search-map
+(defvar moyu/search-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "i" #'imenu
                          "s" #'consult-line
                          "S" #'consult-mark
-                         "p" #'completion/search-project
-                         "d" #'completion/search-cwd
+                         "p" #'search-project
+                         "d" #'search-current-work-dir
                          "M" #'consult-man)
     map)
   "Searching in Emacs.")
 
-(defvar keybinds/git-actions-map
+(defvar moyu/git-actions-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "g" #'magit-status
                          "b" #'magit-branch-checkout
                          "t" #'git-timemachine-toggle
@@ -1031,14 +1037,14 @@ If some elements are missing, the will be stripped out."
     map)
   "Version control")
 
-(defvar keybinds/goto-actions-map
+(defvar moyu/goto-actions-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "l" #'goto-line)))
 
-(defvar keybinds/notes-manage-map
+(defvar moyu/notes-manage-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "c" #'org-capture
                          "r" #'org-roam-node-find
                          "n" #'org-roam-capture
@@ -1047,29 +1053,29 @@ If some elements are missing, the will be stripped out."
                          "d" (cons "daily" org/roam-dailies-map))
     map))
 
-(defvar keybinds/open-map
+(defvar moyu/open-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
+    (moyu/define-key map
                          "a" (cons "Agenda" #'org-agenda)
                          "f" #'make-frame
                          "F" #'select-frame-by-name
                          "s" #'eshell
                          "t" #'org-todo-list
-                         "T" #'core/toggle-profiler)
+                         "T" #'toggle-profiler)
     map)
   "Open someting")
 
-(defvar keybinds/quit-map
+(defvar moyu/quit-map
   (let ((map (make-sparse-keymap)))
-    (keybinds/define-key map
-                         "d" #'core/restart-server
+    (moyu/define-key map
+                         "d" #'restart-server
                          "K" #'kill-emacs
                          "R" #'restart-emacs
                          "f" #'delete-frame)
     map)
   "Quit Emacs")
 
-(keybinds/define-key help-map
+(moyu/define-key help-map
                      "'" #'describe-char
                      "a" #'apropos
                      "A" #'apropos-documentation
@@ -1080,7 +1086,7 @@ If some elements are missing, the will be stripped out."
                      "C-m" #'info-emacs-manual
                      "C-c" #'describe-coding-system)
 
-(keybinds/define-key evil-window-map
+(moyu/define-key evil-window-map
                      "m" #'delete-other-windows
                      "u" #'winner-undo
                      "d" #'evil-window-delete
@@ -1089,22 +1095,22 @@ If some elements are missing, the will be stripped out."
 
 ** Leader emacs
 #+begin_src emacs-lisp :tangle yes
-(keybinds/set-leader nil 'global
+(moyu/set-leader nil 'global
                      "<SPC>" '("Exec" . execute-extended-command)
                      "." '("Find file" . find-file)
                      "'" '("Popper" . popper-toggle)
                      "a" '("Actions" . embark-act)
-                     "b" (cons "buffer" keybinds/buffer-manage-map)
-                     "c" (cons "code" keybinds/code-actions-map)
-                     "f" (cons "file" keybinds/file-manage-map)
-                     "g" (cons "git" keybinds/git-actions-map)
-                     "G" (cons "goto" keybinds/goto-actions-map)
+                     "b" (cons "buffer" moyu/buffer-manage-map)
+                     "c" (cons "code" moyu/code-actions-map)
+                     "f" (cons "file" moyu/file-manage-map)
+                     "g" (cons "git" moyu/git-actions-map)
+                     "G" (cons "goto" moyu/goto-actions-map)
                      "h" (cons "help" help-map)
-                     "n" (cons "notes" keybinds/notes-manage-map)
+                     "n" (cons "notes" moyu/notes-manage-map)
                      "p" (cons "projects" project-prefix-map)
-                     "q" (cons "quit/restart" keybinds/quit-map)
-                     "o" (cons "open" keybinds/open-map)
-                     "s" (cons "searching" keybinds/search-map)
+                     "q" (cons "quit/restart" moyu/quit-map)
+                     "o" (cons "open" moyu/open-map)
+                     "s" (cons "searching" moyu/search-map)
                      "w" (cons "window" evil-window-map))
 #+end_src
 
@@ -1113,14 +1119,14 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (defun editor/init-font ()
   "Initialize Emacs font."
-  (when (find-font (font-spec :name (car configs/default-font)))
-    (let* ((font (car configs/default-font))
-           (props (cdr configs/default-font))
+  (when (find-font (font-spec :name (car moyu/default-font)))
+    (let* ((font (car moyu/default-font))
+           (props (cdr moyu/default-font))
            (fontspec (apply 'font-spec :name font props)))
       (set-frame-font fontspec nil t)))
-  (when (find-font (font-spec :name (car configs/unicode-font)))
-    (let* ((font (car configs/unicode-font))
-           (props (cdr configs/unicode-font))
+  (when (find-font (font-spec :name (car moyu/unicode-font)))
+    (let* ((font (car moyu/unicode-font))
+           (props (cdr moyu/unicode-font))
            (fontspec (apply 'font-spec :name font props)))
       (set-fontset-font t 'unicode fontspec)))
   (run-hooks 'after-setting-font-hook))
@@ -1135,9 +1141,9 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (defun editor/init-theme ()
   "Initialize Emacs theme."
-  (when (and configs/theme (not (custom-theme-enabled-p configs/theme)))
+  (when (and moyu/theme (not (custom-theme-enabled-p moyu/theme)))
     (disable-theme custom-enabled-themes)
-    (load-theme configs/theme t)))
+    (load-theme moyu/theme t)))
 
 (let ((hook (if (daemonp)
                 'server-after-make-frame-hook
@@ -1232,7 +1238,7 @@ If some elements are missing, the will be stripped out."
   :bind (("C-`"    . popper-toggle)
          ("M-'"    . popper-cycle))
   :init
-  (setq popper-reference-buffers popper-buffers)
+  (setq popper-reference-buffers moyu/popper-buffers)
   (popper-mode +1)
   (popper-echo-mode +1)
   :config

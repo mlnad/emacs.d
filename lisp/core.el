@@ -3,11 +3,15 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar core/profiler nil)
+(require 'project)
+(require 'profiler)
+(require 'server)
+
+(defvar profiler-enabled nil)
 
 (defvar better-gc-cons-threshold (* 16 1024 1024))
 
-(defvar env/deny
+(defvar denied-env
   '(;; Unix/shell state that shouldn't be persisted
     "^HOME$" "^\\(OLD\\)?PWD$" "^SHLVL$" "^PS1$" "^R?PROMPT$" "^TERM\\(CAP\\)?$"
     "^USER$" "^INSIDE_EMACS$"
@@ -36,11 +40,6 @@
   (interactive)
   (load-file (concat user-emacs-directory "init.el")))
 
-(defun open-userconfig-file()
-  "Open userconfig."
-  (interactive)
-  (find-file configs/userconfig-file))
-
 (defun gc-minibuffer-setup ()
   (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
 
@@ -48,7 +47,7 @@
   (garbage-collect)
   (setq gc-cons-threshold better-gc-cons-threshold))
 
-(defun core/garbage-collect-h ()
+(defun garbage-collect-h ()
   (if (boundp 'after-focus-change-function)
       (add-function :after after-focus-change-function
                     (lambda ()
@@ -59,29 +58,19 @@
   (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
   (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
 
-(defun core/elpa-package-dir ()
-  "Generate the elpa package directory."
-  (file-name-as-directory
-   (if (not configs/elpa-subdirectory)
-       configs/elpa-pack-dir
-     (let ((subdir (format "%d%s%d"
-                           emacs-major-version
-                           version-separator
-                           emacs-minor-version)))
-       (expand-file-name subdir configs/elpa-pack-dir)))))
-
 ;;;###autoload
-(defun core/toggle-profiler ()
-  "Toggle the Emacs profiler"
+(defun toggle-profiler ()
+  "Toggle the Emacs profiler."
   (interactive)
-  (if (not core/profiler)
+  (if (not profiler-enabled)
       (profiler-start 'cpu+mem)
     (profiler-report)
     (profiler-stop))
-  (setq core/profiler (not core/profiler)))
+  (setq profiler-enabled (not profiler-enabled)))
 
-(defun core/create-if-not-found ()
-  "Create file if not found"
+;;;###autoload
+(defun create-if-not-found ()
+  "Create file if not found."
   (unless (file-remote-p buffer-file-name)
     (let ((parent-dir (file-name-directory buffer-file-name)))
       (and (not (file-directory-p parent-dir))
@@ -89,15 +78,11 @@
                              parent-dir))
            (make-directory parent-dir)))))
 
-(defmacro core/file-exists-p (files &optional directory)
-  "Return non-nil if the FILES in DIRECTORY all exist."
-  `(let ((p))))
-
 ;;;###autoload
-(defun core/genreate-env-file ()
-  "Generate enviroment file"
+(defun genreate-env-file (file)
+  "Generate enviroment FILE."
   (interactive)
-  (let ((env-file configs/env-file))
+  (let ((env-file file))
     (with-temp-file env-file
       (setq-local coding-system-for-write 'utf-8)
       (goto-char (point-min))
@@ -116,7 +101,7 @@
     t))
 
 ;;;###autoload
-(defun core/restart-server ()
+(defun restart-server ()
   "Restart the Emacs server."
   (interactive)
   (server-force-delete)
@@ -125,40 +110,40 @@
   (server-start))
 
 ;;;###autoload
-(defun completion/search--dir (dir &optional initial)
+(defun search--dir (dir &optional initial)
   "Search directory.
 
 DIR for the search directory.
 INITIAL for the initial input."
   (require 'consult)
-  (cond (ripgrep-p
+  (cond ((executable-find "rg")
          (consult-ripgrep dir initial))
-        (grep-p
+        ((executable-find "grep")
          (consult-grep dir initial))
         (t (user-error "Couldn't find ripgrep or grep in PATH"))))
 
-(defun completion/search-project (&optional dir)
+(defun search-project (&optional dir)
   "Search current project in DIR."
   (interactive "P")
-  (completion/search--dir dir nil))
+  (search--dir dir nil))
 
-(defun completion/search-project-at (&optional dir)
+(defun search-project-at (&optional dir)
   "Search current project at point."
   (interactive "P")
-  (completion/search--dir dir (thing-at-point 'symbol)))
+  (search--dir dir (thing-at-point 'symbol)))
 
-(defun completion/search-cwd ()
+(defun search-current-work-dir ()
   "Search current directory."
   (interactive)
-  (completion/search--dir default-directory nil))
+  (search--dir default-directory nil))
 
-(defun completion/search-cwd-at ()
+(defun search-current-work-dir-at ()
   "Search current directory at point."
   (interactive)
-  (completion/search--dir default-directory (thing-at-point 'symbol)))
+  (search--dir default-directory (thing-at-point 'symbol)))
 
 ;;;###autoload
-(defun completion/find-file (dir &optional include-all)
+(defun find--file-in-dir (dir &optional include-all)
   "Find file in DIR."
   (unless (file-directory-p dir)
     (error "Directory %S does note exist" dir))
@@ -185,15 +170,13 @@ INITIAL for the initial input."
           ("Package" "^\\s-*\\(?:;;;###package\\|(\\(?:package!\\|use-package!?\\|after!\\)\\) +\\(\\_<[^ ()\n]+\\_>\\)" 1)
           ("Major modes" "^\\s-*(define-derived-mode +\\([^ ()\n]+\\)" 1)
           ("Minor modes" "^\\s-*(define-\\(?:global\\(?:ized\\)?-minor\\|generic\\|minor\\)-mode +\\([^ ()\n]+\\)" 1)
-          ("Modelines" "^\\s-*(def-modeline! +\\([^ ()\n]+\\)" 1)
-          ("Modeline segments" "^\\s-*(def-modeline-segment! +\\([^ ()\n]+\\)" 1)
-          ("Advice" "^\\s-*(\\(?:def\\(?:\\(?:ine-\\)?advice!?\\)\\) +\\([^ )\n]+\\)" 1)
+          ("Advice" "^\\s-*(\\(?:def\\(?:\\(?:ine-\\)?advice?\\)\\) +\\([^ )\n]+\\)" 1)
           ("Macros" "^\\s-*(\\(?:cl-\\)?def\\(?:ine-compile-macro\\|macro\\) +\\([^ )\n]+\\)" 1)
           ("Inline functions" "\\s-*(\\(?:cl-\\)?defsubst +\\([^ )\n]+\\)" 1)
           ("CLI Command" "^\\s-*(\\(def\\(?:cli\\|alias\\|obsolete\\|autoload\\)! +\\([^\n]+\\)\\)" 1)
-          ("Functions" "^\\s-*(\\(?:cl-\\)?def\\(?:un\\|un\\*\\|method\\|generic\\|-memoized!\\) +\\([^ ,)\n]+\\)" 1)
+          ("Functions" "^\\s-*(\\(?:cl-\\)?def\\(?:un\\|un\\*\\|method\\|generic\\) +\\([^ ,)\n]+\\)" 1)
           ("Variables" "^\\s-*(\\(def\\(?:c\\(?:onst\\(?:ant\\)?\\|ustom\\)\\|ine-symbol-macro\\|parameter\\|var\\(?:-local\\)?\\)\\)\\s-+\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2)
           ("Types" "^\\s-*(\\(cl-def\\(?:struct\\|type\\)\\|def\\(?:class\\|face\\|group\\|ine-\\(?:condition\\|error\\|widget\\)\\|package\\|struct\\|t\\(?:\\(?:hem\\|yp\\)e\\)\\)\\)\\s-+'?\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2))))
 
 (provide 'core)
-;;; core-libs.el ends here
+;;; core.el ends here
