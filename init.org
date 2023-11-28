@@ -531,6 +531,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+begin_src emacs-lisp :tangle yes
 (use-package eglot
   :ensure t
+  :hook (prog-mode . eglot-ensure)
   :init
   (advice-add #'eglot-ensure :around
               (lambda (fn)
@@ -641,7 +642,8 @@ Org mode can be used to manage Emacs configuration file conviently by
   (add-to-list 'popper-buffers "^\\*Python"))
 #+end_src
 
-** TODO C/C++
+** C/C++
+CLOSED: [2023-11-28 二 18:16]
 #+begin_src emacs-lisp :tangle yes
 (use-package cc-mode
   :config
