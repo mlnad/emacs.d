@@ -1,0 +1,18 @@
+#+TITLE: MoYu Emacs
+
+* MoYu Emacs
+Emacs configuration with listed packages.
+
+** Packages
+- Evil, Smartparen,
+- Magit
+- Vertico, Orderless, Consult
+- Org-mode, Markdown, LaTex
+- Rime
+- Eshell
+- Eglot
+- Rustic
+- Python
+  
+** More
+See [[file:init.org][init]] for more information.
