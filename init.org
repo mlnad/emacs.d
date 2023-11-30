@@ -388,8 +388,23 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package smartparens-mode
   :ensure smartparens
   :hook (prog-mode text-mode markdown-mode org-mode)
+  :commands sp-pair sp-local-pair sp-with-modes sp-point-in-comment sp-point-in-string
   :config
-  (require 'smartparens-config))
+  (require 'smartparens-config)
+
+  (with-eval-after-load 'evil
+    (setq sp-show-pair-from-inside t
+          sp-cancel-autoskip-on-backward-movement nil))
+
+  (let ((unless-list '(sp-point-before-word-p
+                       sp-point-after-word-p
+                       sp-point-before-same-p)))
+    (sp-pair "'"  nil :unless unless-list)
+    (sp-pair "\"" nil :unless unless-list))
+
+  (sp-local-pair sp-lisp-modes "(" ")" :unless '(:rem sp-point-before-same-p))
+  (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode gfm-mode)
+                 "[" nil :post-handlers '(:rem ("| " "SPC"))))
 #+end_src
 
 ** Restart
