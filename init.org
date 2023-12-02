@@ -236,7 +236,6 @@ Org mode can be used to manage Emacs configuration file conviently by
   (setq enable-recursive-minibuffers t
         resize-mini-windows 'grow-only
         find-file-visit-truename t
-        vc-follow-symlinks t
         create-lockfiles nil
         make-backup-files nil
         ring-bell-function 'ignore
@@ -246,16 +245,15 @@ Org mode can be used to manage Emacs configuration file conviently by
         kept-old-versions 5
         kept-new-versions 5
         backup-directory-alist moyu/backup-directory-alist
-        auto-save-list-file-prefix moyu/auto-save-list-prefix
-        tabify-regexp "^\t* [ \t]+")
+        auto-save-list-file-prefix moyu/auto-save-list-prefix)
 
   (setq-default auto-image-file-mode t
-                initial-scratch-message nil
+                initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
                 inhibit-splash-screen t
                 initial-major-mode 'org-mode
                 frame-title-format "Mo󱢴Yu: - %b"
                 tab-width 4
-	            indent-tabs-mode nil
+	        indent-tabs-mode nil
                 fill-column 80
                 word-wrap t
                 truncate-lines t)
@@ -263,10 +261,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   (when (boundp 'native-comp-eln-load-path)
     (add-to-list 'native-comp-eln-load-path moyu/profile-eln-caches-dir))
 
-  (fset #'yes-or-no-p #'y-or-n-p)
-
-  :config
-  (delete-selection-mode 1))
+  (fset #'yes-or-no-p #'y-or-n-p))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -381,6 +376,13 @@ Org mode can be used to manage Emacs configuration file conviently by
   (setq compilation-always-kill t
         compilation-ask-about-save nil
         compilation-scroll-output 'first-error))
+#+end_src
+
+*** vc
+#+begin_src emacs-lisp :tangle yes
+(use-package vc
+  :custom
+  (vc-follow-link t))
 #+end_src
 
 ** Smartparens
