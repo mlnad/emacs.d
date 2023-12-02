@@ -993,119 +993,121 @@ If some elements are missing, the will be stripped out."
 (defvar moyu/file-manage-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "f" #'find-file
-                         "s" #'save-buffer
-                         "S" #'write-file
-                         "r" #'recentf-open-files
-                         "P" #'open-init-file)
+                     "f" #'find-file
+                     "s" #'save-buffer
+                     "S" #'write-file
+                     "r" #'recentf-open-files
+                     "P" #'open-init-file)
     map)
   "Emacs file management commands.")
 
 (defvar moyu/buffer-manage-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "b" #'consult-buffer
-                         "d" #'kill-current-buffer
-                         "i" #'ibuffer
-                         "k" #'kill-buffer-and-window
-                         "r" #'revert-buffer
-                         "R" #'rename-buffer
-                         "]" #'next-buffer
-                         "[" #'previous-buffer
-                         "x" #'kill-buffer-and-window)
+                     "b" #'consult-buffer
+                     "d" #'kill-current-buffer
+                     "i" #'ibuffer
+                     "k" #'kill-buffer-and-window
+                     "r" #'revert-buffer
+                     "R" #'rename-buffer
+                     "]" #'next-buffer
+                     "[" #'previous-buffer
+                     "x" #'kill-buffer-and-window)
     map)
   "Emacs buffer management commands.")
 
 (defvar moyu/code-actions-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "r" #'eglot-rename
-                         "a" #'eglot-code-actions
-                         "c" #'compile
-                         "C" #'recompile
-                         "b" (cons "build" moyu/build-actions-map))
+                     "r" #'eglot-rename
+                     "a" #'eglot-code-actions
+                     "c" #'compile
+                     "C" #'recompile
+                     "b" (cons "build" moyu/build-actions-map))
     map)
   "Code actions.")
 
 (defvar moyu/search-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "i" #'imenu
-                         "s" #'consult-line
-                         "S" #'consult-mark
-                         "p" #'search-project
-                         "d" #'search-current-work-dir
-                         "M" #'consult-man)
+                     "i" #'imenu
+                     "I" #'consult-imenu-multi
+                     "s" #'consult-line
+                     "S" #'consult-mark
+                     "p" #'search-project
+                     "d" #'search-current-work-dir
+                     "M" #'consult-man)
     map)
   "Searching in Emacs.")
 
 (defvar moyu/git-actions-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "g" #'magit-status
-                         "b" #'magit-branch-checkout
-                         "t" #'git-timemachine-toggle
-                         "C" #'magit-clone
-                         "S" #'magit-stage-file
-                         "U" #'magit-unstage-file
-                         "R" #'vc-revert)
+                     "g" #'magit-status
+                     "b" #'magit-branch-checkout
+                     "t" #'git-timemachine-toggle
+                     "C" #'magit-clone
+                     "S" #'magit-stage-file
+                     "U" #'magit-unstage-file
+                     "R" #'vc-revert)
     map)
   "Version control")
 
 (defvar moyu/goto-actions-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "l" #'goto-line)))
+                     "l" #'goto-line)))
 
 (defvar moyu/notes-manage-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "c" #'org-capture
-                         "r" #'org-roam-node-find
-                         "n" #'org-roam-capture
-                         "v" #'org-search-view
-                         "f" #'org/find-in-notes
-                         "d" (cons "daily" org/roam-dailies-map))
-    map))
+                     "c" #'org-capture
+                     "r" #'org-roam-node-find
+                     "n" #'org-roam-capture
+                     "v" #'org-search-view
+                     "f" #'org/find-in-notes
+                     "d" (cons "daily" org/roam-dailies-map))
+    map)
+  "Notes Manager.")
 
 (defvar moyu/open-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "a" (cons "Agenda" #'org-agenda)
-                         "f" #'make-frame
-                         "F" #'select-frame-by-name
-                         "s" #'eshell
-                         "t" #'org-todo-list
-                         "T" #'toggle-profiler)
+                     "a" (cons "Agenda" #'org-agenda)
+                     "f" #'make-frame
+                     "F" #'select-frame-by-name
+                     "s" #'eshell
+                     "t" #'org-todo-list
+                     "T" #'toggle-profiler)
     map)
-  "Open someting")
+  "Open someting.")
 
 (defvar moyu/quit-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                         "d" #'restart-server
-                         "K" #'kill-emacs
-                         "R" #'restart-emacs
-                         "f" #'delete-frame)
+                     "d" #'restart-server
+                     "K" #'kill-emacs
+                     "R" #'restart-emacs
+                     "f" #'delete-frame)
     map)
-  "Quit Emacs")
+  "Quit Emacs.")
 
 (moyu/define-key help-map
-                     "'" #'describe-char
-                     "a" #'apropos
-                     "A" #'apropos-documentation
-                     "F" #'describe-face
-                     "t" #'load-theme
-                     "p" #'find-library
-                     "C-l" #'describe-language-environment
-                     "C-m" #'info-emacs-manual
-                     "C-c" #'describe-coding-system)
+                 "'" #'describe-char
+                 "a" #'apropos
+                 "A" #'apropos-documentation
+                 "F" #'describe-face
+                 "t" #'load-theme
+                 "p" #'find-library
+                 "C-l" #'describe-language-environment
+                 "C-m" #'info-emacs-manual
+                 "C-c" #'describe-coding-system)
 
 (moyu/define-key evil-window-map
-                     "m" #'delete-other-windows
-                     "u" #'winner-undo
-                     "d" #'evil-window-delete
-                     "T" #'tear-off-window)
+                 "m" #'delete-other-windows
+                 "u" #'winner-undo
+                 "d" #'evil-window-delete
+                 "T" #'tear-off-window)
 #+end_src
 
 ** Leader emacs
