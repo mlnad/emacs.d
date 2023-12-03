@@ -2,6 +2,8 @@
 #+AUTHOR: Liu
 #+EMAIL: liumiaogemini@gmail.com
 
+#+STARTUP: content
+
 * Preface
 Org mode can be used to manage Emacs configuration file conviently by
 =ob-tangle= module.
@@ -56,9 +58,9 @@ Org mode can be used to manage Emacs configuration file conviently by
 (defvar moyu/lsp-client 'eglot)
 
 (defvar moyu/default-font '("Consolas"
-                               :size 10
-                               :weight normal
-                               :width normal))
+                            :size 10
+                            :weight normal
+                            :width normal))
 
 (defvar moyu/unicode-font '("Noto Sans Mono CJK SC"))
 
@@ -389,9 +391,11 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+begin_src emacs-lisp :tangle yes
 (use-package smartparens-mode
   :ensure smartparens
-  :hook (prog-mode text-mode markdown-mode org-mode)
+  :hook (after-init . smartparens-global-mode)
   :commands sp-pair sp-local-pair sp-with-modes sp-point-in-comment sp-point-in-string
   :config
+  (add-to-list 'sp-lisp-modes 'sly-mrepl-mode)
+
   (require 'smartparens-config)
 
   (with-eval-after-load 'evil
