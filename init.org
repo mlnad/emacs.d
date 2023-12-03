@@ -419,6 +419,24 @@ Org mode can be used to manage Emacs configuration file conviently by
   :ensure t)
 #+end_src
 
+** Enviroment
+#+begin_src emacs-lisp :tangle yes
+(use-package envrc
+  :ensure t)
+#+end_src
+
+** Ligature
+#+begin_src emacs-lisp :tangle yes
+(use-package ligature
+  :ensure t)
+#+end_src
+
+** Emacs SQL
+#+begin_src emacs-lisp :tangle yes
+(use-package emacssql
+  :ensure t)
+#+end_src
+
 * Completion
 ** Vertico based
 *** orderless
@@ -581,6 +599,13 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 ** Debug
+
+** Format
+#+begin_src emacs-lisp :tangle yes
+(use-package format-all
+  :ensure t)
+#+end_src
+
 ** Snippet
 #+begin_src emacs-lisp :tangle yes
 (use-package yasnippet
@@ -810,6 +835,12 @@ If some elements are missing, the will be stripped out."
   (add-hook 'org-mode-hook #'valign-mode))
 #+end_src
 
+*** org-modern
+#+begin_src emacs-lisp :tangle yes
+(use-package org-modern
+  :ensure t)
+#+end_src
+
 *** gnuplot
 #+begin_src emacs-lisp :tangle yes
 (use-package gnuplot
@@ -860,6 +891,13 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 ** Typst
+
+** Edit convient
+*** tempel
+#+begin_src emacs-lisp :tanble yes
+(use-package tempel
+  :ensure t)
+#+end_src
 
 * Applications
 ** Version control
