@@ -736,10 +736,10 @@ Org mode can be used to manage Emacs configuration file conviently by
   '((sequence "TODO(t)" "LOOP(r)" "START(s)" "WAIT(w)" "HOLD(h)" "IDEA(i)" "|" "DONE(d)" "KILL(k)")))
 #+end_src
 
-*** TODO org-mode
+*** org-mode
 #+begin_src emacs-lisp :tangle yes
 (use-package org
-  :preface
+  :config
   ;; org files
   (setq-default org-directory moyu/notes-dir)
   (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
@@ -750,10 +750,9 @@ Org mode can be used to manage Emacs configuration file conviently by
         org-src-tab-acts-natively t
         org-confirm-babel-evaluate nil
         org-link-elisp-confirm-function nil
-        org-src-window-setup 'other-window)
+        org-src-window-setup 'split-window-below)
   ;; org faces
   (setq org-indirect-buffer-display 'current-window
-        org-log-done 'time
         org-enforce-todo-dependencies t
         org-fontify-done-headline t
         org-fontify-quote-and-verse-blocks t
