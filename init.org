@@ -433,7 +433,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 ** Emacs SQL
 #+begin_src emacs-lisp :tangle yes
-(use-package emacssql
+(use-package emacsql
   :ensure t)
 #+end_src
 
