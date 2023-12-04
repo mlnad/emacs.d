@@ -389,18 +389,15 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 ** Smartparens
 #+begin_src emacs-lisp :tangle yes
-(use-package smartparens-mode
+(use-package smartparens
   :ensure smartparens
+  :commands (sp-pair sp-local-pair sp-with-modes sp-point-in-comment sp-point-in-string)
   :hook (after-init . smartparens-global-mode)
-  :commands sp-pair sp-local-pair sp-with-modes sp-point-in-comment sp-point-in-string
   :config
-  (add-to-list 'sp-lisp-modes 'sly-mrepl-mode)
-
   (require 'smartparens-config)
 
   (with-eval-after-load 'evil
-    (setq sp-show-pair-from-inside t
-          sp-cancel-autoskip-on-backward-movement nil))
+    (setq sp-show-pair-from-inside t))
 
   (let ((unless-list '(sp-point-before-word-p
                        sp-point-after-word-p
