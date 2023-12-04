@@ -417,10 +417,6 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 ** Enviroment
-#+begin_src emacs-lisp :tangle yes
-(use-package envrc
-  :ensure t)
-#+end_src
 
 ** Ligature
 #+begin_src emacs-lisp :tangle yes
