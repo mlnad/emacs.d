@@ -1,4 +1,4 @@
-#+TITLE: MoYu Emacs
+#+TITLE: 󰛓 Mo Yu Emacs
 
 #+begin_quote
 Emacs configuration with listed packages.

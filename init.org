@@ -253,7 +253,7 @@ Org mode can be used to manage Emacs configuration file conviently by
                 initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
                 inhibit-splash-screen t
                 initial-major-mode 'org-mode
-                frame-title-format "Mo󱢴Yu: - %b"
+                frame-title-format "󰛓 Mo Yu : - %b"
                 tab-width 4
 	        indent-tabs-mode nil
                 fill-column 80
