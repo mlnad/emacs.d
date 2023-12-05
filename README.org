@@ -1,4 +1,6 @@
-#+TITLE: 󰛓 Mo Yu Emacs
+[[file:feather.svg][Yu]]
+
+#+TITLE: Mo Yu Emacs
 
 #+begin_quote
 Emacs configuration with listed packages.
