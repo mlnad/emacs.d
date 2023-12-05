@@ -1,1 +1,37 @@
-<?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg id="feather" width="128" height="128" style="width:128px;height:128px;" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" enable-background="new 0 0 2048 2048" xml:space="preserve"><path fill="#666" d="M2048 2048 q-48 -24 -125 -135 l-62 -101 q-164 -9 -289 -64.5 q-125 -55.5 -250 -165.5 q149 33 231 48 q96 9 211 5 l-125 -202 q-173 9 -312 -44 q-111 -43 -279 -163 q130 29 238 29 q108 0 252 -24 l-105 -207 q-193 34 -351.5 -7 q-158.5 -41 -360.5 -180 q216 24 317 24 q154 0 294 -44 q-164 -187 -375 -230 q-173 -39 -390 28 q-110 -115 -184.5 -218.5 q-74.5 -103.5 -185.5 -295.5 l-197 -101 l34 101 q48 130 110 274 q92 202 202 399 q140 245 303 466 q173 241 385 409 q173 149 375 240 q158 77 327 121 q115 28 225 38 q87 0 87 0 Z"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="feather"
+   width="128"
+   height="128"
+   style="width:128px;height:128px;"
+   version="1.1"
+   viewBox="0 0 2048 2048"
+   enable-background="new 0 0 2048 2048"
+   xml:space="preserve"
+   sodipodi:docname="feather.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1" /><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.3971067"
+     inkscape:cx="71.047745"
+     inkscape:cy="59.245534"
+     inkscape:window-width="2560"
+     inkscape:window-height="1378"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="feather" /><path
+     fill="#666666"
+     d="m 2048,0 q -48,24 -125,135 l -62,101 q -164,9 -289,64.5 -125,55.5 -250,165.5 149,-33 231,-48 96,-9 211,-5 l -125,202 q -173,-9 -312,44 -111,43 -279,163 130,-29 238,-29 108,0 252,24 l -105,207 q -193,-34 -351.5,7 -158.5,41 -360.5,180 216,-24 317,-24 154,0 294,44 -164,187 -375,230 -173,39 -390,-28 Q 457,1548 382.5,1651.5 308,1755 197,1947 L 0,2048 34,1947 Q 82,1817 144,1673 236,1471 346,1274 486,1029 649,808 822,567 1034,399 1207,250 1409,159 1567,82 1736,38 1851,10 1961,0 Z"
+     id="path1" /></svg>
