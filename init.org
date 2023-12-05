@@ -595,8 +595,9 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 ** Format
 #+begin_src emacs-lisp :tangle yes
-(use-package format-all
-  :ensure t)
+(use-package apheleia
+  :ensure t
+  :hook (after-init . apheleia-global-mode))
 #+end_src
 
 ** Snippet
@@ -715,6 +716,13 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 ** Haskell
+
+** Docker
+*** dockerfile
+#+begin_src emacs-lisp :tangle yes
+(use-package dockerfile-mode
+  :ensure t)
+#+end_src
 
 * Writting
 ** Configs
@@ -1059,7 +1067,8 @@ If some elements are missing, the will be stripped out."
                      "a" #'eglot-code-actions
                      "c" #'compile
                      "C" #'recompile
-                     "b" (cons "build" moyu/build-actions-map))
+                     "b" (cons "build" moyu/build-actions-map)
+                     "f" #'apheleia-format-buffer)
     map)
   "Code actions.")
 
