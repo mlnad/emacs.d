@@ -1,4 +1,5 @@
-[[file:feather.svg][Yu]]
+#+ATTR_HTML: :align center
+[[./feather.svg]]
 
 #+TITLE: Mo Yu Emacs
 
