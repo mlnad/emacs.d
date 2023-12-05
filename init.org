@@ -167,7 +167,7 @@ Org mode can be used to manage Emacs configuration file conviently by
     (insert
      ";; -*- mode: emacs-lisp -*-
 
-(setq moyu/package-mirror emacs-tuna-package-mirror
+(setq moyu/package-mirror default-package-mirror
       moyu/default-font '(\"Source Code Pro\"
                              :size 15
                              :weight normal
@@ -905,8 +905,10 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (use-package magit
   :ensure t
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\(?:\\*magit\\|magit:\\| \\*transient\\*\\)"))
+  :config
+  (setq transient-display-buffer-action '(display-buffer-below-selected)
+        magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1
+        magit-bury-buffer-function #'magit-mode-quit-window))
 
 (use-package magit-gitflow
   :ensure t
@@ -1088,13 +1090,25 @@ If some elements are missing, the will be stripped out."
 (defvar moyu/git-actions-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
+                     "/" #'magit-dispatch
+                     "." #'magit-file-dispatch
                      "g" #'magit-status
                      "b" #'magit-branch-checkout
-                     "t" #'git-timemachine-toggle
+                     "B" #'magit-blame-addition
                      "C" #'magit-clone
+                     "F" #'magit-fetch
+                     "L" #'magit-log-buffer-file
                      "S" #'magit-stage-file
+                     "t" #'git-timemachine-toggle
                      "U" #'magit-unstage-file
-                     "R" #'vc-revert)
+                     "R" #'vc-revert
+                     "f" (cons "find" (let ((map (make-sparse-keymap)))
+                                        (moyu/define-key map
+                                                         "f" #'magit-find-file
+                                                         "g" #'magit-find-git-config-file
+                                                         "c" #'magit-show-commit)
+                                        map))
+                     "R" #'magit-init)
     map)
   "Version control")
 
