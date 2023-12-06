@@ -8,15 +8,16 @@ Emacs configuration with listed packages.
 #+end_quote
 
 * Packages
-- Evil, Smartparen,
-- Magit
-- Vertico, Orderless, Consult
+- Evil, Smartparen, Popper
+- Magit, Git-gutter
+- Vertico, Orderless, Consult, Corfu
 - Org-mode, Markdown, LaTex
-- Rime
-- Eshell
-- Eglot
-- Rustic
-- Python
-  
+- Eglot, Apheleia
+- Rustic, Python
+
+* Mono-file
+All the configurations for start Emacs is integrated into [[file:init.org][init.org]]. These codes
+can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
+
 * More
 See [[file:init.org][init]] for more information.
