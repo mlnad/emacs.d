@@ -1065,12 +1065,16 @@ If some elements are missing, the will be stripped out."
 (defvar moyu/code-actions-map
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
-                     "r" #'eglot-rename
                      "a" #'eglot-code-actions
+                     "b" (cons "build" moyu/build-actions-map)
                      "c" #'compile
                      "C" #'recompile
-                     "b" (cons "build" moyu/build-actions-map)
-                     "f" #'apheleia-format-buffer)
+                     "f" #'apheleia-format-buffer
+                     "j" #'eglot-find-declaration
+                     "r" #'eglot-rename
+                     "S" #'consult-eglot-symbols
+                     "w" #'delete-trailing-whitespace
+                     "x" #'consult-flymake)
     map)
   "Code actions.")
 
