@@ -629,7 +629,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   :after yasnippet)
 #+end_src
 
-** Elisp
+** Lisp
 *** elisp-mode
 #+begin_src emacs-lisp :tangle yes
 (use-package elisp-mode
@@ -661,6 +661,27 @@ Org mode can be used to manage Emacs configuration file conviently by
   :mode ("/test[/-].+\.el$" . buttercup-minor-mode)
   :init
   (add-to-list 'moyu/popper-buffers "^\\*Buttercup\\*$"))
+#+end_src
+
+*** geiser
+#+begin_src emacs-lisp :tangle yes
+(use-package geiser
+  :ensure t
+  :commands run-geiser
+  :init
+  (add-to-list 'moyu/popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\|documentation\\|REPL\\)\\*$"))
+#+end_src
+
+*** lispy
+#+begin_src emacs-lisp :tangle yes
+(use-package lispy
+  :ensure t
+  :hook ((lisp-mode . lispy-mode)
+         (emacs-lisp-mode . lispy-mode)
+         (scheme-mode . lispy-mode)
+         (ielm-mode . lispy-mode))
+  :config
+  (setq lispy-close-quotes-at-end-p t))
 #+end_src
 
 ** Rust
@@ -703,16 +724,6 @@ Org mode can be used to manage Emacs configuration file conviently by
 (use-package modern-cpp-font-lock
   :ensure t
   :hook (c++-mode . modern-c++-font-lock-mode))
-#+end_src
-
-** Scheme
-*** geiser
-#+begin_src emacs-lisp :tangle yes
-(use-package geiser
-  :ensure t
-  :commands run-geiser
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\|documentation\\|REPL\\)\\*$"))
 #+end_src
 
 ** Haskell
