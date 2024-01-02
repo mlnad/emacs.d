@@ -57,12 +57,10 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 (defvar moyu/lsp-client 'eglot)
 
-(defvar moyu/default-font '("Consolas"
-                            :size 10
-                            :weight normal
-                            :width normal))
+(defvar moyu/default-font (font-spec :family "Consolas"
+                                     :size 14))
 
-(defvar moyu/unicode-font '("Noto Sans Mono CJK SC"))
+(defvar moyu/serif-font (font-spec :family "Noto Serif CJK SC"))
 
 (defvar moyu/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))
@@ -168,10 +166,8 @@ Org mode can be used to manage Emacs configuration file conviently by
      ";; -*- mode: emacs-lisp -*-
 
 (setq moyu/package-mirror default-package-mirror
-      moyu/default-font '(\"Source Code Pro\"
-                             :size 15
-                             :weight normal
-                             :width normal))")))
+      moyu/default-font (font-spec :family \"Consolas\"
+                                     :size 14))")))
 (load-file moyu/userconfig-file)
 
 ;; load `custom-file'
@@ -632,12 +628,27 @@ Org mode can be used to manage Emacs configuration file conviently by
 ** Lisp
 *** elisp-mode
 #+begin_src emacs-lisp :tangle yes
+(defvar emacs-lisp-extend-imenu-list
+  `(("Section" "^[ \t]*;;;*\\**[ \t]+\\([^\n]+\\)" 1)
+    ("Unit tests" "^\\s-*(\\(?:ert-deftest\\|describe\\) +\"\\([^\")]+\\)\"" 1)
+    ("Package" "^\\s-*\\(?:;;;###package\\|(\\(?:package!\\|use-package!?\\|after!\\)\\) +\\(\\_<[^ ()\n]+\\_>\\)" 1)
+    ("Major modes" "^\\s-*(define-derived-mode +\\([^ ()\n]+\\)" 1)
+    ("Minor modes" "^\\s-*(define-\\(?:global\\(?:ized\\)?-minor\\|generic\\|minor\\)-mode +\\([^ ()\n]+\\)" 1)
+    ("Advice" "^\\s-*(\\(?:def\\(?:\\(?:ine-\\)?advice?\\)\\) +\\([^ )\n]+\\)" 1)
+    ("Macros" "^\\s-*(\\(?:cl-\\)?def\\(?:ine-compile-macro\\|macro\\) +\\([^ )\n]+\\)" 1)
+    ("Inline functions" "\\s-*(\\(?:cl-\\)?defsubst +\\([^ )\n]+\\)" 1)
+    ("CLI Command" "^\\s-*(\\(def\\(?:cli\\|alias\\|obsolete\\|autoload\\)! +\\([^\n]+\\)\\)" 1)
+    ("Functions" "^\\s-*(\\(?:cl-\\)?def\\(?:un\\|un\\*\\|method\\|generic\\) +\\([^ ,)\n]+\\)" 1)
+    ("Variables" "^\\s-*(\\(def\\(?:c\\(?:onst\\(?:ant\\)?\\|ustom\\)\\|ine-symbol-macro\\|parameter\\|var\\(?:-local\\)?\\)\\)\\s-+\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2)
+    ("Types" "^\\s-*(\\(cl-def\\(?:struct\\|type\\)\\|def\\(?:class\\|face\\|group\\|ine-\\(?:condition\\|error\\|widget\\)\\|package\\|struct\\|t\\(?:\\(?:hem\\|yp\\)e\\)\\)\\)\\s-+'?\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2)))
+
 (use-package elisp-mode
   :mode ("\\.Cask\\'" . emacs-lisp-mode)
   :hook (emacs-lisp-mode . flymake-mode-on)
   :config
   (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode)
-  (add-hook 'emacs-lisp-mode-hook #'emacs-lisp-extend-imenu-help)
+  (add-hook 'emacs-lisp-mode-hook (lambda ()
+                                    (setq imenu-generic-expression emacs-lisp-extend-imenu-list)))
 
   (define-advice elisp-get-var-docstring (:around (fn sym))
     (when-let (ret (funcall fn sym))
@@ -1208,24 +1219,10 @@ If some elements are missing, the will be stripped out."
 * UI
 ** Font
 #+begin_src emacs-lisp :tangle yes
-(defun editor/init-font ()
-  "Initialize Emacs font."
-  (when (find-font (font-spec :name (car moyu/default-font)))
-    (let* ((font (car moyu/default-font))
-           (props (cdr moyu/default-font))
-           (fontspec (apply 'font-spec :name font props)))
-      (set-frame-font fontspec nil t)))
-  (when (find-font (font-spec :name (car moyu/unicode-font)))
-    (let* ((font (car moyu/unicode-font))
-           (props (cdr moyu/unicode-font))
-           (fontspec (apply 'font-spec :name font props)))
-      (set-fontset-font t 'unicode fontspec)))
-  (run-hooks 'after-setting-font-hook))
-
 (let ((hook (if (daemonp)
                 'server-after-make-frame-hook
               'after-init-hook)))
-  (add-hook hook #'editor/init-font -100))
+  (add-hook hook (lambda () (init-fonts-in-emacs moyu/default-font moyu/serif-font)) -100))
 #+end_src
 
 ** Theme

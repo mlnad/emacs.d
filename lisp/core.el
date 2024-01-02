@@ -161,22 +161,25 @@ INITIAL for the initial input."
      dirs pr include-all)))
 
 ;;;###autoload
-(defun emacs-lisp-extend-imenu-help ()
-  "Improve imenu support in `emacs-lisp-mode' for Doom's APIs."
-  (setq imenu-generic-expression
-        `(("Section" "^[ \t]*;;;*\\**[ \t]+\\([^\n]+\\)" 1)
-          ("Evil commands" "^\\s-*(evil-define-\\(?:command\\|operator\\|motion\\) +\\(\\_<[^ ()\n]+\\_>\\)" 1)
-          ("Unit tests" "^\\s-*(\\(?:ert-deftest\\|describe\\) +\"\\([^\")]+\\)\"" 1)
-          ("Package" "^\\s-*\\(?:;;;###package\\|(\\(?:package!\\|use-package!?\\|after!\\)\\) +\\(\\_<[^ ()\n]+\\_>\\)" 1)
-          ("Major modes" "^\\s-*(define-derived-mode +\\([^ ()\n]+\\)" 1)
-          ("Minor modes" "^\\s-*(define-\\(?:global\\(?:ized\\)?-minor\\|generic\\|minor\\)-mode +\\([^ ()\n]+\\)" 1)
-          ("Advice" "^\\s-*(\\(?:def\\(?:\\(?:ine-\\)?advice?\\)\\) +\\([^ )\n]+\\)" 1)
-          ("Macros" "^\\s-*(\\(?:cl-\\)?def\\(?:ine-compile-macro\\|macro\\) +\\([^ )\n]+\\)" 1)
-          ("Inline functions" "\\s-*(\\(?:cl-\\)?defsubst +\\([^ )\n]+\\)" 1)
-          ("CLI Command" "^\\s-*(\\(def\\(?:cli\\|alias\\|obsolete\\|autoload\\)! +\\([^\n]+\\)\\)" 1)
-          ("Functions" "^\\s-*(\\(?:cl-\\)?def\\(?:un\\|un\\*\\|method\\|generic\\) +\\([^ ,)\n]+\\)" 1)
-          ("Variables" "^\\s-*(\\(def\\(?:c\\(?:onst\\(?:ant\\)?\\|ustom\\)\\|ine-symbol-macro\\|parameter\\|var\\(?:-local\\)?\\)\\)\\s-+\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2)
-          ("Types" "^\\s-*(\\(cl-def\\(?:struct\\|type\\)\\|def\\(?:class\\|face\\|group\\|ine-\\(?:condition\\|error\\|widget\\)\\|package\\|struct\\|t\\(?:\\(?:hem\\|yp\\)e\\)\\)\\)\\s-+'?\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)+\\)" 2))))
+(defun init-fonts-in-emacs (default-font serif-font &optional symbol-font emoji-font)
+  "Loads fonts."
+  (dolist (map `((default . ,default-font)
+                 (fixed-pitch . ,default-font)
+                 (fixed-pitch-serif . ,serif-font)))
+    (when-let* ((face (car map))
+                (font (cdr map)))
+      (dolist (frame (frame-list))
+        (when (display-multi-font-p frame)
+          (set-face-attribute face frame
+                              :width 'normal :width	'normal
+                              :slant 'normal :font font)))))
+  (when (fboundp 'set-fontset-font)
+    (when symbol-font
+      (dolist (script '(symbol mathematical))
+        (set-fontset-font t script symbol-font)))
+    (when emoji-font
+      (set-fontset-font t 'symbol emoji-font nil 'append)))
+  (run-hooks 'after-setting-font-hook))
 
 (provide 'core)
 ;;; core.el ends here
