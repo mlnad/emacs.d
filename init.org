@@ -139,6 +139,8 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 (defvar moyu/popper-buffers
   (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" 'compilation-mode 'help-mode))
+
+(defvar moyu/profiler-enabled nil)
 #+end_src
 
 * Start Up
@@ -184,6 +186,26 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 ** GC
 #+BEGIN_SRC emacs-lisp :tangle yes
+(defvar better-gc-cons-threshold (* 16 1024 1024))
+
+(defun gc-minibuffer-setup ()
+  (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
+
+(defun gc-minibuffer-exit ()
+  (garbage-collect)
+  (setq gc-cons-threshold better-gc-cons-threshold))
+
+(defun garbage-collect-h ()
+  (if (boundp 'after-focus-change-function)
+      (add-function :after after-focus-change-function
+                    (lambda ()
+                      (unless (frame-focus-state)
+                        (garbage-collect))))
+    (add-hook 'after-focus-change-function 'garbage-collect))
+
+  (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
+  (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
+
 (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
 (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit)
 #+END_SRC
@@ -219,9 +241,8 @@ Org mode can be used to manage Emacs configuration file conviently by
   :init
   ;; TAB cycle if there are only few candidates
   (setq completion-cycle-threshold 3)
-  (defun crm-indicator (args)
+  (define-advice completing-read-multiple (:filter-args (args))
     (cons (concat "[CRM]" (car args)) (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
   ;; Do not allow the cursor in the minibuffer prompt
   (setq minibuffer-prompt-properties
         '(read-only t cursor-intangible t face minibuffer-prompt))
@@ -260,6 +281,16 @@ Org mode can be used to manage Emacs configuration file conviently by
     (add-to-list 'native-comp-eln-load-path moyu/profile-eln-caches-dir))
 
   (fset #'yes-or-no-p #'y-or-n-p))
+
+;;;###autoload
+(defun toggle-profiler ()
+  "Toggle the Emacs profiler."
+  (interactive)
+  (if (not moyu/profiler-enabled)
+      (profiler-start 'cpu+mem)
+    (profiler-report)
+    (profiler-stop))
+  (setq moyu/profiler-enabled (not moyu/profiler-enabled)))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -570,14 +601,13 @@ Org mode can be used to manage Emacs configuration file conviently by
   :ensure t
   :hook (prog-mode . eglot-ensure)
   :init
-  (advice-add #'eglot-ensure :around
-              (lambda (fn)
-                (when (alist-get major-mode eglot-server-programs nil nil
-                                 (lambda (modes key)
-                                   (if (listp modes)
-                                       (member key modes)
-                                     (eq key modes))))
-                  (funcall fn))))
+  (define-advice eglot-ensure (:around (fn))
+    (when (alist-get major-mode eglot-server-programs nil nil
+                     (lambda (modes key)
+                       (if (listp modes)
+                           (member key modes)
+                         (eq key modes))))
+      (funcall fn)))
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t
         eglot-send-changes-idle-time 0.5))

@@ -7,10 +7,6 @@
 (require 'profiler)
 (require 'server)
 
-(defvar profiler-enabled nil)
-
-(defvar better-gc-cons-threshold (* 16 1024 1024))
-
 (defvar denied-env
   '(;; Unix/shell state that shouldn't be persisted
     "^HOME$" "^\\(OLD\\)?PWD$" "^SHLVL$" "^PS1$" "^R?PROMPT$" "^TERM\\(CAP\\)?$"
@@ -39,34 +35,6 @@
   "Load init.el."
   (interactive)
   (load-file (concat user-emacs-directory "init.el")))
-
-(defun gc-minibuffer-setup ()
-  (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
-
-(defun gc-minibuffer-exit ()
-  (garbage-collect)
-  (setq gc-cons-threshold better-gc-cons-threshold))
-
-(defun garbage-collect-h ()
-  (if (boundp 'after-focus-change-function)
-      (add-function :after after-focus-change-function
-                    (lambda ()
-                      (unless (frame-focus-state)
-                        (garbage-collect))))
-    (add-hook 'after-focus-change-function 'garbage-collect))
-
-  (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
-  (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
-
-;;;###autoload
-(defun toggle-profiler ()
-  "Toggle the Emacs profiler."
-  (interactive)
-  (if (not profiler-enabled)
-      (profiler-start 'cpu+mem)
-    (profiler-report)
-    (profiler-stop))
-  (setq profiler-enabled (not profiler-enabled)))
 
 ;;;###autoload
 (defun create-if-not-found ()
