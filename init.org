@@ -36,6 +36,7 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 * Default variables
+Default variables and constants with "moyu" prefix, some of these variables will be overwrited by user configuration in `.cache/userconfig` file.
 #+begin_src emacs-lisp :tangle yes
 (defvar moyu/full-name "Liu Miao")
 (defvar moyu/email-address "liumiaogemini@foxmail.com")
@@ -145,8 +146,8 @@ Org mode can be used to manage Emacs configuration file conviently by
 
 * Start Up
 ** Configure
+Add the `lisp` path to `load-path`, and generate cache directory and user config file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
 #+begin_src emacs-lisp :tangle yes
-;; add `lisp' to `load-path'.
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
 
@@ -178,6 +179,7 @@ Org mode can be used to manage Emacs configuration file conviently by
   (load custom-file))
 #+end_src
 
+Load the required packages for `init.el`.
 #+begin_src emacs-lisp :tangle yes
 (require 'core)
 (require 'cl-lib)
@@ -185,32 +187,28 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 ** GC
+Add gc-action when state changed.
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defvar better-gc-cons-threshold (* 16 1024 1024))
 
-(defun gc-minibuffer-setup ()
-  (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
+(if (boundp 'after-focus-change-function)
+    (add-function :after after-focus-change-function
+                  (lambda ()
+                    (unless (frame-focus-state)
+                      (garbage-collect)))))
 
-(defun gc-minibuffer-exit ()
-  (garbage-collect)
-  (setq gc-cons-threshold better-gc-cons-threshold))
+(add-hook 'minibuffer-setup-hook
+          (lambda ()
+            (setq gc-cons-threshold (* better-gc-cons-threshold 2))))
 
-(defun garbage-collect-h ()
-  (if (boundp 'after-focus-change-function)
-      (add-function :after after-focus-change-function
-                    (lambda ()
-                      (unless (frame-focus-state)
-                        (garbage-collect))))
-    (add-hook 'after-focus-change-function 'garbage-collect))
-
-  (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
-  (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit))
-
-(add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup)
-(add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit)
+(add-hook 'minibuffer-exit-hook
+          (lambda ()
+            (garbage-collect)
+            (setq gc-cons-threshold better-gc-cons-threshold)))
 #+END_SRC
 
 ** Packages
+Initialize package manager. Elpa packages will be installed into named folders, packages will be reinstalled after Emacs is updated.
 #+begin_src emacs-lisp :tangle yes
 (setq package-enable-at-startup nil
       package-archives moyu/package-mirror
