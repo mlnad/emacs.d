@@ -3,6 +3,7 @@
 #+EMAIL: liumiaogemini@gmail.com
 
 #+STARTUP: content
+#+STARTUP: hideblocks
 
 * Preface
 Org mode can be used to manage Emacs configuration file conviently by
@@ -268,7 +269,7 @@ Initialize package manager. Elpa packages will be installed into named folders, 
                 initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
                 inhibit-splash-screen t
                 initial-major-mode 'org-mode
-                frame-title-format "󰛓 Mo Yu : - %b"
+                frame-title-format "󰛓 Mo Yu :: %b"
                 tab-width 4
 	        indent-tabs-mode nil
                 fill-column 80
@@ -811,7 +812,10 @@ Initialize package manager. Elpa packages will be installed into named folders, 
 
 * Writting
 ** Configs
-
+#+begin_src emacs-lisp :tangle yes
+(use-package svg-tag-mode
+  :ensure t)
+#+end_src
 ** Org
 *** variables
 #+begin_src emacs-lisp :tangle yes
@@ -832,12 +836,14 @@ Initialize package manager. Elpa packages will be installed into named folders, 
 *** org-mode
 #+begin_src emacs-lisp :tangle yes
 (use-package org
+  :hook (org-mode . turn-on-org-cdlatex)
   :config
   ;; org files
   (setq-default org-directory moyu/notes-dir)
   (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
         org-preview-latex-image-directory (concat moyu/cache-directory "org/latex/")
-        org-list-allow-alphabetical t)
+        org-list-allow-alphabetical t
+        org-pretty-entities t)
   ;; org babels
   (setq org-src-preserve-indentation t
         org-src-tab-acts-natively t
@@ -866,7 +872,28 @@ Initialize package manager. Elpa packages will be installed into named folders, 
                 org-agenda-inhibit-startup t)
   ;; attachements
   (setq org-attach-store-link-p t
-        org-attach-use-inheritance t))
+        org-attach-use-inheritance t)
+  ;; no space
+  (require 'ox)
+  (font-lock-add-keywords 'org-mode
+                          '(("\\cc\\( \\)[/+*_=~][^a-zA-Z0-9]*?[/+*_=~]\\( \\)?\\cc?"
+                             (1 (prog1 () (compose-region (match-beginning 1) (match-end 1) ""))))
+                            ("\\cc?\\( \\)?[/+*_=~][^a-zA-Z0-9]*?[/+*_=~]\\( \\)\\cc"
+                             (2 (prog1 () (compose-region (match-beginning 2) (match-end 2) "")))))
+                          'append)
+  (with-eval-after-load 'org
+    (defun eli-strip-ws-maybe (text _backend _info)
+      (let* ((text (replace-regexp-in-string
+                    "\\(\\cc\\) *\n *\\(\\cc\\)"
+                    "\\1\\2" text));; remove whitespace from line break
+             ;; remove whitespace from `org-emphasis-alist'
+             (text (replace-regexp-in-string "\\(\\cc\\) \\(.*?\\) \\(\\cc\\)"
+                                             "\\1\\2\\3" text))
+             ;; restore whitespace between English words and Chinese words
+             (text (replace-regexp-in-string "\\(\\cc\\)\\(\\(?:<[^>]+>\\)?[a-z0-9A-Z-]+\\(?:<[^>]+>\\)?\\)\\(\\cc\\)"
+                                             "\\1 \\2 \\3" text)))
+        text)))
+  (add-to-list 'org-export-filter-paragraph-functions #'eli-strip-ws-maybe))
 #+end_src
 
 *** org-roam
@@ -917,19 +944,45 @@ If some elements are missing, the will be stripped out."
 (use-package valign
   :ensure t
   :config
+  (setq valign-fancy-bar t)
   (add-hook 'org-mode-hook #'valign-mode))
 #+end_src
 
 *** org-modern
 #+begin_src emacs-lisp :tangle yes
 (use-package org-modern
-  :ensure t)
+  :ensure t
+  :hook (org-mode . org-modern-mode)
+  :init
+  (setq org-modern-table nil
+        org-modern-keyword nil
+        org-modern-block-name nil
+        org-modern-block-fringe 0))
 #+end_src
 
 *** gnuplot
 #+begin_src emacs-lisp :tangle yes
 (use-package gnuplot
   :ensure gnuplot)
+#+end_src
+
+*** org-fragtog
+#+begin_src emacs-lisp :tangle yes
+(use-package org-fragtog
+  :ensure t
+  :hook (org-mode . org-fragtog-mode))
+#+end_src
+
+*** org-appear
+#+begin_src emacs-lisp :tangle yes
+(use-package org-appear
+  :ensure t
+  :hook (org-mode . org-appear-mode)
+  :custom
+  (org-appear-autoentities t)
+  (org-appear-autoemphasis t)
+  (org-appear-autolinks t)
+  (org-appear-inside-latex t))
 #+end_src
 
 ** Markdown
@@ -973,6 +1026,10 @@ If some elements are missing, the will be stripped out."
 (with-eval-after-load 'bibtex
   (setq bibtex-align-at-equal-sign t
         bibtex-text-indentation 20))
+
+(use-package cdlatex
+  :ensure t
+  :hook (org-mode . cdlatex-mode))
 #+end_src
 
 ** Typst
