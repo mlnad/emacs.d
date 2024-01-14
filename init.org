@@ -836,7 +836,6 @@ Initialize package manager. Elpa packages will be installed into named folders, 
 *** org-mode
 #+begin_src emacs-lisp :tangle yes
 (use-package org
-  :hook (org-mode . turn-on-org-cdlatex)
   :config
   ;; org files
   (setq-default org-directory moyu/notes-dir)
@@ -861,7 +860,8 @@ Initialize package manager. Elpa packages will be installed into named folders, 
         org-imenu-depth 6
         org-startup-indented t
         org-tags-column 0
-        org-startup-folded nil)
+        org-startup-folded nil
+        org-highlight-latex-and-related '(native script entities))
   (setq org-todo-keywords org/todo-keywords)
   ;; org agenda
   (setq-default org-agenda-files (list (concat "agendas/" moyu/notes-dir))
@@ -893,7 +893,8 @@ Initialize package manager. Elpa packages will be installed into named folders, 
              (text (replace-regexp-in-string "\\(\\cc\\)\\(\\(?:<[^>]+>\\)?[a-z0-9A-Z-]+\\(?:<[^>]+>\\)?\\)\\(\\cc\\)"
                                              "\\1 \\2 \\3" text)))
         text)))
-  (add-to-list 'org-export-filter-paragraph-functions #'eli-strip-ws-maybe))
+  (add-to-list 'org-export-filter-paragraph-functions #'eli-strip-ws-maybe)
+  (plist-put org-format-latex-options :scale 1.5))
 #+end_src
 
 *** org-roam
@@ -981,6 +982,7 @@ If some elements are missing, the will be stripped out."
   :custom
   (org-appear-autoentities t)
   (org-appear-autoemphasis t)
+  (org-appear-autosubmarkers t)
   (org-appear-autolinks t)
   (org-appear-inside-latex t))
 #+end_src
@@ -1028,8 +1030,7 @@ If some elements are missing, the will be stripped out."
         bibtex-text-indentation 20))
 
 (use-package cdlatex
-  :ensure t
-  :hook (org-mode . cdlatex-mode))
+  :ensure t)
 #+end_src
 
 ** Typst
