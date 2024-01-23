@@ -1268,6 +1268,7 @@ If some elements are missing, the will be stripped out."
   (let ((map (make-sparse-keymap)))
     (moyu/define-key map
                      "c" #'org-capture
+                     "I" #'org-id-get-create
                      "r" #'org-roam-node-find
                      "n" #'org-roam-capture
                      "v" #'org-search-view
