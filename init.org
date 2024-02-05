@@ -1349,6 +1349,9 @@ If some elements are missing, the will be stripped out."
 
 ** Theme
 #+begin_src emacs-lisp :tangle yes
+(use-package doom-themes
+  :ensure t)
+
 (defun editor/init-theme ()
   "Initialize Emacs theme."
   (when (and moyu/theme (not (custom-theme-enabled-p moyu/theme)))
@@ -1359,6 +1362,23 @@ If some elements are missing, the will be stripped out."
                 'server-after-make-frame-hook
               'after-init-hook)))
   (add-hook hook #'editor/init-theme -99))
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p)
+  :preface
+  (add-hook 'after-setting-font-hook
+            (lambda ()
+              (when (fboundp 'set-fontset-font)
+                (dolist (font (list "Weather Icons"
+                                    "github-octicons"
+                                    "FontAwesome"
+                                    "all-the-icons"
+                                    "file-icons"
+                                    "Material Icons"))
+                  (set-fontset-font t 'unicode (font-spec :family font) nil 'append))))))
 #+end_src
 
 ** Modeline
