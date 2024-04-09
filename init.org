@@ -183,6 +183,7 @@ Add the `lisp` path to `load-path`, and generate cache directory and user config
 Load the required packages for `init.el`.
 #+begin_src emacs-lisp :tangle yes
 (require 'core)
+(require 'env-ext)
 (require 'cl-lib)
 (require 'package)
 #+end_src
@@ -231,6 +232,26 @@ Initialize package manager. Elpa packages will be installed into named folders, 
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package)))
+#+end_src
+
+** Enviroment
+Generate enviroment file when not exists.
+#+begin_src emacs-lisp :tangle yes
+(unless (file-exists-p moyu/env-file)
+  (generate-env-file moyu/env-file))
+
+(defun moyu/generate-env-file (file)
+  "Generate env FILE."
+  (interactive)
+  (generate-env-file moyu/env-file))
+#+end_src
+
+Load enviroment file.
+#+begin_src emacs-lisp :tangle yes
+(when (and (or initial-window-system
+               (daemonp))
+           moyu/env-file)
+  (load-env-file moyu/env-file 'noerror))
 #+end_src
 
 * Editor
