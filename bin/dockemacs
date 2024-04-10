@@ -4,8 +4,30 @@ help_desc="Options:
 \n\t    build : build the docker image.
 \n\t    run : run emacs in the builded container"
 
-if [ $# -ne 2 ]
+EMACSD_DIR=$(cd $(dirname $0)/..; pwd)
+DOCKERFILE=$EMACSD_DIR/Dockerfile
+IMAGE_NAME=moyu_emacs
+
+if [ $# -ne 1 ]
 then
    echo ${help_desc}
-   exit
+   return 1
 fi
+
+echo "Emacs working directory: $EMACSD_DIR"
+
+case $1 in
+   build)  echo "Building $IMAGE_NAME at $EMACSD_DIR/bin based on $DOCKERFILE"
+           cd $EMACSD_DIR
+           docker build -f "$DOCKERFILE" -t "$IMAGE_NAME" $EMACSD_DIR
+
+           if [ $? -eq 0 ]; then
+              echo "Build Success: $IMAGE_NAME"
+           else
+              echo "Build Failed"
+              return 1
+           fi
+          ;;
+   run) echo "Run Emacs in containter $IMAGE_NAME"
+        docker run -it --rm --volume "$(pwd):/root/.emacs.d" $IMAGE_NAME;;
+esac
