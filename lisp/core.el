@@ -108,5 +108,15 @@ INITIAL for the initial input."
       (set-fontset-font t 'symbol emoji-font nil 'append)))
   (run-hooks 'after-setting-font-hook))
 
+;;;###autoload
+(defun insert-file-path (arg)
+  "Insert the file name (absolute path if prefix ARG)."
+  (interactive "P")
+  (let ((path (or buffer-file-name default-directory)))
+    (insert
+     (if arg
+         (abbreviate-file-name path)
+       (file-name-nondirectory path)))))
+
 (provide 'core)
 ;;; core.el ends here
