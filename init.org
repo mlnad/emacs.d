@@ -51,12 +51,6 @@ Default variables and constants with "moyu" prefix, some of these variables will
 (defconst *sys/mac*
   (eq system-type 'darwin))
 
-(defvar ripgrep-p
-  (executable-find "rg"))
-
-(defvar grep-p
-  (executable-find "grep"))
-
 (defvar moyu/lsp-client 'eglot)
 
 (defvar moyu/default-font (font-spec :family "Consolas"
@@ -1107,6 +1101,10 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (use-package magit
   :ensure t
+  :init
+  (setq transient-levels-file  (expand-file-name "transient/levels" moyu/cache-directory)
+        transient-values-file  (expand-file-name "transient/values" moyu/cache-directory)
+        transient-history-file (expand-file-name "transient/history" moyu/cache-directory))
   :config
   (setq transient-display-buffer-action '(display-buffer-below-selected)
         magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1
@@ -1152,6 +1150,7 @@ If some elements are missing, the will be stripped out."
 
 ** Eshell
 #+begin_src emacs-lisp :tangle yes
+(defvar eshell-directory-name (expand-file-name "eshell" moyu/cache-directory))
 (with-eval-after-load 'eshell
   (setq eshell-banner-message '(format "%s %s\n"
                                 (propertize (format " %s " (string-trim (buffer-name)))
