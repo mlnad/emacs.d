@@ -820,13 +820,26 @@ Load enviroment file.
 #+end_src
 
 ** Rust
+*** rust-mode
+#+begin_src emacs-lisp :tangle yes
+(use-package rust-mode
+  :ensure t
+  :init
+  (setq rust-mode-treesitter-derive t))
+#+end_src
+
 *** rustic
 #+begin_src emacs-lisp :tangle yes
 (use-package rustic
   :ensure t
+  :after (rust-mode)
   :mode ("\\.rs$" . rustic-mode)
   :init
+  (with-eval-after-load 'org-src
+    (defalias 'org-babel-execute:rust #'org-babel-execute:rustic)
+    (add-to-list 'org-src-lang-modes '("rust" . rustic)))
   (add-to-list 'moyu/popper-buffers "^\\*cargo-.*\\*$")
+  (add-to-list 'moyu/popper-buffers "^\\*rustic-compilation")
   :config
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil)
