@@ -1218,6 +1218,24 @@ If some elements are missing, the will be stripped out."
   (while (length> binds 1)
     (define-key keymap (kbd (pop binds)) (pop binds))))
 
+(defmacro moyu/build-map-list (&rest binds)
+  `(let ((map (make-sparse-keymap)))
+     (moyu/define-key map ,@binds)
+     map))
+
+(defmacro moyu/create-keymap (name doc &rest binds)
+  `(defvar ,name
+     (moyu/build-map-list
+      ,@(cl-loop for bind in binds
+                 collect (if (listp bind)
+                             (if (eq (car bind) 'function)
+                                 `(function ,@(cdr bind))
+                               (if (keymapp (cdr bind))
+                                   (cons ,(car bind) (cdr bind))
+                               `(cons ,(car bind) (moyu/build-map-list ,@(cdr bind)))))
+                           bind)))
+     ,doc))
+
 (defmacro moyu/set-leader (states keymap &rest binds)
   `(evil-define-key ,states ,keymap
      ,@(let ((binds-list))
@@ -1271,125 +1289,99 @@ If some elements are missing, the will be stripped out."
 
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
-(defvar moyu/file-manage-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "f" #'find-file
-                     "s" #'save-buffer
-                     "S" #'write-file
-                     "r" #'recentf-open-files
-                     "P" #'open-init-file)
-    map)
-  "Emacs file management commands.")
+(moyu/create-keymap moyu/file-manage-map
+                    "Emacs file management commands."
+                    "f" #'find-file
+                    "s" #'save-buffer
+                    "S" #'write-file
+                    "r" #'recentf-open-files
+                    "P" #'open-init-file)
 
-(defvar moyu/buffer-manage-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "b" #'consult-buffer
-                     "d" #'kill-current-buffer
-                     "i" #'ibuffer
-                     "k" #'kill-buffer-and-window
-                     "r" #'revert-buffer
-                     "R" #'rename-buffer
-                     "]" #'next-buffer
-                     "[" #'previous-buffer
-                     "x" #'kill-buffer-and-window)
-    map)
-  "Emacs buffer management commands.")
+(moyu/create-keymap moyu/buffer-manage-map
+                    "Emacs buffer management commands."
+                    "b" #'consult-buffer
+                    "d" #'kill-current-buffer
+                    "i" #'ibuffer
+                    "k" #'kill-buffer-and-window
+                    "r" #'revert-buffer
+                    "R" #'rename-buffer
+                    "]" #'next-buffer
+                    "[" #'previous-buffer
+                    "x" #'kill-buffer-and-window)
 
-(defvar moyu/code-actions-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "a" #'eglot-code-actions
-                     "b" (cons "build" moyu/build-actions-map)
-                     "c" #'compile
-                     "C" #'recompile
-                     "f" #'apheleia-format-buffer
-                     "j" #'eglot-find-declaration
-                     "r" #'eglot-rename
-                     "S" #'consult-eglot-symbols
-                     "w" #'delete-trailing-whitespace
-                     "x" #'consult-flymake)
-    map)
-  "Code actions.")
+(moyu/create-keymap moyu/code-actions-map
+                    "Code actions."
+                    "a" #'eglot-code-actions
+                    "b" ("build" moyu/build-actions-map)
+                    "c" #'compile
+                    "C" #'recompile
+                    "f" #'apheleia-format-buffer
+                    "j" #'eglot-find-declaration
+                    "r" #'eglot-rename
+                    "S" #'consult-eglot-symbols
+                    "w" #'delete-trailing-whitespace
+                    "x" #'consult-flymake)
 
-(defvar moyu/search-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "i" #'imenu
-                     "I" #'consult-imenu-multi
-                     "s" #'consult-line
-                     "S" #'consult-mark
-                     "p" #'search-project
-                     "d" #'search-current-work-dir
-                     "M" #'consult-man)
-    map)
-  "Searching in Emacs.")
+(moyu/create-keymap moyu/search-map
+                    "Searching in Emacs."
+                    "i" #'imenu
+                    "I" #'consult-imenu-multi
+                    "s" #'consult-line
+                    "S" #'consult-mark
+                    "p" #'search-project
+                    "d" #'search-current-work-dir
+                    "M" #'consult-man)
 
-(defvar moyu/git-actions-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "/" #'magit-dispatch
-                     "." #'magit-file-dispatch
-                     "g" #'magit-status
-                     "b" #'magit-branch-checkout
-                     "B" #'magit-blame-addition
-                     "C" #'magit-clone
-                     "F" #'magit-fetch
-                     "I" #'magit-init
-                     "L" #'magit-log-buffer-file
-                     "S" #'magit-stage-file
-                     "t" #'git-timemachine-toggle
-                     "U" #'magit-unstage-file
-                     "R" #'vc-revert
-                     "f" (cons "find" (let ((map (make-sparse-keymap)))
-                                        (moyu/define-key map
-                                                         "f" #'magit-find-file
-                                                         "g" #'magit-find-git-config-file
-                                                         "c" #'magit-show-commit)
-                                        map)))
-    map)
-  "Version control")
+(moyu/create-keymap moyu/git-actions-map
+                    "Version control"
+                    "/" #'magit-dispatch
+                    "." #'magit-file-dispatch
+                    "g" #'magit-status
+                    "b" #'magit-branch-checkout
+                    "B" #'magit-blame-addition
+                    "C" #'magit-clone
+                    "F" #'magit-fetch
+                    "I" #'magit-init
+                    "L" #'magit-log-buffer-file
+                    "S" #'magit-stage-file
+                    "t" #'git-timemachine-toggle
+                    "U" #'magit-unstage-file
+                    "R" #'vc-revert
+                    "f" ("find"
+                         "f" #'magit-find-file
+                         "g" #'magit-find-git-config-file
+                         "c" #'magit-show-commit)
+                    )
 
-(defvar moyu/goto-actions-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "l" #'goto-line)))
+(moyu/create-keymap moyu/goto-actions-map
+                    ""
+                    "l" #'goto-line)
 
-(defvar moyu/notes-manage-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "c" #'org-capture
-                     "I" #'org-id-get-create
-                     "r" #'org-roam-node-find
-                     "n" #'org-roam-capture
-                     "v" #'org-search-view
-                     "f" #'org/find-in-notes
-                     "d" (cons "daily" org/roam-dailies-map))
-    map)
-  "Notes Manager.")
+(moyu/create-keymap moyu/notes-manage-map
+                    "Notes Manager."
+                    "c" #'org-capture
+                    "I" #'org-id-get-create
+                    "r" #'org-roam-node-find
+                    "n" #'org-roam-capture
+                    "v" #'org-search-view
+                    "f" #'org/find-in-notes
+                    "d" ("daily" org/roam-dailies-map))
 
-(defvar moyu/open-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "a" (cons "Agenda" #'org-agenda)
-                     "f" #'make-frame
-                     "F" #'select-frame-by-name
-                     "s" #'eshell
-                     "t" #'org-todo-list
-                     "T" #'toggle-profiler)
-    map)
-  "Open someting.")
+(moyu/create-keymap moyu/open-map
+                    "Open someting."
+                    "a" ("Agenda" #'org-agenda)
+                    "f" #'make-frame
+                    "F" #'select-frame-by-name
+                    "s" #'eshell
+                    "t" #'org-todo-list
+                    "T" #'toggle-profiler)
 
-(defvar moyu/quit-map
-  (let ((map (make-sparse-keymap)))
-    (moyu/define-key map
-                     "d" #'restart-server
-                     "K" #'kill-emacs
-                     "R" #'restart-emacs
-                     "f" #'delete-frame)
-    map)
-  "Quit Emacs.")
+(moyu/create-keymap moyu/quit-map
+                    "Quit Emacs."
+                    "d" #'restart-server
+                    "K" #'kill-emacs
+                    "R" #'restart-emacs
+                    "f" #'delete-frame)
 
 (moyu/define-key help-map
                  "'" #'describe-char
