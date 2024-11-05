@@ -885,8 +885,7 @@ Load enviroment file.
 ** Docker
 *** dockerfile
 #+begin_src emacs-lisp :tangle yes
-(use-package dockerfile-mode
-  :ensure t)
+(use-package dockerfile-ts-mode)
 #+end_src
 
 * Writting
