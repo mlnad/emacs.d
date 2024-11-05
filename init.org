@@ -501,12 +501,6 @@ Load enviroment file.
 
 ** Enviroment
 
-** Ligature
-#+begin_src emacs-lisp :tangle yes
-(use-package ligature
-  :ensure t)
-#+end_src
-
 ** Emacs SQL
 #+begin_src emacs-lisp :tangle yes
 (use-package emacsql
