@@ -880,6 +880,10 @@ Load enviroment file.
   :config)
 #+end_src
 
+#+begin_src emacs-lisp :tangle yes
+(use-package cmake-ts-mode)
+#+end_src
+
 ** Haskell
 
 ** Docker
