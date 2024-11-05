@@ -134,7 +134,7 @@ Default variables and constants with "moyu" prefix, some of these variables will
   (expand-file-name "transient/history.el" moyu/cache-directory))
 
 (defvar moyu/popper-buffers
-  (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" 'compilation-mode 'help-mode))
+  (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" "^\\*Warnings\\*$" 'compilation-mode 'help-mode))
 
 (defvar moyu/profiler-enabled nil)
 #+end_src
@@ -853,7 +853,7 @@ Load enviroment file.
 ** Python
 #+begin_src emacs-lisp :tangle yes
 (use-package python
-  :mode (("\\.py\\'" . python-ts-mode))
+  :mode ("\\.py\\'" . python-ts-mode)
   :mode ("[./]flake8\\'" . conf-mode)
   :custom
   (python-indent-offset 4)
@@ -876,16 +876,8 @@ Load enviroment file.
 
 ** C/C++
 #+begin_src emacs-lisp :tangle yes
-(use-package cc-mode
-  :config
-  (setq c-basic-offset tab-width
-        c-backspace-function #'delete-backward-char))
-#+end_src
-
-#+begin_src emacs-lisp :tangle yes
-(use-package modern-cpp-font-lock
-  :ensure t
-  :hook (c++-mode . modern-c++-font-lock-mode))
+(use-package c-ts-mode
+  :config)
 #+end_src
 
 ** Haskell
