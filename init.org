@@ -428,6 +428,13 @@ Load enviroment file.
   (vc-follow-link t))
 #+end_src
 
+*** repeat
+#+begin_src emacs-lisp :tangle yes
+(use-package repeat
+  :config
+  (repeat-mode))
+#+end_src
+
 *** treesit
 #+begin_src emacs-lisp :tangle yes
 (use-package treesit
