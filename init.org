@@ -917,6 +917,15 @@ Load enviroment file.
 #+end_src
 
 ** Haskell
+#+begin_src emacs-lisp :tangle yes
+(use-package haskell-mode
+  :ensure t
+  :init
+  (add-to-list 'moyu/popper-buffers "^\\*haskell\\*")
+  :config
+  (add-hook 'haskell-mode-hook #'haskell-collapse-mode)
+  (add-hook 'haskell-mode-hook #'interactive-haskell-mode))
+#+end_src
 
 ** Docker
 *** dockerfile
