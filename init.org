@@ -1188,12 +1188,18 @@ If some elements are missing, the will be stripped out."
   :ensure t)
 #+end_src
 
-*** git-gutter
+*** diff-hl
 #+begin_src emacs-lisp :tangle yes
-(use-package git-gutter
+(use-package diff-hl
   :ensure t
+  :hook (after-init . global-diff-hl-mode)
+  :hook (vc-dir-mode . turn-on-diff-hl-mode)
+  :hook (diff-hl-mode . diff-hl-flydiff-mode)
   :config
-  (global-git-gutter-mode +1))
+  (setq diff-hl-update-async t)
+  (add-hook 'magit-pre-refresh-hook #'diff-hl-magit-pre-refresh)
+  (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)
+  (add-to-list 'moyu/popper-buffers "^\\*diff-hl"))
 #+end_src
 
 ** Rime
