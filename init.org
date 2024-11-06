@@ -1300,27 +1300,14 @@ If some elements are missing, the will be stripped out."
 
 ** Evil
 #+begin_src emacs-lisp :tangle yes
-(use-package undo-fu
-  :ensure t)
-
-;;; Keybinding
 (use-package evil
   :ensure t
-  :init
-  (setq evil-want-keybinding nil
-        evil-want-integration t)
+  :custom
+  (evil-undo-system 'undo-redo)
   :config
   (evil-mode 1)
-  (evil-set-undo-system 'undo-fu)
   (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
-  (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key)))
-
-(use-package evil-collection
-  :after evil
-  :ensure t
-  :config
-  (setq evil-collection-setup-minibuffer t)
-  (evil-collection-init))
+  (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key) t))
 #+end_src
 
 ** Keymaps
@@ -1474,7 +1461,7 @@ If some elements are missing, the will be stripped out."
 
 (defun editor/init-theme ()
   "Initialize Emacs theme."
-  (when (and moyu/theme (not (custom-theme-enabled-p moyu/theme)))
+  (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
     (disable-theme custom-enabled-themes)
     (load-theme moyu/theme t)))
 
