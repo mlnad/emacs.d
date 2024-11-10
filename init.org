@@ -746,39 +746,10 @@ Load enviroment file.
   :hook (after-init . apheleia-global-mode))
 #+end_src
 
-** Snippet
+** Template
 #+begin_src emacs-lisp :tangle yes
-(use-package yasnippet
-  :ensure t
-  :commands (yas-minor-mode-on
-             yas-expand
-             yas-expand-snippet
-             yas-lookup-snippet
-             yas-insert-snippet
-             yas-new-snippet
-             yas-visit-extra-mode
-             yas-active-extra-mode
-             yas-deactive-extra-mode
-             yas-maybe-expand-abbrev-key-filter)
-  :init
-  (setq yas-trigger-in-field t
-        yas-wrap-around-region t
-        yas-prompt-functions '(yas-completing-prompt))
-
-  (add-hook 'prog-mode-hook #'yas-minor-mode)
-  (add-hook 'org-mode-hook #'yas-minor-mode)
-  :config
-  (add-hook 'prog-mode-hook 'yas-reload-all))
-
-(use-package yasnippet-snippets
-  :ensure t
-  :after yasnippet)
-
-(use-package yasnippet-capf
-  :ensure t
-  :init
-  (add-hook 'yas-minor-mode-hook
-            (lambda () (add-hook 'completion-at-point-functions #'yasnippet-capf 30 t))))
+(use-package tempel
+  :ensure t)
 #+end_src
 
 ** Lisp
@@ -995,29 +966,7 @@ Load enviroment file.
                 org-agenda-inhibit-startup t)
   ;; attachements
   (setq org-attach-store-link-p t
-        org-attach-use-inheritance t)
-  ;; no space
-  (require 'ox)
-  (font-lock-add-keywords 'org-mode
-                          '(("\\cc\\( \\)[/+*_=~][^a-zA-Z0-9]*?[/+*_=~]\\( \\)?\\cc?"
-                             (1 (prog1 () (compose-region (match-beginning 1) (match-end 1) ""))))
-                            ("\\cc?\\( \\)?[/+*_=~][^a-zA-Z0-9]*?[/+*_=~]\\( \\)\\cc"
-                             (2 (prog1 () (compose-region (match-beginning 2) (match-end 2) "")))))
-                          'append)
-  (with-eval-after-load 'org
-    (defun eli-strip-ws-maybe (text _backend _info)
-      (let* ((text (replace-regexp-in-string
-                    "\\(\\cc\\) *\n *\\(\\cc\\)"
-                    "\\1\\2" text));; remove whitespace from line break
-             ;; remove whitespace from `org-emphasis-alist'
-             (text (replace-regexp-in-string "\\(\\cc\\) \\(.*?\\) \\(\\cc\\)"
-                                             "\\1\\2\\3" text))
-             ;; restore whitespace between English words and Chinese words
-             (text (replace-regexp-in-string "\\(\\cc\\)\\(\\(?:<[^>]+>\\)?[a-z0-9A-Z-]+\\(?:<[^>]+>\\)?\\)\\(\\cc\\)"
-                                             "\\1 \\2 \\3" text)))
-        text)))
-  (add-to-list 'org-export-filter-paragraph-functions #'eli-strip-ws-maybe)
-  (plist-put org-format-latex-options :scale 1.5))
+        org-attach-use-inheritance t))
 #+end_src
 
 *** org-roam
@@ -1158,12 +1107,6 @@ If some elements are missing, the will be stripped out."
 
 ** Typst
 
-** Edit convient
-*** tempel
-#+begin_src emacs-lisp :tanble yes
-(use-package tempel
-  :ensure t)
-#+end_src
 
 * Applications
 ** Version control
@@ -1314,8 +1257,6 @@ If some elements are missing, the will be stripped out."
   (evil-mode 1)
   (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
   (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key) t))
-#+end_src
-
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
 (moyu/create-keymap moyu/file-manage-map
