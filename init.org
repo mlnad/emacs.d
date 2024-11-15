@@ -266,8 +266,7 @@ Load enviroment file.
   (setq tab-always-indent t)
 
   ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t
-        resize-mini-windows 'grow-only
+  (setq esize-mini-windows 'grow-only
         find-file-visit-truename t
         create-lockfiles nil
         make-backup-files nil
@@ -477,40 +476,9 @@ Load enviroment file.
   )
 #+end_src
 
-** Smartparens
-#+begin_src emacs-lisp :tangle yes
-(use-package smartparens
-  :ensure smartparens
-  :commands (sp-pair sp-local-pair sp-with-modes sp-point-in-comment sp-point-in-string)
-  :hook (after-init . smartparens-global-mode)
-  :config
-  (require 'smartparens-config)
-
-  (with-eval-after-load 'evil
-    (setq sp-show-pair-from-inside t))
-
-  (let ((unless-list '(sp-point-before-word-p
-                       sp-point-after-word-p
-                       sp-point-before-same-p)))
-    (sp-pair "'"  nil :unless unless-list)
-    (sp-pair "\"" nil :unless unless-list))
-
-  (sp-local-pair sp-lisp-modes "(" ")" :unless '(:rem sp-point-before-same-p))
-  (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode gfm-mode)
-                 "[" nil :post-handlers '(:rem ("| " "SPC"))))
-#+end_src
-
-** Restart
-#+begin_src emacs-lisp :tangle yes
-(use-package restart-emacs
-  :ensure t)
-#+end_src
-
-** Enviroment
-
-** Emacs SQL
-#+begin_src emacs-lisp :tangle yes
-(use-package emacsql
+** Templates
+#+begin_src emacs-lisp :tanble yes
+(use-package tempel
   :ensure t)
 #+end_src
 
@@ -746,12 +714,6 @@ Load enviroment file.
   :hook (after-init . apheleia-global-mode))
 #+end_src
 
-** Template
-#+begin_src emacs-lisp :tangle yes
-(use-package tempel
-  :ensure t)
-#+end_src
-
 ** Lisp
 *** elisp-mode
 #+begin_src emacs-lisp :tangle yes
@@ -885,17 +847,6 @@ Load enviroment file.
 
 #+begin_src emacs-lisp :tangle yes
 (use-package cmake-ts-mode)
-#+end_src
-
-** Haskell
-#+begin_src emacs-lisp :tangle yes
-(use-package haskell-mode
-  :ensure t
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\*haskell\\*")
-  :config
-  (add-hook 'haskell-mode-hook #'haskell-collapse-mode)
-  (add-hook 'haskell-mode-hook #'interactive-haskell-mode))
 #+end_src
 
 ** Docker
@@ -1046,18 +997,6 @@ If some elements are missing, the will be stripped out."
   :hook (org-mode . org-fragtog-mode))
 #+end_src
 
-*** org-appear
-#+begin_src emacs-lisp :tangle yes
-(use-package org-appear
-  :ensure t
-  :hook (org-mode . org-appear-mode)
-  :custom
-  (org-appear-autoentities t)
-  (org-appear-autoemphasis t)
-  (org-appear-autosubmarkers t)
-  (org-appear-autolinks t)
-  (org-appear-inside-latex t))
-#+end_src
 
 ** Markdown
 #+begin_src emacs-lisp :tangle yes
@@ -1107,7 +1046,6 @@ If some elements are missing, the will be stripped out."
 
 ** Typst
 
-
 * Applications
 ** Version control
 *** magit
@@ -1123,12 +1061,10 @@ If some elements are missing, the will be stripped out."
         magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1
         magit-bury-buffer-function #'magit-mode-quit-window))
 
-(use-package magit-gitflow
-  :ensure t
-  :hook (maigt-mode . turn-on-magit-gitflow))
-
 (use-package magit-todos
-  :ensure t)
+  :ensure t
+  :after magit
+  :config (magit-todos-mode 1))
 #+end_src
 
 *** diff-hl
@@ -1257,6 +1193,7 @@ If some elements are missing, the will be stripped out."
   (evil-mode 1)
   (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
   (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key) t))
+#+end_src
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
 (moyu/create-keymap moyu/file-manage-map
