@@ -266,7 +266,7 @@ Load enviroment file.
   (setq tab-always-indent t)
 
   ;; Enable recursive minibuffers
-  (setq esize-mini-windows 'grow-only
+  (setq resize-mini-windows 'grow-only
         find-file-visit-truename t
         create-lockfiles nil
         make-backup-files nil
@@ -293,7 +293,10 @@ Load enviroment file.
   (when (boundp 'native-comp-eln-load-path)
     (add-to-list 'native-comp-eln-load-path moyu/profile-eln-caches-dir))
 
-  (fset #'yes-or-no-p #'y-or-n-p))
+  (fset #'yes-or-no-p #'y-or-n-p)
+  :config
+  (electric-pair-mode 1)
+  (electric-indent-mode 1))
 
 ;;;###autoload
 (defun toggle-profiler ()
@@ -398,11 +401,6 @@ Load enviroment file.
 (use-package autorevert
   :ensure nil
   :hook (after-init . global-auto-revert-mode))
-#+end_src
-
-*** imenu
-#+begin_src emacs-lisp :tangle yes
-(use-package imenu)
 #+end_src
 
 *** display-fill-column-indicator
@@ -882,6 +880,8 @@ Load enviroment file.
 #+begin_src emacs-lisp :tangle yes
 (use-package org
   :config
+  ;; org packages
+  (require 'org-tempo)
   ;; org files
   (setq-default org-directory moyu/notes-dir)
   (setq org-id-locations-file (expand-file-name ".orgids" org-directory)
