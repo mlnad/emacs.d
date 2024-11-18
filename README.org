@@ -8,8 +8,8 @@ Emacs configuration with listed packages.
 #+end_quote
 
 * Packages
-- Evil, Smartparen, Popper
-- Magit, Git-gutter
+- Evil, Popper
+- Magit, diff-hl
 - Vertico, Orderless, Consult, Corfu
 - Org-mode, Markdown, LaTex
 - Eglot, Apheleia
