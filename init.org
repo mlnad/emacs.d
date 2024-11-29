@@ -1189,6 +1189,9 @@ If some elements are missing, the will be stripped out."
   :ensure t
   :custom
   (evil-undo-system 'undo-redo)
+  :init
+  (with-eval-after-load 'evil-maps
+    (define-key evil-motion-state-map (kbd "TAB") nil))
   :config
   (evil-mode 1)
   (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
