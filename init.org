@@ -1199,26 +1199,6 @@ If some elements are missing, the will be stripped out."
 #+end_src
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
-(moyu/create-keymap moyu/file-manage-map
-                    "Emacs file management commands."
-                    "f" #'find-file
-                    "s" #'save-buffer
-                    "S" #'write-file
-                    "r" #'recentf-open-files
-                    "P" #'open-init-file)
-
-(moyu/create-keymap moyu/buffer-manage-map
-                    "Emacs buffer management commands."
-                    "b" #'consult-buffer
-                    "d" #'kill-current-buffer
-                    "i" #'ibuffer
-                    "k" #'kill-buffer-and-window
-                    "r" #'revert-buffer
-                    "R" #'rename-buffer
-                    "]" #'next-buffer
-                    "[" #'previous-buffer
-                    "x" #'kill-buffer-and-window)
-
 (moyu/create-keymap moyu/code-actions-map
                     "Code actions."
                     "a" #'eglot-code-actions
@@ -1309,27 +1289,41 @@ If some elements are missing, the will be stripped out."
                  "u" #'winner-undo
                  "d" #'evil-window-delete
                  "T" #'tear-off-window)
+
+(moyu/define-key embark-buffer-map
+                 "i" #'ibuffer
+                 "R" #'revert-buffer
+                 "]" #'next-buffer
+                 "[" #'previous-buffer
+                 "x" #'kill-buffer-and-window)
+
+(moyu/define-key embark-file-map
+                 "r" #'recentf-open-files
+                 "p" #'project-find-file
+                 "L" #'find-library
+                 "v" #'vc-dir
+                 "P" #'open-init-file)
 #+end_src
 
 ** Leader emacs
 #+begin_src emacs-lisp :tangle yes
 (moyu/set-leader nil 'global
-                     "<SPC>" '("Exec" . execute-extended-command)
-                     "." '("Find file" . find-file)
-                     "'" '("Popper" . popper-toggle)
-                     "a" '("Actions" . embark-act)
-                     "b" (cons "buffer" moyu/buffer-manage-map)
-                     "c" (cons "code" moyu/code-actions-map)
-                     "f" (cons "file" moyu/file-manage-map)
-                     "g" (cons "git" moyu/git-actions-map)
-                     "G" (cons "goto" moyu/goto-actions-map)
-                     "h" (cons "help" help-map)
-                     "n" (cons "notes" moyu/notes-manage-map)
-                     "p" (cons "projects" project-prefix-map)
-                     "q" (cons "quit/restart" moyu/quit-map)
-                     "o" (cons "open" moyu/open-map)
-                     "s" (cons "searching" moyu/search-map)
-                     "w" (cons "window" evil-window-map))
+                 "<SPC>" '("Exec" . execute-extended-command)
+                 "." '("Find file" . find-file)
+                 "'" '("Popper" . popper-toggle)
+                 "a" '("Actions" . embark-act)
+                 "b" (cons "buffer" embark-buffer-map)
+                 "c" (cons "code" moyu/code-actions-map)
+                 "e" (cons "error" embark-flymake-map)
+                 "f" (cons "file" embark-file-map)
+                 "g" (cons "git" moyu/git-actions-map)
+                 "G" (cons "goto" moyu/goto-actions-map)
+                 "n" (cons "notes" moyu/notes-manage-map)
+                 "p" (cons "projects" project-prefix-map)
+                 "q" (cons "quit/restart" moyu/quit-map)
+                 "o" (cons "open" moyu/open-map)
+                 "s" (cons "searching" moyu/search-map)
+                 "w" (cons "window" evil-window-map))
 #+end_src
 
 * UI
