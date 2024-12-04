@@ -1279,7 +1279,7 @@ If some elements are missing, the will be stripped out."
                  "A" #'apropos-documentation
                  "F" #'describe-face
                  "t" #'load-theme
-                 "p" #'find-library
+                 "p" (cons "library" embark-library-map)
                  "C-l" #'describe-language-environment
                  "C-m" #'info-emacs-manual
                  "C-c" #'describe-coding-system)
@@ -1293,6 +1293,7 @@ If some elements are missing, the will be stripped out."
 (moyu/define-key embark-buffer-map
                  "i" #'ibuffer
                  "R" #'revert-buffer
+                 "s" #'save-buffer
                  "]" #'next-buffer
                  "[" #'previous-buffer
                  "x" #'kill-buffer-and-window)
@@ -1303,6 +1304,9 @@ If some elements are missing, the will be stripped out."
                  "L" #'find-library
                  "v" #'vc-dir
                  "P" #'open-init-file)
+
+(moyu/define-key minibuffer-local-map
+                 "C-'" #'embark-become)
 #+end_src
 
 ** Leader emacs
