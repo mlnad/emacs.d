@@ -511,7 +511,6 @@ Load enviroment file.
 #+begin_src emacs-lisp :tangle yes
 (use-package consult
   :ensure t
-  :after (vertico)
   :commands (consult-ripgrep consult-grep)
   :bind (([remap apropos]                       . consult-apropos)
          ([remap bookmark-jump]                 . consult-bookmark)
@@ -629,6 +628,7 @@ Load enviroment file.
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
+
 *** icons
 #+begin_src emacs-lisp :tangle yes
 (use-package nerd-icons-corfu
@@ -1265,6 +1265,19 @@ If some elements are missing, the will be stripped out."
                     "R" #'restart-emacs
                     "f" #'delete-frame)
 
+(moyu/create-keymap moyu/search-map
+                    "Searching Emacs."
+                    "f" #'consult-find
+                    "G" #'consult-git-grep
+                    "i" #'consult-imenu
+                    "I" #'consult-imenu-multi
+                    "o" #'consult-outline
+                    "s" #'consult-line
+                    "S" #'consult-mark
+                    "p" #'search-project
+                    "d" #'search-current-work-dir
+                    "M" #'consult-man)
+
 (moyu/define-key help-map
                  "'" #'describe-char
                  "a" #'apropos
@@ -1297,13 +1310,6 @@ If some elements are missing, the will be stripped out."
                  "v" #'vc-dir
                  "P" #'open-init-file)
 
-(moyu/define-key embark-consult-search-map
-                 "s" #'consult-line
-                 "S" #'consult-mark
-                 "p" #'search-project
-                 "d" #'search-current-work-dir
-                 "M" #'consult-man)
-
 (moyu/define-key minibuffer-local-map
                  "C-'" #'embark-become)
 #+end_src
@@ -1320,12 +1326,11 @@ If some elements are missing, the will be stripped out."
                  "e" (cons "error" embark-flymake-map)
                  "f" (cons "file" embark-file-map)
                  "g" (cons "git" moyu/git-actions-map)
-                 "G" (cons "debug" dape-global-map)
                  "n" (cons "notes" moyu/notes-manage-map)
                  "p" (cons "projects" project-prefix-map)
                  "q" (cons "quit/restart" moyu/quit-map)
                  "o" (cons "open" moyu/open-map)
-                 "s" (cons "searching" embark-consult-search-map)
+                 "s" (cons "searching" moyu/search-map)
                  "w" (cons "window" evil-window-map))
 #+end_src
 
