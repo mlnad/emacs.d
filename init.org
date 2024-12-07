@@ -58,6 +58,10 @@ Default variables and constants with "moyu" prefix, some of these variables will
 
 (defvar moyu/serif-font (font-spec :family "Noto Serif CJK SC"))
 
+(defvar moyu/symbol-font nil)
+
+(defvar moyu/emoji-font nil)
+
 (defvar moyu/cache-directory
   (expand-file-name ".cache/" user-emacs-directory))
 
@@ -1333,8 +1337,15 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 * UI
-** Font
+** Font & Theme
 #+begin_src emacs-lisp :tangle yes
+(use-package doom-themes
+  :ensure t)
+
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p))
+
 (defun moyu/init-fonts ()
   "Loads fonts."
   (dolist (map `((default . ,moyu/default-font)
@@ -1348,6 +1359,13 @@ If some elements are missing, the will be stripped out."
                               :width 'normal :width	'normal
                               :slant 'normal :font font)))))
   (when (fboundp 'set-fontset-font)
+    (dolist (font (list "Weather Icons"
+                        "github-octicons"
+                        "FontAwesome"
+                        "all-the-icons"
+                        "file-icons"
+                        "Material Icons"))
+      (set-fontset-font t 'unicode (font-spec :family font) nil 'append))
     (when moyu/symbol-font
       (dolist (script '(symbol mathematical))
         (set-fontset-font t script moyu/symbol-font)))
@@ -1355,44 +1373,15 @@ If some elements are missing, the will be stripped out."
       (set-fontset-font t 'symbol moyu/emoji-font nil 'append)))
   (run-hooks 'after-setting-font-hook))
 
-(let ((hook (if (daemonp)
-                'server-after-make-frame-hook
-              'after-init-hook)))
-  (add-hook hook #'moyu/init-fonts -100))
-#+end_src
-
-** Theme
-#+begin_src emacs-lisp :tangle yes
-(use-package doom-themes
-  :ensure t)
-
-(defun editor/init-theme ()
+(defun moyu/init-theme ()
   "Initialize Emacs theme."
   (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
     (disable-theme custom-enabled-themes)
     (load-theme moyu/theme t)))
 
-(let ((hook (if (daemonp)
-                'server-after-make-frame-hook
-              'after-init-hook)))
-  (add-hook hook #'editor/init-theme -99))
-#+end_src
-
-#+begin_src emacs-lisp :tangle yes
-(use-package all-the-icons
-  :ensure t
-  :if (display-graphic-p)
-  :preface
-  (add-hook 'after-setting-font-hook
-            (lambda ()
-              (when (fboundp 'set-fontset-font)
-                (dolist (font (list "Weather Icons"
-                                    "github-octicons"
-                                    "FontAwesome"
-                                    "all-the-icons"
-                                    "file-icons"
-                                    "Material Icons"))
-                  (set-fontset-font t 'unicode (font-spec :family font) nil 'append))))))
+(let ((hook (if (daemonp) 'server-after-make-frame-hook 'after-init-hook)))
+  (add-hook hook #'moyu/init-fonts)
+  (add-hook hook #'moyu/init-theme))
 #+end_src
 
 ** Modeline

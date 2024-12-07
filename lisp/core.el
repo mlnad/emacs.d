@@ -88,27 +88,6 @@ INITIAL for the initial input."
      dirs pr include-all)))
 
 ;;;###autoload
-(defun init-fonts-in-emacs (default-font serif-font &optional symbol-font emoji-font)
-  "Loads fonts."
-  (dolist (map `((default . ,default-font)
-                 (fixed-pitch . ,default-font)
-                 (fixed-pitch-serif . ,serif-font)))
-    (when-let* ((face (car map))
-                (font (cdr map)))
-      (dolist (frame (frame-list))
-        (when (display-multi-font-p frame)
-          (set-face-attribute face frame
-                              :width 'normal :width	'normal
-                              :slant 'normal :font font)))))
-  (when (fboundp 'set-fontset-font)
-    (when symbol-font
-      (dolist (script '(symbol mathematical))
-        (set-fontset-font t script symbol-font)))
-    (when emoji-font
-      (set-fontset-font t 'symbol emoji-font nil 'append)))
-  (run-hooks 'after-setting-font-hook))
-
-;;;###autoload
 (defun insert-file-path (arg)
   "Insert the file name (absolute path if prefix ARG)."
   (interactive "P")
