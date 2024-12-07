@@ -511,9 +511,9 @@ Load enviroment file.
 #+begin_src emacs-lisp :tangle yes
 (use-package consult
   :ensure t
+  :demand t
   :commands (consult-ripgrep consult-grep)
-  :bind (([remap apropos]                       . consult-apropos)
-         ([remap bookmark-jump]                 . consult-bookmark)
+  :bind (([remap bookmark-jump]                 . consult-bookmark)
          ([remap evil-show-marks]               . consult-mark)
          ([remap evil-show-registers]           . consult-register)
          ([remap goto-line]                     . consult-goto-line)
@@ -1140,6 +1140,7 @@ If some elements are missing, the will be stripped out."
 (defvar moyu/localleader-key "M-m"
   "The localleader prefix key.")
 
+;;;###autoload
 (defun moyu/define-key (keymap &rest binds)
   "Define KEY-OPs at KEYMAP."
   (while (length> binds 1)
@@ -1159,7 +1160,7 @@ If some elements are missing, the will be stripped out."
                                  `(function ,@(cdr bind))
                                (if (keymapp (cdr bind))
                                    (cons ,(car bind) (cdr bind))
-                               `(cons ,(car bind) (moyu/build-map-list ,@(cdr bind)))))
+                                 `(cons ,(car bind) (moyu/build-map-list ,@(cdr bind)))))
                            bind)))
      ,doc))
 
@@ -1203,6 +1204,7 @@ If some elements are missing, the will be stripped out."
   (evil-set-leader '(normal motion visual) (kbd moyu/leader-key))
   (evil-set-leader '(insert replace emacs) (kbd moyu/localleader-key) t))
 #+end_src
+
 ** Keymaps
 #+begin_src emacs-lisp :tangle yes
 (moyu/create-keymap moyu/code-actions-map
@@ -1265,19 +1267,6 @@ If some elements are missing, the will be stripped out."
                     "R" #'restart-emacs
                     "f" #'delete-frame)
 
-(moyu/create-keymap moyu/search-map
-                    "Searching Emacs."
-                    "f" #'consult-find
-                    "G" #'consult-git-grep
-                    "i" #'consult-imenu
-                    "I" #'consult-imenu-multi
-                    "o" #'consult-outline
-                    "s" #'consult-line
-                    "S" #'consult-mark
-                    "p" #'search-project
-                    "d" #'search-current-work-dir
-                    "M" #'consult-man)
-
 (moyu/define-key help-map
                  "'" #'describe-char
                  "a" #'apropos
@@ -1310,6 +1299,16 @@ If some elements are missing, the will be stripped out."
                  "v" #'vc-dir
                  "P" #'open-init-file)
 
+(moyu/define-key embark-consult-search-map
+                 "f" #'consult-find
+                 "I" #'consult-imenu-multi
+                 "o" #'consult-outline
+                 "s" #'consult-line
+                 "S" #'consult-mark
+                 "p" #'search-project
+                 "d" #'search-current-work-dir
+                 "M" #'consult-man)
+
 (moyu/define-key minibuffer-local-map
                  "C-'" #'embark-become)
 #+end_src
@@ -1330,17 +1329,36 @@ If some elements are missing, the will be stripped out."
                  "p" (cons "projects" project-prefix-map)
                  "q" (cons "quit/restart" moyu/quit-map)
                  "o" (cons "open" moyu/open-map)
-                 "s" (cons "searching" moyu/search-map)
-                 "w" (cons "window" evil-window-map))
+                 "s" (cons "searching" embark-consult-search-map))
 #+end_src
 
 * UI
 ** Font
 #+begin_src emacs-lisp :tangle yes
+(defun moyu/init-fonts ()
+  "Loads fonts."
+  (dolist (map `((default . ,moyu/default-font)
+                 (fixed-pitch . ,moyu/default-font)
+                 (fixed-pitch-serif . ,moyu/serif-font)))
+    (when-let* ((face (car map))
+                (font (cdr map)))
+      (dolist (frame (frame-list))
+        (when (display-multi-font-p frame)
+          (set-face-attribute face frame
+                              :width 'normal :width	'normal
+                              :slant 'normal :font font)))))
+  (when (fboundp 'set-fontset-font)
+    (when moyu/symbol-font
+      (dolist (script '(symbol mathematical))
+        (set-fontset-font t script moyu/symbol-font)))
+    (when moyu/emoji-font
+      (set-fontset-font t 'symbol moyu/emoji-font nil 'append)))
+  (run-hooks 'after-setting-font-hook))
+
 (let ((hook (if (daemonp)
                 'server-after-make-frame-hook
               'after-init-hook)))
-  (add-hook hook (lambda () (init-fonts-in-emacs moyu/default-font moyu/serif-font)) -100))
+  (add-hook hook #'moyu/init-fonts -100))
 #+end_src
 
 ** Theme
