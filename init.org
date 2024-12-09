@@ -1476,5 +1476,5 @@ If some elements are missing, the will be stripped out."
   (popper-echo-mode +1)
   :config
   (setq popper-group-function #'popper-group-by-project
-        popper-mode-line-position 2))
+        popper-mode-line nil))
 #+end_src
