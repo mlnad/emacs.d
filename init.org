@@ -482,7 +482,7 @@ Load enviroment file.
 #+end_src
 
 ** Templates
-#+begin_src emacs-lisp :tanble yes
+#+begin_src emacs-lisp :tangle yes
 (use-package tempel
   :ensure t)
 #+end_src
@@ -858,7 +858,8 @@ Load enviroment file.
   ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
   ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
   ;;      to reconfigure them.
-  (setq rustic-lsp-client moyu/lsp-client))
+  (add-hook 'rustic-mode-local-vars-hook
+            (lambda () (setq rustic-lsp-client moyu/lsp-client))))
 #+end_src
 
 ** Python
@@ -869,7 +870,7 @@ Load enviroment file.
   :custom
   (python-indent-offset 4)
   :init
-  (setq python-enviroment-directory moyu/cache-directory
+  (setq python-environment-directory moyu/cache-directory
         python-indent-guess-indent-offset-verbose nil)
   (add-to-list 'moyu/popper-buffers "^\\*Python")
   :config
