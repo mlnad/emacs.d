@@ -57,3 +57,4 @@ smex-items
 # generated elisp files
 init.el
 early-init.el
+.aider*

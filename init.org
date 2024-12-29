@@ -59,7 +59,6 @@ The file is divided into several major sections:
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
 (setq gc-cons-threshold (* 128 1024 1024)
-      load-prefer-newer noninteractive
       package-enable-at-startup nil
       auto-mode-case-fold nil
       fast-but-imprecise-scrolling t
@@ -853,13 +852,8 @@ Load enviroment file.
   (add-to-list 'moyu/popper-buffers "^\\*rustic-compilation")
   :config
   (setq rustic-indent-method-chain t
-        rustic-babel-format-src-block nil)
-
-  ;; HACK `rustic-lsp' sets up lsp-mode/eglot too early. We move it to
-  ;;      `rustic-mode-local-vars-hook' so file/dir local variables can be used
-  ;;      to reconfigure them.
-  (add-hook 'rustic-mode-local-vars-hook
-            (lambda () (setq rustic-lsp-client moyu/lsp-client))))
+        rustic-babel-format-src-block nil
+        rustic-lsp-client moyu/lsp-client))
 #+end_src
 
 ** Python
@@ -870,8 +864,6 @@ Load enviroment file.
   :custom
   (python-indent-offset 4)
   :init
-  (setq python-environment-directory moyu/cache-directory
-        python-indent-guess-indent-offset-verbose nil)
   (add-to-list 'moyu/popper-buffers "^\\*Python")
   :config
   (when (and (executable-find "python3")
