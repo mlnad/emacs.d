@@ -86,22 +86,23 @@ The file is divided into several major sections:
 Default variables and constants with "moyu" prefix, some of these variables will
 be overwrited by user configuration in `.cache/userconfig` file.
 #+name: default-vars
-| Variable Name    | Value                                                |
-|------------------+------------------------------------------------------|
-| full-name        | Liu Miao                                             |
-| email-address    | liumiaogemini@foxmail.com                            |
-| lsp-client       | 'eglot                                               |
-| deepseek-api-key | nil                                                  |
-| default-font     | (font-spec :family "Consolas" :size 14)              |
-| serif-font       | (font-spec :family "Noto Serif CJK SC")              |
-| symbol-font      | nil                                                  |
-| emoji-font       | nil                                                  |
-| cache-directory  | (expand-file-name ".cache/" user-emacs-directory)    |
-| userconfig-file  | (expand-file-name "userconfig" moyu/cache-directory) |
-| org-journal-type | 'daily                                               |
-| notes-dir        | "~/org/"                                             |
-| org-roam-dir     | "~/org/"                                             |
-| theme            | 'doom-one                                            |
+| Variable Name    | Value                                             |
+|------------------+---------------------------------------------------|
+| full-name        | Liu Miao                                          |
+| email-address    | liumiaogemini@foxmail.com                         |
+| lsp-client       | 'eglot                                            |
+| deepseek-api-key | 'nil                                              |
+| default-font     | (font-spec :family "Consolas" :size 14)           |
+| serif-font       | (font-spec :family "Noto Serif CJK SC")           |
+| symbol-font      | 'nil                                              |
+| emoji-font       | 'nil                                              |
+| cache-directory  | (expand-file-name ".cache/" user-emacs-directory) |
+| org-journal-type | 'daily                                            |
+| notes-dir        | ~/org/                                            |
+| org-roam-dir     | ~/org/                                            |
+| theme            | 'doom-one                                         |
+| profiler-enabled | 'nil                                              |
+| package-mirror   | 'default                                          |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
@@ -118,23 +119,8 @@ be overwrited by user configuration in `.cache/userconfig` file.
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-(defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
-                                 ("gnu" . "https://elpa.gnu.org/packages/")))
-
-(defvar emacs-china-package-mirror '(("gnu"   . "http://mirrors.ustc.edu.cn/elpa/gnu/")
-                                     ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
-                                     ("nongnu"   . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
-
-(defvar emacs-tuna-package-mirror '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                                    ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
-                                    ("nongnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
-
-(defvar moyu/package-mirror default-package-mirror)
-
 (defvar moyu/popper-buffers
   (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" "^\\*Warnings\\*$" 'compilation-mode 'help-mode))
-
-(defvar moyu/profiler-enabled nil)
 #+end_src
 
 * Start Up
@@ -145,6 +131,8 @@ file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
 (defmacro moyu/cache-it (file-or-dir)
   "Cache the FILE-OR-DIR in the `.cache' directory."
   `(expand-file-name ,file-or-dir moyu/cache-directory))
+
+(defvar moyu/userconfig-file (moyu/cache-it "userconfig"))
 
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
@@ -166,7 +154,7 @@ file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
     (insert
      ";; -*- mode: emacs-lisp -*-
 
-(setq moyu/package-mirror default-package-mirror
+(setq moyu/package-mirror 'default
       moyu/default-font (font-spec :family \"Consolas\"
                                      :size 14))")))
 (load-file moyu/userconfig-file)
@@ -210,8 +198,25 @@ Add gc-action when state changed.
 Initialize package manager. Elpa packages will be installed into named folders,
 packages will be reinstalled after Emacs is updated.
 #+begin_src emacs-lisp :tangle yes
+(defvar moyu/avaliable-package-mirrors
+  '((default . (("melpa" . "https://melpa.org/packages/")
+                ("gnu"   . "https://elpa.gnu.org/packages/")))
+    (emacs-ustc . (("gnu"   . "http://mirrors.ustc.edu.cn/elpa/gnu/")
+                    ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
+                    ("nongnu" . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
+    (emacs-tuna . (("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                   ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+                   ("nongnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
+    "A list of package mirrors, keyed by mirror name."))
+
+(defvar moyu/used-package-mirror
+  (let ((mirror (alist-get moyu/package-mirror moyu/avaliable-package-mirrors)))
+    (unless mirror
+      (error "Unknown package mirror: %s" moyu/package-mirror))
+    mirror))
+
 (setq package-enable-at-startup nil
-      package-archives moyu/package-mirror
+      package-archives moyu/used-package-mirror
       package-user-dir (file-name-as-directory
                         (let ((subdir (format "%d%s%d"
                                               emacs-major-version
@@ -232,26 +237,16 @@ packages will be reinstalled after Emacs is updated.
 #+end_src
 
 ** Enviroment
-Generate enviroment file when not exists.
+Generate enviroment file when not exists. And load enviroment file.
 #+begin_src emacs-lisp :tangle yes
-(defvar moyu/env-file
-  (expand-file-name "env" moyu/cache-directory))
+(let ((env-file (moyu/cache-it "env")))
+  (unless (file-exists-p env-file)
+    (generate-env-file env-file))
 
-(unless (file-exists-p moyu/env-file)
-  (generate-env-file moyu/env-file))
-
-(defun moyu/generate-env-file (file)
-  "Generate env FILE."
-  (interactive)
-  (generate-env-file moyu/env-file))
-#+end_src
-
-Load enviroment file.
-#+begin_src emacs-lisp :tangle yes
-(when (and (or initial-window-system
-               (daemonp))
-           moyu/env-file)
-  (load-env-file moyu/env-file 'noerror))
+  (when (and (or initial-window-system
+                 (daemonp))
+             env-file)
+    (load-env-file env-file 'noerror)))
 #+end_src
 
 * Editor
