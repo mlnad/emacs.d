@@ -107,8 +107,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
           (let ((name (concat "moyu/" (nth 0 row)))
-                (value-str (nth 1 row))
-                (description (nth 2 row)))
+                (value-str (nth 1 row)))
             (let ((value (cond
                           ((or (string-prefix-p "(" value-str)
                                (string-prefix-p "'" value-str))
@@ -116,11 +115,6 @@ be overwrited by user configuration in `.cache/userconfig` file.
                           (t value-str))))
               (eval `(defvar ,(intern name) ,value)))))
         vars)
-#+end_src
-
-#+begin_src emacs-lisp :tangle yes
-(defvar moyu/popper-buffers
-  (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" "^\\*Warnings\\*$" 'compilation-mode 'help-mode))
 #+end_src
 
 * Start Up
@@ -798,18 +792,14 @@ Generate enviroment file when not exists. And load enviroment file.
 #+begin_src emacs-lisp :tangle yes
 (use-package buttercup
   :ensure t
-  :mode ("/test[/-].+\.el$" . buttercup-minor-mode)
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\*Buttercup\\*$"))
+  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
 #+end_src
 
 *** geiser
 #+begin_src emacs-lisp :tangle yes
 (use-package geiser
   :ensure t
-  :commands run-geiser
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\*[gG]eiser \\(dbg\\|xref\\|messages\\|documentation\\|REPL\\)\\*$"))
+  :commands run-geiser)
 #+end_src
 
 *** lispy
@@ -843,8 +833,6 @@ Generate enviroment file when not exists. And load enviroment file.
   (with-eval-after-load 'org-src
     (defalias 'org-babel-execute:rust #'org-babel-execute:rustic)
     (add-to-list 'org-src-lang-modes '("rust" . rustic)))
-  (add-to-list 'moyu/popper-buffers "^\\*cargo-.*\\*$")
-  (add-to-list 'moyu/popper-buffers "^\\*rustic-compilation")
   :config
   (setq rustic-indent-method-chain t
         rustic-babel-format-src-block nil
@@ -858,8 +846,6 @@ Generate enviroment file when not exists. And load enviroment file.
   :mode ("[./]flake8\\'" . conf-mode)
   :custom
   (python-indent-offset 4)
-  :init
-  (add-to-list 'moyu/popper-buffers "^\\*Python")
   :config
   (when (and (executable-find "python3")
              (string= python-shell-interpreter "python"))
@@ -1059,9 +1045,6 @@ If some elements are missing, the will be stripped out."
 
 (use-package tex
   :ensure auctex
-  :init
-  (add-to-list 'moyu/popper-buffers " output\\*$")
-  (add-to-list 'moyu/popper-buffers "^\\*TeX \\(?:Help\\|errors\\)")
   :config
   (setq TeX-parse-self t
       TeX-auto-save t
@@ -1112,8 +1095,7 @@ If some elements are missing, the will be stripped out."
   :config
   (setq diff-hl-update-async t)
   (add-hook 'magit-pre-refresh-hook #'diff-hl-magit-pre-refresh)
-  (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)
-  (add-to-list 'moyu/popper-buffers "^\\*diff-hl"))
+  (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh))
 #+end_src
 
 ** Rime
@@ -1154,11 +1136,6 @@ If some elements are missing, the will be stripped out."
         eshell-hist-ignoredups t
         eshell-glob-case-insensitive t
         eshell-error-if-no-glob t))
-
-(add-to-list 'moyu/popper-buffers "\\.*eshell.*\\*$")
-(add-to-list 'moyu/popper-buffers 'eshell-mode)
-(add-to-list 'moyu/popper-buffers "\\.*-shell.*\\*$")
-(add-to-list 'moyu/popper-buffers 'shell-mode)
 #+end_src
 
 * Keybindings
@@ -1492,6 +1469,36 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 *** popper
+The table defines a list of buffer names and their associated modes that Popper
+should manage.
+#+name: popper-buffers
+| Mode             | Buffer Name           |
+|------------------+-----------------------|
+| fundmental       | \*Messages\*          |
+| ^                | ^\*Completions        |
+| ^                | Output\*$             |
+| ^                | ^\*Warnings\*$        |
+| vc               | ^\*vc-diff            |
+| help-mode        | *Help*                |
+| ^                | *Apropos*             |
+| compilation-mode | *Compilation*         |
+| eshell-mode      | \.*eshell.*\*$        |
+| shell-mode       | \.*-shell.*\*$        |
+| buttercup        | ^\*Buttercup\*$       |
+| rustic-mode      | ^\*cargo-.*\*$        |
+| ^                | ^\*rustic-compilation |
+| python-mode      | ^\*Python             |
+| tex              | output\*$             |
+| diff-hl-mode     | ^\*diff-hl            |
+
+#+begin_src emacs-lisp :var popper-buffers=popper-buffers :tangle yes
+(defvar moyu/popper-buffers nil)
+(mapc (lambda (row)
+        (let ((buffer-name (nth 1 row)))
+          (add-to-list 'moyu/popper-buffers buffer-name)))
+      popper-buffers)
+#+end_src
+
 #+begin_src emacs-lisp :tangle yes
 (use-package popper
   :ensure t
