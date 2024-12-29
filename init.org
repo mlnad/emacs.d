@@ -6,8 +6,55 @@
 #+STARTUP: hideblocks
 
 * Preface
-Org mode can be used to manage Emacs configuration file conviently by
-=ob-tangle= module.
+** Overview
+This file serves as the central configuration for Emacs, a highly customized
+   Emacs setup designed for efficiency, flexibility, and productivity. It
+   leverages Org-mode's powerful tangling capabilities to generate Emacs Lisp
+   code, ensuring a clean and maintainable configuration structure. The
+   configuration is modular, with sections dedicated to initialization, editor
+   settings, completion frameworks, programming environments, and user interface
+   enhancements.
+
+** Key Features
+ - Modular Design: The configuration is organized into logical sections, making
+   it easy to navigate and modify.
+
+ - Dynamic Code Generation: Org-mode tables and Babel blocks are used to
+   dynamically generate Emacs Lisp code, reducing redundancy and improving
+   maintainability.
+
+ - Extensive Customization: Variables, keybindings, and package configurations
+   are tailored to optimize workflows for coding, writing, and project
+   management.
+
+ - Modern Tools: Integration with modern Emacs packages like Eglot (for LSP),
+   Vertico (for completion), and Magit (for version control) ensures a
+   cutting-edge development experience.
+
+ - Cross-Platform Support: The configuration is designed to work seamlessly
+   across different operating systems, with specific adjustments for Windows,
+   Linux, and macOS.
+
+** Structure
+The file is divided into several major sections:
+
+ 1. Initialization: Sets up early init settings, package management, and
+    environment variables.
+
+ 2. Editor: Configures core Emacs behavior, including indentation, completion,
+    and keybindings.
+
+ 3. Completion & Projects: Implements advanced completion frameworks (e.g.,
+    Vertico, Corfu) and project management tools.
+
+ 4. Programming: Provides language-specific configurations for Lisp, Rust,
+    Python, and more, with support for LSP and debugging.
+
+ 5. Writing: Enhances Org-mode and Markdown workflows, including note-taking,
+    journaling, and document formatting.
+
+ 6. UI: Customizes the user interface with themes, fonts, and modeline
+    enhancements for a visually appealing experience.
 
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
@@ -37,81 +84,41 @@ Org mode can be used to manage Emacs configuration file conviently by
 #+end_src
 
 * Default variables
-Default variables and constants with "moyu" prefix, some of these variables will be overwrited by user configuration in `.cache/userconfig` file.
+Default variables and constants with "moyu" prefix, some of these variables will
+be overwrited by user configuration in `.cache/userconfig` file.
+#+name: default-vars
+| Variable Name    | Value                                                |
+|------------------+------------------------------------------------------|
+| full-name        | Liu Miao                                             |
+| email-address    | liumiaogemini@foxmail.com                            |
+| lsp-client       | 'eglot                                               |
+| deepseek-api-key | nil                                                  |
+| default-font     | (font-spec :family "Consolas" :size 14)              |
+| serif-font       | (font-spec :family "Noto Serif CJK SC")              |
+| symbol-font      | nil                                                  |
+| emoji-font       | nil                                                  |
+| cache-directory  | (expand-file-name ".cache/" user-emacs-directory)    |
+| userconfig-file  | (expand-file-name "userconfig" moyu/cache-directory) |
+| org-journal-type | 'daily                                               |
+| notes-dir        | "~/org/"                                             |
+| org-roam-dir     | "~/org/"                                             |
+| theme            | 'doom-one                                            |
+
+#+begin_src emacs-lisp :var vars=default-vars :tangle yes
+(mapc (lambda (row)
+          (let ((name (concat "moyu/" (nth 0 row)))
+                (value-str (nth 1 row))
+                (description (nth 2 row)))
+            (let ((value (cond
+                          ((or (string-prefix-p "(" value-str)
+                               (string-prefix-p "'" value-str))
+                           (read value-str))
+                          (t value-str))))
+              (eval `(defvar ,(intern name) ,value)))))
+        vars)
+#+end_src
+
 #+begin_src emacs-lisp :tangle yes
-(defvar moyu/full-name "Liu Miao")
-(defvar moyu/email-address "liumiaogemini@foxmail.com")
-
-(defconst *sys/win32*
-  (eq system-type 'windows-nt))
-
-(defconst *sys/linux*
-  (eq system-type 'gnu/linux))
-
-(defconst *sys/mac*
-  (eq system-type 'darwin))
-
-(defvar moyu/lsp-client 'eglot)
-
-(defvar moyu/default-font (font-spec :family "Consolas"
-                                     :size 14))
-
-(defvar moyu/serif-font (font-spec :family "Noto Serif CJK SC"))
-
-(defvar moyu/symbol-font nil)
-
-(defvar moyu/emoji-font nil)
-
-(defvar moyu/cache-directory
-  (expand-file-name ".cache/" user-emacs-directory))
-
-(defvar moyu/userconfig-file
-  (expand-file-name "userconfig" moyu/cache-directory))
-
-(defvar moyu/custom-file
-  (expand-file-name "custom.el" moyu/cache-directory))
-
-(defvar moyu/recentf-save-file
-  (expand-file-name "recentf" moyu/cache-directory))
-
-(defvar moyu/save-place-file
-  (expand-file-name "places" moyu/cache-directory))
-
-(defvar moyu/backup-directory-alist
-  (expand-file-name "backup/" moyu/cache-directory))
-
-(defvar moyu/project-list-file
-  (expand-file-name "projects" moyu/cache-directory))
-
-(defvar moyu/auto-save-list-prefix
-  (expand-file-name "auto-save-list/.saves-" moyu/cache-directory))
-
-(defvar moyu/layouts-directory
-  (expand-file-name "layouts/" moyu/cache-directory))
-
-(defvar moyu/quelpa-dir
-  (expand-file-name "quelpa/" moyu/cache-directory))
-
-(defvar moyu/notes-dir "~/org/"
-  "User defined notes directory.")
-
-(defvar moyu/org-roam-dir moyu/notes-dir
-  "User defined org roam directory.")
-
-(defvar moyu/org-roam-db-location
-  (expand-file-name "org-roam.db" moyu/cache-directory))
-
-(defvar moyu/notes-extensions '("org" "md" "markdown"))
-
-(defvar moyu/rime-data-dir
-  (expand-file-name "rime/" moyu/cache-directory))
-
-(defvar moyu/elpa-pack-dir
-  (expand-file-name "elpa" user-emacs-directory )
-  "Packages install by package-initilize.")
-
-(defvar moyu/elpa-subdirectory 'emacs-version)
-
 (defvar default-package-mirror '(("melpa" . "https://melpa.org/packages/")
                                  ("gnu" . "https://elpa.gnu.org/packages/")))
 
@@ -125,18 +132,6 @@ Default variables and constants with "moyu" prefix, some of these variables will
 
 (defvar moyu/package-mirror default-package-mirror)
 
-(defvar moyu/org-journal-type 'daily)
-
-(defvar moyu/theme 'doom-one)
-
-(defvar moyu/profile-eln-caches-dir (expand-file-name "eln-caches" moyu/cache-directory))
-
-(defvar moyu/env-file
-  (expand-file-name "env" moyu/cache-directory))
-
-(defvar moyu/transient-history-file
-  (expand-file-name "transient/history.el" moyu/cache-directory))
-
 (defvar moyu/popper-buffers
   (list "\\*Messages\\*" "Output\\*$" "^\\*Completions" "^\\*vc-diff" "^\\*Warnings\\*$" 'compilation-mode 'help-mode))
 
@@ -145,13 +140,18 @@ Default variables and constants with "moyu" prefix, some of these variables will
 
 * Start Up
 ** Configure
-Add the `lisp` path to `load-path`, and generate cache directory and user config file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
+Add the `lisp` path to `load-path`, and generate cache directory and user config
+file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
 #+begin_src emacs-lisp :tangle yes
+(defmacro moyu/cache-it (file-or-dir)
+  "Cache the FILE-OR-DIR in the `.cache' directory."
+  `(expand-file-name ,file-or-dir moyu/cache-directory))
+
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
 
 (when-let (realhome
-           (and *sys/win32*
+           (and (eq system-type 'windows-nt)
                 (getenv "USERPROFILE")))
   (setenv "HOME" realhome)
   (setq abbreviated-home-dir nil))
@@ -173,7 +173,7 @@ Add the `lisp` path to `load-path`, and generate cache directory and user config
 (load-file moyu/userconfig-file)
 
 ;; load `custom-file'
-(setq custom-file moyu/custom-file)
+(setq custom-file (moyu/cache-it "custom.el"))
 (when (file-exists-p custom-file)
   (load custom-file))
 #+end_src
@@ -208,18 +208,18 @@ Add gc-action when state changed.
 #+END_SRC
 
 ** Packages
-Initialize package manager. Elpa packages will be installed into named folders, packages will be reinstalled after Emacs is updated.
+Initialize package manager. Elpa packages will be installed into named folders,
+packages will be reinstalled after Emacs is updated.
 #+begin_src emacs-lisp :tangle yes
 (setq package-enable-at-startup nil
       package-archives moyu/package-mirror
       package-user-dir (file-name-as-directory
-                        (if (not moyu/elpa-subdirectory)
-                            moyu/elpa-pack-dir
-                          (let ((subdir (format "%d%s%d"
-                                                emacs-major-version
-                                                version-separator
-                                                emacs-minor-version)))
-                            (expand-file-name subdir moyu/elpa-pack-dir)))))
+                        (let ((subdir (format "%d%s%d"
+                                              emacs-major-version
+                                              version-separator
+                                              emacs-minor-version)))
+                          (expand-file-name subdir
+                                            (expand-file-name "elpa" user-emacs-directory)))))
 
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)
@@ -235,6 +235,9 @@ Initialize package manager. Elpa packages will be installed into named folders, 
 ** Enviroment
 Generate enviroment file when not exists.
 #+begin_src emacs-lisp :tangle yes
+(defvar moyu/env-file
+  (expand-file-name "env" moyu/cache-directory))
+
 (unless (file-exists-p moyu/env-file)
   (generate-env-file moyu/env-file))
 
@@ -280,8 +283,8 @@ Load enviroment file.
         delete-old-versions t
         kept-old-versions 5
         kept-new-versions 5
-        backup-directory-alist moyu/backup-directory-alist
-        auto-save-list-file-prefix moyu/auto-save-list-prefix)
+        backup-directory-alist (moyu/cache-it "backup/")
+        auto-save-list-file-prefix (moyu/cache-it "auto-save-list/.saves-"))
 
   (setq-default auto-image-file-mode t
                 initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
@@ -289,13 +292,13 @@ Load enviroment file.
                 initial-major-mode 'org-mode
                 frame-title-format "󰛓 Mo Yu :: %b"
                 tab-width 4
-	        indent-tabs-mode nil
+	            indent-tabs-mode nil
                 fill-column 80
                 word-wrap t
                 truncate-lines t)
 
   (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path moyu/profile-eln-caches-dir))
+    (add-to-list 'native-comp-eln-load-path (moyu/cache-it "eln-caches/")))
 
   (fset #'yes-or-no-p #'y-or-n-p)
   :config
@@ -327,11 +330,11 @@ Load enviroment file.
 
 ** Tramp
 #+begin_src emacs-lisp :tangle yes
-(unless *sys/win32*
+(unless (eq system-type 'windows-nt)
   (setq tramp-default-method "ssh"
         tramp-backup-directory-alist backup-directory-alist
         tramp-auto-save-directory (expand-file-name "tramp-autosave/" moyu/cache-directory)
-        tramp-backup-directory-alist (expand-file-name "backup/" moyu/cache-directory)))
+        tramp-backup-directory-alist (moyu/cache-it "backup/")))
 
 (with-eval-after-load 'tramp
   (setq remote-file-name-inihibit-cache 60
@@ -360,7 +363,7 @@ Load enviroment file.
                               (unless recentf-mode
                                 (recentf-mode)
                                 (recentf-track-opened-file))))
-  (setq recentf-save-file moyu/recentf-save-file
+  (setq recentf-save-file (moyu/cache-it "recentf")
         recentf-max-saved-items 1000
         recentf-auto-cleanup 'never)
 
@@ -391,7 +394,7 @@ Load enviroment file.
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
-  (setq save-place-file moyu/save-place-file))
+  (setq save-place-file (moyu/cache-it "places")))
 #+end_src
 
 *** subword
@@ -648,7 +651,30 @@ Load enviroment file.
 (use-package project
   :bind (([remap project-shell] . project-eshell))
   :init
-  (setq project-list-file moyu/project-list-file))
+  (setq project-list-file (moyu/cache-it "projects")))
+#+end_src
+
+*** projection
+#+begin_src emacs-lisp :tangle yes
+(use-package projection
+  :ensure t
+  :hook (after-init . global-projection-hook-mode)
+  :bind-keymap ("C-c P" . projection-map)
+  :config
+  (with-eval-after-load 'project
+    (require 'projection)))
+
+(use-package projection-multi
+  :ensure t
+  :bind (:map project-prefix-map
+              ("RET" . projection-multi-compile)))
+
+(use-package projection-multi-embark
+  :ensure t
+  :after embark
+  :after projection-multi
+  :demand t
+  :config (projection-multi-embark-setup-command-map))
 #+end_src
 
 * Workspace
@@ -683,6 +709,17 @@ Load enviroment file.
   :bind (([remap xref-find-apropos] . consult-eglot-symbols)))
 #+end_src
 
+** AI
+#+begin_src emacs-lisp :tangle yes
+(use-package aider
+  :config
+  ;; Use claude-3-5-sonnet cause it is best in aider benchmark 
+  (setq aider-args '("--deepseek"))
+  (when moyu/deepseek-api-key
+    (setenv "DEEPSEEK_API_KEY" moyu/deepseek-api-key))
+  ;; Optional: Set a key binding for the transient menu
+  (global-set-key (kbd "C-c a") 'aider-transient-menu))
+#+end_src
 ** Debug
 #+begin_src emacs-lisp :tangle yes
 (use-package dape
@@ -943,7 +980,7 @@ Load enviroment file.
              org-roam-tag-delete)
   :init
   (require 'org-roam-dailies)
-  (setq org-roam-db-location moyu/org-roam-db-location)
+  (setq org-roam-db-location (moyu/cache-it "org-roam.db"))
   :config
   (add-to-list 'org/roam-templates org/default-roam-capture)
   (setq org-roam-capture-templates org/roam-templates
@@ -1095,17 +1132,18 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (use-package rime
   :ensure t
-  :if (not *sys/win32*)
+  :if (not (eq system-type 'windows-nt))
   :custom
   (rime-show-candidate 'posframe)
   (default-input-method "rime")
-  (rime-user-data-dir moyu/rime-data-dir)
+  (rime-user-data-dir (moyu/cache-it "rime/"))
   :init
   (add-hook 'after-init-hook
             (lambda ()
-              (let ((rime-user-file (concat moyu/rime-data-dir "user.yaml")))
-              (unless (file-exists-p moyu/rime-data-dir)
-                (make-directory moyu/rime-data-dir)
+              (let* ((rime-data-dir (expand-file-name "rime/" user-emacs-directory))
+                    (rime-user-file (concat rime-data-dir "user.yaml")))
+              (unless (file-exists-p rime-data-dir)
+                (make-directory rime-data-dir)
                 (with-temp-file rime-user-file
                   (setq-local coding-system-for-write 'utf-8)
                   (insert
@@ -1399,7 +1437,8 @@ If some elements are missing, the will be stripped out."
         doom-modeline-minor-modes nil
         doom-modeline-major-mode-icon nil
         doom-modeline-buffer-file-name-style 'relative-from-project
-        doom-modeline-buffer-encoding t)
+        doom-modeline-buffer-encoding t
+        doom-modeline-highlight-modified-buffer-name nil)
 
   (when (daemonp)
     (setq doom-modeline-icon t))
