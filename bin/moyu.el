@@ -28,5 +28,15 @@
         (org-babel-tangle-file init-file)
       (message "init.org file not found in %s" user-emacs-directory))))
 
+(defun moyu/install-packages ()
+  "Load init.el to install packages defined by use-package."
+  (interactive)
+  (let ((init-el (expand-file-name "init.el" user-emacs-directory)))
+    (if (file-exists-p init-el)
+        (progn
+          (load-file init-el)
+          (message "Packages installed successfully!"))
+      (message "init.el file not found in %s" user-emacs-directory))))
+
 (provide 'moyu)
 ;;; moyu.el ends here
