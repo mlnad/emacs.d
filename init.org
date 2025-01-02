@@ -103,6 +103,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | theme            | 'doom-one                                         |
 | profiler-enabled | 'nil                                              |
 | package-mirror   | 'default                                          |
+| ai-args          | '("--model" "deepseek/deepseek-chat")               |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
@@ -702,7 +703,7 @@ Generate enviroment file when not exists. And load enviroment file.
 (use-package aider
   :config
   ;; Use claude-3-5-sonnet cause it is best in aider benchmark 
-  (setq aider-args '("--deepseek"))
+  (setq aider-args moyu/ai-args)
   (when moyu/deepseek-api-key
     (setenv "DEEPSEEK_API_KEY" moyu/deepseek-api-key))
   ;; Optional: Set a key binding for the transient menu
