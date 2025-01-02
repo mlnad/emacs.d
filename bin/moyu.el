@@ -19,6 +19,14 @@
 ;;
 ;;; Code:
 
+(defun moyu/tangle-init ()
+  "Tangle the init.org file to generate Emacs configuration files."
+  (interactive)
+  (require 'org)
+  (let ((init-file (expand-file-name "init.org" user-emacs-directory)))
+    (if (file-exists-p init-file)
+        (org-babel-tangle-file init-file)
+      (message "init.org file not found in %s" user-emacs-directory))))
 
 (provide 'moyu)
 ;;; moyu.el ends here
