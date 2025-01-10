@@ -8,53 +8,52 @@
 * Preface
 ** Overview
 This file serves as the central configuration for Emacs, a highly customized
-   Emacs setup designed for efficiency, flexibility, and productivity. It
-   leverages Org-mode's powerful tangling capabilities to generate Emacs Lisp
-   code, ensuring a clean and maintainable configuration structure. The
-   configuration is modular, with sections dedicated to initialization, editor
-   settings, completion frameworks, programming environments, and user interface
-   enhancements.
+Emacs setup designed for efficiency, flexibility, and productivity. It leverages
+Org-mode's powerful tangling capabilities to generate Emacs Lisp code, ensuring
+a clean and maintainable configuration structure. The configuration is modular,
+with sections dedicated to initialization, editor settings, completion
+frameworks, programming environments, and user interface enhancements.
 
 ** Key Features
- - Modular Design: The configuration is organized into logical sections, making
-   it easy to navigate and modify.
+- Modular Design: The configuration is organized into logical sections, making
+  it easy to navigate and modify.
 
- - Dynamic Code Generation: Org-mode tables and Babel blocks are used to
-   dynamically generate Emacs Lisp code, reducing redundancy and improving
-   maintainability.
+- Dynamic Code Generation: Org-mode tables and Babel blocks are used to
+  dynamically generate Emacs Lisp code, reducing redundancy and improving
+  maintainability.
 
- - Extensive Customization: Variables, keybindings, and package configurations
-   are tailored to optimize workflows for coding, writing, and project
-   management.
+- Extensive Customization: Variables, keybindings, and package configurations
+  are tailored to optimize workflows for coding, writing, and project
+  management.
 
- - Modern Tools: Integration with modern Emacs packages like Eglot (for LSP),
-   Vertico (for completion), and Magit (for version control) ensures a
-   cutting-edge development experience.
+- Modern Tools: Integration with modern Emacs packages like Eglot (for LSP),
+  Vertico (for completion), and Magit (for version control) ensures a
+  cutting-edge development experience.
 
- - Cross-Platform Support: The configuration is designed to work seamlessly
-   across different operating systems, with specific adjustments for Windows,
-   Linux, and macOS.
+- Cross-Platform Support: The configuration is designed to work seamlessly
+  across different operating systems, with specific adjustments for Windows,
+  Linux, and macOS.
 
 ** Structure
 The file is divided into several major sections:
 
- 1. Initialization: Sets up early init settings, package management, and
-    environment variables.
+1. Initialization: Sets up early init settings, package management, and
+   environment variables.
 
- 2. Editor: Configures core Emacs behavior, including indentation, completion,
-    and keybindings.
+2. Editor: Configures core Emacs behavior, including indentation, completion,
+   and keybindings.
 
- 3. Completion & Projects: Implements advanced completion frameworks (e.g.,
-    Vertico, Corfu) and project management tools.
+3. Completion & Projects: Implements advanced completion frameworks (e.g.,
+   Vertico, Corfu) and project management tools.
 
- 4. Programming: Provides language-specific configurations for Lisp, Rust,
-    Python, and more, with support for LSP and debugging.
+4. Programming: Provides language-specific configurations for Lisp, Rust,
+   Python, and more, with support for LSP and debugging.
 
- 5. Writing: Enhances Org-mode and Markdown workflows, including note-taking,
-    journaling, and document formatting.
+5. Writing: Enhances Org-mode and Markdown workflows, including note-taking,
+   journaling, and document formatting.
 
- 6. UI: Customizes the user interface with themes, fonts, and modeline
-    enhancements for a visually appealing experience.
+6. UI: Customizes the user interface with themes, fonts, and modeline
+   enhancements for a visually appealing experience.
 
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
@@ -103,7 +102,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | theme            | 'doom-one                                         |
 | profiler-enabled | 'nil                                              |
 | package-mirror   | 'default                                          |
-| ai-args          | '("--model" "deepseek/deepseek-chat")               |
+| ai-args          | '("--model" "deepseek/deepseek-chat")             |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
