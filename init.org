@@ -327,7 +327,8 @@ Generate enviroment file when not exists. And load enviroment file.
 (with-eval-after-load 'tramp
   (setq remote-file-name-inihibit-cache 60
         tramp-completion-reread-directory-timeout 60
-        tramp-verbose 6))
+        tramp-verbose 6)
+  (add-to-list 'tramp-remote-process-environment '("LSP_USE_PLISTS=true")))
 #+end_src
 
 ** Build-in Pacakges
