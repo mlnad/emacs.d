@@ -469,12 +469,6 @@ Generate enviroment file when not exists. And load enviroment file.
   )
 #+end_src
 
-** Templates
-#+begin_src emacs-lisp :tangle yes
-(use-package tempel
-  :ensure t)
-#+end_src
-
 * Completion
 ** Vertico based
 *** orderless
@@ -663,6 +657,12 @@ Generate enviroment file when not exists. And load enviroment file.
   :after projection-multi
   :demand t
   :config (projection-multi-embark-setup-command-map))
+#+end_src
+
+** Templates
+#+begin_src emacs-lisp :tangle yes
+(use-package tempel
+  :ensure t)
 #+end_src
 
 * Workspace
