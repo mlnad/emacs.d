@@ -61,7 +61,6 @@ The file is divided into several major sections:
       package-enable-at-startup nil
       auto-mode-case-fold nil
       fast-but-imprecise-scrolling t
-      ffap-machine-p-known 'reject
       idle-update-delay 1.0
       inhibit-compacting-font-caches t
       read-process-output-max (* 64 1024)
@@ -71,9 +70,16 @@ The file is divided into several major sections:
   (setq init-file-debug t
         debug-on-error t))
 
-(push '(menu-bar-lines . 0) default-frame-alist)
-(push '(tool-bar-lines . 0) default-frame-alist)
-(push '(vertical-scroll-bars) default-frame-alist)
+(when-let (realhome
+           (and (eq system-type 'windows-nt)
+                (getenv "USERPROFILE")))
+  (setenv "HOME" realhome)
+  (setq abbreviated-home-dir nil))
+
+(setq-default default-frame-alist
+              '((menu-bar-lines . 0)
+                (tool-bar-lines . 0)
+                (vertical-scroll-bars . nil)))
 (setq menu-bar-mode nil
       tool-bar-mode nil
       scroll-bar-mode nil)
@@ -130,12 +136,6 @@ file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
 
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
-
-(when-let (realhome
-           (and (eq system-type 'windows-nt)
-                (getenv "USERPROFILE")))
-  (setenv "HOME" realhome)
-  (setq abbreviated-home-dir nil))
 
 ;; make cache directory
 (unless (file-exists-p moyu/cache-directory)
@@ -327,7 +327,7 @@ Generate enviroment file when not exists. And load enviroment file.
 (with-eval-after-load 'tramp
   (setq remote-file-name-inihibit-cache 60
         tramp-completion-reread-directory-timeout 60
-        tramp-verbose 1))
+        tramp-verbose 6))
 #+end_src
 
 ** Build-in Pacakges
