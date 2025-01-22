@@ -597,13 +597,6 @@ Generate enviroment file when not exists. And load enviroment file.
           ;; cape-elisp-symbol
           cape-line
           cape-abbrev))
-  :hook
-  (prog-mode . (lambda ()
-                 (add-to-list 'completion-at-point-functions #'cape-symbol t)
-                 (add-to-list 'completion-at-point-functions #'cape-keyword t)))
-  (text-mode . (lambda ()
-                 (add-to-list 'completion-at-point-functions #'cape-dabbrev t)
-                 (add-to-list 'completion-at-point-functions #'cape-history t)))
   :config
   (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive))
 #+end_src
@@ -678,7 +671,10 @@ Generate enviroment file when not exists. And load enviroment file.
 ** Templates
 #+begin_src emacs-lisp :tangle yes
 (use-package tempel
-  :ensure t)
+  :ensure t
+  :init
+  (add-to-list 'completion-at-point-functions 'tempel-expand)
+  (add-to-list 'completion-at-point-functions 'tempel-complete))
 #+end_src
 
 * Workspace

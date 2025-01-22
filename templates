@@ -1,0 +1,247 @@
+;;; templates --- Basic template file for Emacs edit -*- lexical-binding: t -*-
+;;; Commentary:
+;;; Code:
+
+fundamental-mode ;; Available everywhere
+
+(today (format-time-string "%Y-%m-%d"))
+
+prog-mode
+
+(fixme (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "FIXME ")
+(todo (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO ")
+(bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG ")
+(hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK ")
+
+texinfo-mode
+
+(defmac "@defmac " p n> r> "@end defmac")
+(defun "@defun " p n> r> "@end defun")
+(defvar "@defvar " p n> r> "@end defvar")
+(example "@example " p n> r> "@end example")
+(lisp "@lisp " p n> r> "@end lisp")
+(bullet "@itemize @bullet{}" n> r> "@end itemize")
+(code "@code{" p "}")
+(var "@var{" p "}")
+
+lisp-mode emacs-lisp-mode ;; Specify multiple modes
+
+(lambda "(lambda (" p ")" n> r> ")")
+
+emacs-lisp-mode
+
+(autoload ";;;###autoload")
+(pt "(point)")
+(var "(defvar " p "\n  \"" p "\")")
+(local "(defvar-local " p "\n  \"" p "\")")
+(const "(defconst " p "\n  \"" p "\")")
+(custom "(defcustom " p "\n  \"" p "\"" n> ":type '" p ")")
+(face "(defface " p " '((t :inherit " p "))\n  \"" p "\")")
+(group "(defgroup " p " nil\n  \"" p "\"" n> ":group '" p n> ":prefix \"" p "-\")")
+(macro "(defmacro " p " (" p ")\n  \"" p "\"" n> r> ")")
+(alias "(defalias '" p " '" p ")")
+(fun "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
+(iflet "(if-let (" p ")" n> r> ")")
+(whenlet "(when-let (" p ")" n> r> ")")
+(whilelet "(while-let (" p ")" n> r> ")")
+(andlet "(and-let* (" p ")" n> r> ")")
+(cond "(cond" n "(" q "))" >)
+(pcase "(pcase " (p "scrutinee") n "(" q "))" >)
+(let "(let (" p ")" n> r> ")")
+(lett "(let* (" p ")" n> r> ")")
+(pcaselet "(pcase-let (" p ")" n> r> ")")
+(pcaselett "(pcase-let* (" p ")" n> r> ")")
+(rec "(letrec (" p ")" n> r> ")")
+(dotimes "(dotimes (" p ")" n> r> ")")
+(dolist "(dolist (" p ")" n> r> ")")
+(loop "(cl-loop for " p " in " p " do" n> r> ")")
+(command "(defun " p " (" p ")\n  \"" p "\"" n> "(interactive" p ")" n> r> ")")
+(advice "(defun " (p "adv" name) " (&rest app)" n> p n> "(apply app))" n>
+        "(advice-add #'" (p "fun") " " (p ":around") " #'" (s name) ")")
+(header ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name)))
+        " --- " p " -*- lexical-binding: t -*-" n
+        ";;; Commentary:" n ";;; Code:" n n)
+(provide "(provide '" (file-name-base (or (buffer-file-name) (buffer-name))) ")" n
+         ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name)))
+         " ends here" n)
+(package (i header) r n n (i provide))
+
+eshell-mode shell-mode
+
+(for "for " (p "i") " in " p " { " q " }")
+(while "while { " p " } { " q " }")
+(until "until { " p " } { " q " }")
+(if "if { " p " } { " q " }")
+(ife "if { " p " } { " p " } { " q " }")
+(unl "unless { " p " } { " q " }")
+(unle "unless { " p " } { " p " } { " q " }")
+
+text-mode
+
+(box "┌─" (make-string (length str) ?─) "─┐" n
+     "│ " (s str)                       " │" n
+     "└─" (make-string (length str) ?─) "─┘" n)
+(abox "+-" (make-string (length str) ?-) "-+" n
+      "| " (s str)                       " |" n
+      "+-" (make-string (length str) ?-) "-+" n)
+(cut "--8<---------------cut here---------------start------------->8---" n r n
+     "--8<---------------cut here---------------end--------------->8---" n)
+(rot13 (p "plain text" text) n "----" n (rot13 text))
+(calc (p "taylor(sin(x),x=0,3)" formula) n "----" n (format "%s" (calc-eval formula)))
+(table (p (read-number "Rows: ") rows noinsert)
+       (p (read-number "Cols: ") cols noinsert)
+       "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n
+       "|" (* cols "----|") n
+       (* rows "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n))
+
+rst-mode
+
+(title (make-string (length title) ?=) n (p "Title: " title) n (make-string (length title) ?=) n)
+
+org-mode
+
+(begin "#+begin_" (s name) n> r> n "#+end_" name)
+(ascii "#+begin_export ascii" n> r> n "#+end_export")
+(html "#+begin_export html" n> r> n "#+end_export")
+(latex "#+begin_export latex" n> r> n "#+end_export")
+(inlsrc "src_" p "{" q "}")
+(cptn & "#+caption: ")
+(drwr & ":" p ":" n r ":end:")
+(ttl      & "#+title: " p n "#+author: " p n "#+language: " p n n)
+(nm       & "#+name: " p n)
+(lnk      & "[[" p "][" p "]]")
+(bgn      & "#+begin_" (s name) n r n "#+end_" name)
+(exmpl    & "#+begin_example" n> r> n> "#+end_example")
+(cntr     & "#+begin_center" n> r> n> "#+end_center")
+(cmm     & "#+begin_comment" n> r> n> "#+end_comment")
+(mrginnte & "#+begin_marginnote" n> r> n "#+end_marginnote")
+(qt       & "#+begin_quote" n> r> n> "#+end_quote")
+(sdnt     & "#+begin_sidenote" n> r> n "#+end_sidenote")
+(src      & "#+begin_src " p n r n "#+end_src"
+ :post (org-edit-src-code))
+(rst      & "#+begin_src restclient" p n r n "#+end_src"
+ :post (org-edit-src-code))
+(elsp     & "#+begin_src emacs-lisp" n r n "#+end_src"
+ :post (org-edit-src-code))
+(gnplt    & "#+begin_src gnuplot :var data=" (p "table") " :file " (p "plot.png") n r n "#+end_src"
+ :post (org-edit-src-code))
+(py_   & "#+begin_src python" n r n "#+end_src"
+ :post (org-edit-src-code))
+(py_vl & "#+begin_src python :results value" n r n "#+end_src"
+ :post (org-edit-src-code))
+(py_otpt & "#+begin_src python :results output" n r n "#+end_src"
+ :post (org-edit-src-code))
+(vrs & "#+begin_verse" n> r> n> "#+end_verse")
+(rdnly ":tangle yes :tangle-mode (identity #o444) :mkdirp yes" n)
+(oxhugo & ":PROPERTIES:"  n ":EXPORT_FILE_NAME: " (p "Simple Filename") n ":EXPORT_DATE: "
+ (format-time-string "%Y-%m-%d") n ":EXPORT_HUGO_DRAFT: false" n ":END:")
+(rdmecollapse  "*** " (p "Heading") n "#+HTML: <details> <summary> " (p "sub-heading")  " </summary>" n
+ (r> "link or any comments") n n "#+HTML: </details>" n)
+
+rust-mode rust-ts-mode
+
+(if "if " p " {" n> q n "}" > q)
+(el "if " p " {" n> p n "} else {" >n> p n "}" > q)
+(elif "if " p " {" n> p n "} else if " p " {" >n> p n "}" > q)
+(fn "fn " p "(" p ") {" n> p n "}" q)
+(fnr "fn " p "(" p ") -> " p " {" n> p n "}" q)
+(crt "extern crate " q ";")
+(drv & "#[derive(" p ")]" q)
+(d "dbg!(" p ")" q)
+(lp "loop {" n> q n "}" > q)
+
+python-base-mode
+
+(__contains__ "def __contains__(self, el):" n> p n> "pass")
+(__enter__ "def __enter__(self):" n> p n> "return self")
+(__eq__ "def __eq__(self, other):" n> "return self." p " == other." q)
+(__exit__ "def __exit__(self, type, value, traceback):" n> p n> "pass")
+(__getitem__ "def __len__(self):" n> p n> "pass")
+(__iter__ "def __iter__(self):" n> "return " q)
+(__new__ "def __new__(mcs, name, bases, dict):" n> p n> "return type.__new__(mcs, name, bases, dict)")
+(__setitem__ "__all__ = [" n> p n> "]")
+(arg "parser.add_argument('-" p "', '--" p "'," n> p ")")
+(arg_positional "parser.add_argument('" p "', " p ")")
+(assert "assert " q)
+(assertEqual "self.assertEqual(" p ", " p ")")
+(assertFalse "self.assertFalse(" p ")")
+(assertIn "self.assertIn(" p ", " p ")")
+(assertNotEqual "self.assertNotEqual(" p ", " p ")")
+(assertRaises "assertRaises(" p ", " p ")")
+(assertRaises-with "with self.assertRaises(" p "):" n> q)
+(assertTrue "self.assertTrue(" p ")")
+(celery_pdb "from celery.contrib import rdb; rdb.set_trace()")
+(class "class " p "(" p "):" n> q)
+(classmethod "@classmethod" n> "def " p "(cls, " p "):" n> q)
+(def_decorator "def " p "(func):" n> p n> "def _" p "(*args, **kwargs):" n> p n> "ret = func(*args, **kwargs)" n> p n> "return ret" n n> "return _" q)
+(def_function "def " p "(" p "):" n> q)
+(doc "\"\"\"" p "\"\"\"")
+(doctest ">>> " p n> q)
+(for "for " p " in " p ":" n> q)
+(from "from " p " import " q)
+(function_docstring "def " p "(" p "):" n> "\"\"\"" p "\"\"\"" n> q)
+(if "if " p ":" n> q)
+(ife "if " p ":" n> p n> "else:" n> q)
+(ifmain "if __name__ == '__main__':" n> q)
+(ig "# type: ignore" q)
+(import "import " p q)
+(init "def __init__(self" p "):" n> q)
+(init_docstring "def __init__(self" p "):" n> "\"\"\"" p "\"\"\"" n> q)
+(interact "import code; code.interact(local=locals())")
+(ipdb_trace "import ipdb; ipdb.set_trace()")
+(lambda "lambda " p ": " q)
+(list "[" p " for " p " in " p "]")
+(logger_name "logger = logging.getLogger(__name__)")
+(logging "logger = logging.getLogger(\"" p "\")" n> "logger.setLevel(logging." p ")")
+(main "def main():" n> q)
+(metaclass "__metaclass__ = type")
+(method "def " p "(self" p "):" n> q)
+(method_docstring "def " p "(self" p "):" n> "\"\"\"" p "\"\"\"" n> q)
+(not_impl "raise NotImplementedError")
+(np "import numpy as np" n> q)
+(parse_args "def parse_arguments():" n> "parser = argparse.ArgumentParser(description='" p "')" n> p n> "return parser.parse_args()")
+(pd "import pandas as pd" n> q)
+(tf "import tensorflow as tf" n> q)
+(tr & "import " p "; " p ".set_trace()" q)
+(parser "parser = argparse.ArgumentParser(description='" p "')" n> q)
+(pass "pass")
+(print "print(" p ")")
+(prop "def " p "():"
+      n> "doc = \"\"\"" p "\"\"\"" 
+      n> "def fget(self):"
+      n> "return self._" p 
+      n> n> "def fset(self, value):"
+      n> "self._" p " = value" 
+      n> n> "def fdel(self):"
+      n> "del self._" p 
+      n> "return locals()"
+      n> p " = property(**" p "())")
+(reg p " = re.compile(r\"" p "\")")
+(__repr__ "def __repr__(self):" n> q)
+(return "return " q)
+(script "#!/usr/bin/env python" n n> "def main():" n> "pass" n n> "if __name__ == '__main__':" n> "main()")
+(self "self." q)
+(self_without_dot "self")
+(selfassign "self." p " = " q)
+(setdef p ".setdefault(" p ", []).append(" p ")")
+(setup "from setuptools import setup" n n> "package = '" p "'" n> "version = '" p "'" n n> "setup(name=package," n> "version=version," n> "description=\"" p "\"," n> "url='" p "'" p ")")
+(shebang_line "#!/usr/bin/env python" n> q)
+(size "sys.getsizeof(" p ")")
+(static "@staticmethod" n> "def " p "(" p "):" n> q)
+(__str__ "def __str__(self):" n> q)
+(super "super(" p ", self)." p "(" p ")")
+(test_class "class Test" p "(" p "):" n> q)
+(test_file "import unittest" n> "from " p " import *" n> p n> "if __name__ == '__main__':" n> "unittest.main()")
+(trace "import pdb; pdb.set_trace()")
+(try "try:" n> p n> "except " p ":" n> q)
+(tryelse "try:" n> p n> "except " p ":" n> p n> "else:" n> q)
+(__unicode__ "def __unicode__(self):" n> q)
+(utf-8_encoding "# -*- coding: utf-8 -*-")
+(while "while " p ":" n> q)
+(with "with " p p ":" n> q)
+(with_statement "from __future__ import with_statement")
+
+;; Local Variables:
+;; mode: lisp-data
+;; outline-regexp: "[a-z]"
+;; End:
