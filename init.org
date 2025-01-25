@@ -4,6 +4,7 @@
 
 #+STARTUP: content
 #+STARTUP: hideblocks
+#+OPTIONS: ^:{}
 
 * Preface
 ** Overview
@@ -96,7 +97,6 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | full-name        | Liu Miao                                          |
 | email-address    | liumiaogemini@foxmail.com                         |
 | lsp-client       | 'eglot                                            |
-| deepseek-api-key | 'nil                                              |
 | default-font     | (font-spec :family "Consolas" :size 14)           |
 | serif-font       | (font-spec :family "Noto Serif CJK SC")           |
 | symbol-font      | 'nil                                              |
@@ -108,7 +108,8 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | theme            | 'doom-one                                         |
 | profiler-enabled | 'nil                                              |
 | package-mirror   | 'default                                          |
-| ai-args          | '("--model" "deepseek/deepseek-chat")             |
+| ai-provider  | deepseek-r1  |
+| ai-api-key | 'nil                                              |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
@@ -710,16 +711,34 @@ Generate enviroment file when not exists. And load enviroment file.
 #+end_src
 
 ** AI
-#+begin_src emacs-lisp :tangle yes
+#+name: ai-providers
+| Provider    | Args                           | Env               |
+|-------------+--------------------------------+-------------------|
+| deepseek-v3 | --model deepseek/deepseek-chat | DEEPSEEK_API_KEY  |
+| deepseek-r1 | --model r1                     | DEEPSEEK_API_KEY  |
+| claude      | --model anthropic/claude-3-5   | ANTHROPIC_API_KEY |
+| gpt4        | --model openai/gpt-4           | OPENAI_API_KEY    |
+
+#+begin_src emacs-lisp :var providers=ai-providers :tangle yes
+(defvar moyu/ai-provider-config 
+  (cl-loop for row in (cdr providers)
+           when (string= (car row) moyu/ai-provider)
+           return `(:args ,(split-string (cadr row))
+                          :env ,(caddr row)))
+  "AI provider configuration.
+\(:args val :env val)")
+
 (use-package aider
   :config
   ;; Use claude-3-5-sonnet cause it is best in aider benchmark 
-  (setq aider-args moyu/ai-args)
-  (when moyu/deepseek-api-key
-    (setenv "DEEPSEEK_API_KEY" moyu/deepseek-api-key))
+  (setq aider-args (plist-get moyu/ai-provider-config :args))
+  (when moyu/ai-api-key
+    (setenv (plist-get moyu/ai-provider-config :env)
+            moyu/ai-api-key))
   ;; Optional: Set a key binding for the transient menu
   (global-set-key (kbd "C-c a") 'aider-transient-menu))
 #+end_src
+
 ** Debug
 #+begin_src emacs-lisp :tangle yes
 (use-package dape
