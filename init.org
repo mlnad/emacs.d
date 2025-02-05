@@ -6,8 +6,7 @@
 #+STARTUP: hideblocks
 #+OPTIONS: ^:{}
 
-* Preface
-** Overview
+* Overview
 This file serves as the central configuration for Emacs, a highly customized
 Emacs setup designed for efficiency, flexibility, and productivity. It leverages
 Org-mode's powerful tangling capabilities to generate Emacs Lisp code, ensuring
@@ -15,27 +14,7 @@ a clean and maintainable configuration structure. The configuration is modular,
 with sections dedicated to initialization, editor settings, completion
 frameworks, programming environments, and user interface enhancements.
 
-** Key Features
-- Modular Design: The configuration is organized into logical sections, making
-  it easy to navigate and modify.
-
-- Dynamic Code Generation: Org-mode tables and Babel blocks are used to
-  dynamically generate Emacs Lisp code, reducing redundancy and improving
-  maintainability.
-
-- Extensive Customization: Variables, keybindings, and package configurations
-  are tailored to optimize workflows for coding, writing, and project
-  management.
-
-- Modern Tools: Integration with modern Emacs packages like Eglot (for LSP),
-  Vertico (for completion), and Magit (for version control) ensures a
-  cutting-edge development experience.
-
-- Cross-Platform Support: The configuration is designed to work seamlessly
-  across different operating systems, with specific adjustments for Windows,
-  Linux, and macOS.
-
-** Structure
+* Structure
 The file is divided into several major sections:
 
 1. Initialization: Sets up early init settings, package management, and
@@ -721,7 +700,7 @@ Generate enviroment file when not exists. And load enviroment file.
 
 #+begin_src emacs-lisp :var providers=ai-providers :tangle yes
 (defvar moyu/ai-provider-config 
-  (cl-loop for row in (cdr providers)
+  (cl-loop for row in providers
            when (string= (car row) moyu/ai-provider)
            return `(:args ,(split-string (cadr row))
                           :env ,(caddr row)))

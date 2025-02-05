@@ -1,23 +1,69 @@
 #+TITLE: Mo Yu Emacs
 
-[[./feather.svg]]
+#+begin_center
 
+[[./feather.svg]]
+#+end_center
 
 #+begin_quote
 Emacs configuration with listed packages.
 #+end_quote
 
-* Packages
-- Evil, Popper
-- Magit, diff-hl
-- Vertico, Orderless, Consult, Corfu
-- Org-mode, Markdown, LaTex
-- Eglot, Apheleia
-- Rustic, Python
+* Overview
+This is a highly customized Emacs configuration designed for efficient coding,
+writing, and project management.
 
-* Mono-file
+** Key Features
+- Modular Design: The configuration is organized into logical sections, making
+  it easy to navigate and modify.
+
+- Dynamic Code Generation: Org-mode tables and Babel blocks are used to
+  dynamically generate Emacs Lisp code, reducing redundancy and improving
+  maintainability.
+
+- Extensive Customization: Variables, keybindings, and package configurations
+  are tailored to optimize workflows for coding, writing, and project
+  management.
+
+- Modern Tools: Integration with modern Emacs packages like Eglot (for LSP),
+  Vertico (for completion), and Magit (for version control) ensures a
+  cutting-edge development experience.
+
+- Cross-Platform Support: The configuration is designed to work seamlessly
+  across different operating systems, with specific adjustments for Windows,
+  Linux, and macOS.
+
+** Mono-file
 All the configurations for start Emacs is integrated into [[file:init.org][init.org]]. These codes
 can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
+
+* Key Packages
+| Category        | Packages                                |
+|-----------------+-----------------------------------------|
+| Editing         | Evil, Corfu, Cape, Tempel               |
+| Completion      | Vertico, Orderless, Consult, Marginalia |
+| Version Control | Magit, diff-hl                          |
+| Writing         | Org-mode, Markdown, LaTeX               |
+| Programming     | Eglot, Apheleia, Dape                   |
+| Languages       | Rustic, Python, Lisp                    |
+| UI              | Doom-themes, Doom-modeline, Popper      |
+
+* Installation
+1. Clone this repository:
+   #+begin_src shell
+   git clone https://github.com/yourusername/moyu-emacs.git ~/.emacs.d
+   #+end_src
+
+2. Install dependencies:
+   #+begin_src shell
+   sudo apt install ripgrep fd-find
+   #+end_src
+
+3. Start Emacs - packages will be automatically installed
+
+* Customization
+It will automatically create a =~/.emacs.d/.cache/userconfig= file to override
+the default settings.
 
 * More
 See [[file:init.org][init]] for more information.
