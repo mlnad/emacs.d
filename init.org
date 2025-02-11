@@ -575,7 +575,8 @@ Generate enviroment file when not exists. And load enviroment file.
           ;; cape-rfc1345
           ;; cape-dict
           ;; cape-elisp-symbol
-          cape-line
+          ;; cape-line
+          cape-dabbrev
           cape-abbrev))
   :config
   (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive))
