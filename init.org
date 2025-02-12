@@ -451,8 +451,7 @@ Generate enviroment file when not exists. And load enviroment file.
 #+end_src
 
 * Completion
-** Vertico based
-*** orderless
+** orderless
 #+begin_src emacs-lisp :tangle yes
 (use-package orderless
   :ensure t
@@ -464,7 +463,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (add-to-list 'orderless-matching-styles 'orderless-flex))
 #+end_src
 
-*** vertico
+** vertico
 #+begin_src emacs-lisp :tangle yes
 (use-package vertico
   :ensure t
@@ -480,7 +479,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (vertico-multiform-mode 1))
 #+end_src
 
-*** consult
+** consult
 #+begin_src emacs-lisp :tangle yes
 (use-package consult
   :ensure t
@@ -519,7 +518,7 @@ Generate enviroment file when not exists. And load enviroment file.
         xref-show-definitions-function #'consult-xref))
 #+end_src
 
-*** corfu
+** corfu
 #+begin_src emacs-lisp :tangle yes
 (use-package corfu
   :ensure t
@@ -558,7 +557,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (corfu-popupinfo-mode 1))
 #+end_src
 
-*** cape
+** cape
 #+begin_src emacs-lisp :tangle yes
 (use-package cape
   :ensure t
@@ -582,7 +581,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive))
 #+end_src
 
-*** marginalia
+** marginalia
 #+begin_src emacs-lisp :tangle yes
 (use-package marginalia
   :ensure t
@@ -591,7 +590,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (marginalia-mode))
 #+end_src
 
-*** embark
+** embark
 #+begin_src emacs-lisp :tangle yes
 (use-package embark
   :ensure t
@@ -608,7 +607,7 @@ Generate enviroment file when not exists. And load enviroment file.
   (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 
-*** icons
+** icons
 #+begin_src emacs-lisp :tangle yes
 (use-package nerd-icons-corfu
   :ensure t
@@ -617,39 +616,7 @@ Generate enviroment file when not exists. And load enviroment file.
     (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
 #+end_src
 
-** Projects
-*** project
-#+begin_src emacs-lisp :tangle yes
-(use-package project
-  :bind (([remap project-shell] . project-eshell))
-  :init
-  (setq project-list-file (moyu/cache-it "projects")))
-#+end_src
-
-*** projection
-#+begin_src emacs-lisp :tangle yes
-(use-package projection
-  :ensure t
-  :hook (after-init . global-projection-hook-mode)
-  :bind-keymap ("C-c P" . projection-map)
-  :config
-  (with-eval-after-load 'project
-    (require 'projection)))
-
-(use-package projection-multi
-  :ensure t
-  :bind (:map project-prefix-map
-              ("RET" . projection-multi-compile)))
-
-(use-package projection-multi-embark
-  :ensure t
-  :after embark
-  :after projection-multi
-  :demand t
-  :config (projection-multi-embark-setup-command-map))
-#+end_src
-
-** Templates
+** tempel
 #+begin_src emacs-lisp :tangle yes
 (use-package tempel
   :ensure t
@@ -688,6 +655,38 @@ Generate enviroment file when not exists. And load enviroment file.
 (use-package consult-eglot
   :ensure t
   :bind (([remap xref-find-apropos] . consult-eglot-symbols)))
+#+end_src
+
+** Projects
+*** project
+#+begin_src emacs-lisp :tangle yes
+(use-package project
+  :bind (([remap project-shell] . project-eshell))
+  :init
+  (setq project-list-file (moyu/cache-it "projects")))
+#+end_src
+
+*** projection
+#+begin_src emacs-lisp :tangle yes
+(use-package projection
+  :ensure t
+  :hook (after-init . global-projection-hook-mode)
+  :bind-keymap ("C-c P" . projection-map)
+  :config
+  (with-eval-after-load 'project
+    (require 'projection)))
+
+(use-package projection-multi
+  :ensure t
+  :bind (:map project-prefix-map
+              ("RET" . projection-multi-compile)))
+
+(use-package projection-multi-embark
+  :ensure t
+  :after embark
+  :after projection-multi
+  :demand t
+  :config (projection-multi-embark-setup-command-map))
 #+end_src
 
 ** AI
