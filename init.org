@@ -6,14 +6,6 @@
 #+STARTUP: hideblocks
 #+OPTIONS: ^:{}
 
-* Overview
-This file serves as the central configuration for Emacs, a highly customized
-Emacs setup designed for efficiency, flexibility, and productivity. It leverages
-Org-mode's powerful tangling capabilities to generate Emacs Lisp code, ensuring
-a clean and maintainable configuration structure. The configuration is modular,
-with sections dedicated to initialization, editor settings, completion
-frameworks, programming environments, and user interface enhancements.
-
 * Structure
 The file is divided into several major sections:
 
@@ -23,11 +15,11 @@ The file is divided into several major sections:
 2. Editor: Configures core Emacs behavior, including indentation, completion,
    and keybindings.
 
-3. Completion & Projects: Implements advanced completion frameworks (e.g.,
+3. Completion: Implements advanced completion frameworks (e.g.,
    Vertico, Corfu) and project management tools.
 
 4. Programming: Provides language-specific configurations for Lisp, Rust,
-   Python, and more, with support for LSP and debugging.
+   Python, and more, with support for projects, LSP and debugging.
 
 5. Writing: Enhances Org-mode and Markdown workflows, including note-taking,
    journaling, and document formatting.
@@ -87,8 +79,8 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | theme            | 'doom-one                                         |
 | profiler-enabled | 'nil                                              |
 | package-mirror   | 'default                                          |
-| ai-provider  | deepseek-r1  |
-| ai-api-key | 'nil                                              |
+| ai-provider      | deepseek-r1                                       |
+| ai-api-key       | 'nil                                              |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
