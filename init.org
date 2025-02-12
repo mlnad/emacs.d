@@ -31,12 +31,7 @@ The file is divided into several major sections:
 #+begin_src emacs-lisp :tangle "early-init.el"
 (setq gc-cons-threshold (* 128 1024 1024)
       package-enable-at-startup nil
-      auto-mode-case-fold nil
-      fast-but-imprecise-scrolling t
-      idle-update-delay 1.0
-      inhibit-compacting-font-caches t
-      read-process-output-max (* 64 1024)
-      redisplay-skip-fontification-on-input t)
+      idle-update-delay 1.0)
 
 (when (getenv-internal "DEBUG")
   (setq init-file-debug t
@@ -57,9 +52,30 @@ The file is divided into several major sections:
       scroll-bar-mode nil)
 
 (set-language-environment "UTF-8")
+
+(defmacro moyu/cache-it (file-or-dir)
+  "Cache the FILE-OR-DIR in the `.cache' directory."
+  `(expand-file-name ,file-or-dir moyu/cache-directory))
+
+(defvar moyu/cache-directory (expand-file-name ".cache/" user-emacs-directory))
+(defvar moyu/userconfig-file (moyu/cache-it "userconfig"))
+
+(unless (file-exists-p moyu/cache-directory)
+  (make-directory moyu/cache-directory))
+
+(unless (file-exists-p moyu/userconfig-file)
+  (with-temp-file moyu/userconfig-file
+    (setq-local coding-system-for-write 'utf-8)
+    (goto-char (point-min))
+    (insert
+     ";; -*- mode: emacs-lisp -*-
+
+(setq moyu/package-mirror 'default
+      moyu/default-font (font-spec :family \"Consolas\"
+                                     :size 14))")))
 #+end_src
 
-* Default variables
+* Custom variables
 Default variables and constants with "moyu" prefix, some of these variables will
 be overwrited by user configuration in `.cache/userconfig` file.
 #+name: default-vars
@@ -72,7 +88,6 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | serif-font       | (font-spec :family "Noto Serif CJK SC")           |
 | symbol-font      | 'nil                                              |
 | emoji-font       | 'nil                                              |
-| cache-directory  | (expand-file-name ".cache/" user-emacs-directory) |
 | org-journal-type | 'daily                                            |
 | notes-dir        | ~/org/                                            |
 | org-roam-dir     | ~/org/                                            |
@@ -95,71 +110,15 @@ be overwrited by user configuration in `.cache/userconfig` file.
         vars)
 #+end_src
 
-* Start Up
-** Configure
-Add the `lisp` path to `load-path`, and generate cache directory and user config
-file if not exist. Use a separated `custom.el` to keep the `init.el` clean.
 #+begin_src emacs-lisp :tangle yes
-(defmacro moyu/cache-it (file-or-dir)
-  "Cache the FILE-OR-DIR in the `.cache' directory."
-  `(expand-file-name ,file-or-dir moyu/cache-directory))
-
-(defvar moyu/userconfig-file (moyu/cache-it "userconfig"))
-
-(add-to-list 'load-path
-             (expand-file-name "lisp" user-emacs-directory))
-
-;; make cache directory
-(unless (file-exists-p moyu/cache-directory)
-  (make-directory moyu/cache-directory))
-;; load user configs.
-(unless (file-exists-p moyu/userconfig-file)
-  (with-temp-file moyu/userconfig-file
-    (setq-local coding-system-for-write 'utf-8)
-    (goto-char (point-min))
-    (insert
-     ";; -*- mode: emacs-lisp -*-
-
-(setq moyu/package-mirror 'default
-      moyu/default-font (font-spec :family \"Consolas\"
-                                     :size 14))")))
 (load-file moyu/userconfig-file)
-
 ;; load `custom-file'
 (setq custom-file (moyu/cache-it "custom.el"))
 (when (file-exists-p custom-file)
   (load custom-file))
 #+end_src
 
-Load the required packages for `init.el`.
-#+begin_src emacs-lisp :tangle yes
-(require 'core)
-(require 'env-ext)
-(require 'cl-lib)
-(require 'package)
-#+end_src
-
-** GC
-Add gc-action when state changed.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defvar better-gc-cons-threshold (* 16 1024 1024))
-
-(if (boundp 'after-focus-change-function)
-    (add-function :after after-focus-change-function
-                  (lambda ()
-                    (unless (frame-focus-state)
-                      (garbage-collect)))))
-
-(add-hook 'minibuffer-setup-hook
-          (lambda ()
-            (setq gc-cons-threshold (* better-gc-cons-threshold 2))))
-
-(add-hook 'minibuffer-exit-hook
-          (lambda ()
-            (garbage-collect)
-            (setq gc-cons-threshold better-gc-cons-threshold)))
-#+END_SRC
-
+* Start Up
 ** Packages
 Initialize package manager. Elpa packages will be installed into named folders,
 packages will be reinstalled after Emacs is updated.
@@ -200,6 +159,18 @@ packages will be reinstalled after Emacs is updated.
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package)))
+#+end_src
+
+** Libs
+Load the required packages for `init.el`.
+#+begin_src emacs-lisp :tangle yes
+(add-to-list 'load-path
+             (expand-file-name "lisp" user-emacs-directory))
+
+(require 'core)
+(require 'env-ext)
+(require 'cl-lib)
+(require 'package)
 #+end_src
 
 ** Enviroment
@@ -617,7 +588,6 @@ Generate enviroment file when not exists. And load enviroment file.
   (add-to-list 'completion-at-point-functions 'tempel-complete))
 #+end_src
 
-* Workspace
 * Programming
 ** Configs
 #+begin_src emacs-lisp :tangle yes
@@ -1424,13 +1394,6 @@ If some elements are missing, the will be stripped out."
 #+begin_src emacs-lisp :tangle yes
 (setq hscroll-margin 2
       hscroll-step 1
-      ;; Emacs spends too much effort recentering the screen if you scroll the
-      ;; cursor more than N lines past window edges (where N is the settings of
-      ;; `scroll-conservatively'). This is especially slow in larger files
-      ;; during large-scale scrolling commands. If kept over 100, the window is
-      ;; never automatically recentered. The default (0) triggers this too
-      ;; aggressively, so I've set it to 10 to recenter if scrolling too far
-      ;; off-screen.
       scroll-conservatively 10
       scroll-margin 0
       scroll-preserve-screen-position t
