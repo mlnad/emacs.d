@@ -264,7 +264,8 @@ Generate enviroment file when not exists. And load enviroment file.
 (unless (eq system-type 'windows-nt)
   (setq tramp-default-method "ssh"
         tramp-backup-directory-alist backup-directory-alist
-        tramp-auto-save-directory (expand-file-name "tramp-autosave/" moyu/cache-directory)
+        tramp-auto-save-directory (moyu/cache-it "tramp-autosave/")
+        tramp-persistency-file-name (moyu/cache-it "tramp")
         tramp-backup-directory-alist (moyu/cache-it "backup/")))
 
 (with-eval-after-load 'tramp
@@ -371,6 +372,12 @@ Generate enviroment file when not exists. And load enviroment file.
   (repeat-mode))
 #+end_src
 
+*** bookmark
+#+begin_src emacs-lisp :tangle yes
+(use-package bookmark
+  :custom
+  (bookmark-default-file (moyu/cache-it "bookmarks")))
+#+end_src
 *** treesit
 #+begin_src emacs-lisp :tangle yes
 (use-package treesit
@@ -692,13 +699,12 @@ Generate enviroment file when not exists. And load enviroment file.
   :hook
   ((kill-emacs . dape-breakpoint-save)
    (after-init . dape-breakpoint-load))
-
+  :custom
+  (dape-buffer-window-arrangement 'right)
+  (dape-default-breakpoints-file (moyu/cache-it "dape-breakpoints"))
   :config
   ;; Turn on global bindings for setting breakpoints with mouse
   (dape-breakpoint-global-mode)
-
-  ;; Info buffers to the right
-  (setq dape-buffer-window-arrangement 'right)
 
   ;; Pulse source line (performance hit)
   (add-hook 'dape-display-source-hook 'pulse-momentary-highlight-one-line)

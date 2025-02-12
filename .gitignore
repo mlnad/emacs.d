@@ -58,3 +58,5 @@ smex-items
 init.el
 early-init.el
 .aider*
+
+tree-sitter
