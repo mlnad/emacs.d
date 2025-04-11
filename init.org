@@ -79,23 +79,19 @@ The file is divided into several major sections:
 Default variables and constants with "moyu" prefix, some of these variables will
 be overwrited by user configuration in `.cache/userconfig` file.
 #+name: default-vars
-| Variable Name    | Value                                             |
-|------------------+---------------------------------------------------|
-| full-name        | Liu Miao                                          |
-| email-address    | liumiaogemini@foxmail.com                         |
-| lsp-client       | 'eglot                                            |
-| default-font     | (font-spec :family "Consolas" :size 14)           |
-| serif-font       | (font-spec :family "Noto Serif CJK SC")           |
-| symbol-font      | 'nil                                              |
-| emoji-font       | 'nil                                              |
-| org-journal-type | 'daily                                            |
-| notes-dir        | ~/org/                                            |
-| org-roam-dir     | ~/org/                                            |
-| theme            | 'doom-one                                         |
-| profiler-enabled | 'nil                                              |
-| package-mirror   | 'default                                          |
-| ai-provider      | deepseek-r1                                       |
-| ai-api-key       | 'nil                                              |
+| Variable Name    | Value                     |
+|------------------+---------------------------|
+| full-name        | Liu Miao                  |
+| email-address    | liumiaogemini@foxmail.com |
+| lsp-client       | 'eglot                    |
+| org-journal-type | 'daily                    |
+| notes-dir        | ~/org/                    |
+| org-roam-dir     | ~/org/                    |
+| theme            | 'doom-one                 |
+| profiler-enabled | 'nil                      |
+| package-mirror   | 'default                  |
+| ai-provider      | deepseek-r1               |
+| ai-api-key       | 'nil                      |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
@@ -253,6 +249,7 @@ Generate enviroment file when not exists. And load enviroment file.
 
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
+(add-hook 'comint-mode-hook #'visual-line-mode)
 
 ;; Create missing directory when we open a file that doesn't exist under
 ;; a directory tree tha may not exist.
@@ -589,15 +586,6 @@ Generate enviroment file when not exists. And load enviroment file.
   (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 
-** icons
-#+begin_src emacs-lisp :tangle yes
-(use-package nerd-icons-corfu
-  :ensure t
-  :init
-  (with-eval-after-load 'corfu
-    (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
-#+end_src
-
 ** tempel
 #+begin_src emacs-lisp :tangle yes
 (use-package tempel
@@ -869,6 +857,7 @@ Generate enviroment file when not exists. And load enviroment file.
 (use-package svg-tag-mode
   :ensure t)
 #+end_src
+
 ** Org
 *** variables
 #+begin_src emacs-lisp :tangle yes
@@ -1311,62 +1300,67 @@ If some elements are missing, the will be stripped out."
 #+end_src
 
 * UI
-** Font & Theme
-#+name: font-theme
-| Font set     | family            | size | weight | slant  |
-|--------------+-------------------+------+--------+--------|
-| default-font | Consolas          |   14 | normal | normal |
-| serif-font   | Noto Serif CJK SC |   14 | normal | normal |
-| symbol       | 'nil              |      |        |        |
-| mathematical | 'nil              |      |        |        |
-| unicode      | Weather Icons     |      |        |        |
-| unicode      | github-octicons   |      |        |        |
-| unicode      | FontAwesome       |      |        |        |
-
+** Font
+*** Font packages
 #+begin_src emacs-lisp :tangle yes
-(use-package doom-themes
-  :ensure t)
+(use-package nerd-icons-corfu
+  :ensure t
+  :init
+  (with-eval-after-load 'corfu
+    (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)))
 
 (use-package all-the-icons
   :ensure t
   :if (display-graphic-p))
+#+end_src
 
-(defun moyu/init-fonts ()
-  "Loads fonts."
-  (dolist (map `((default . ,moyu/default-font)
-                 (fixed-pitch . ,moyu/default-font)
-                 (fixed-pitch-serif . ,moyu/serif-font)))
-    (when-let* ((face (car map))
-                (font (cdr map)))
-      (dolist (frame (frame-list))
-        (when (display-multi-font-p frame)
-          (set-face-attribute face frame
-                              :width 'normal :width	'normal
-                              :slant 'normal :font font)))))
-  (when (fboundp 'set-fontset-font)
-    (dolist (font (list "Weather Icons"
-                        "github-octicons"
-                        "FontAwesome"
-                        "all-the-icons"
-                        "file-icons"
-                        "Material Icons"))
-      (set-fontset-font t 'unicode (font-spec :family font) nil 'append))
-    (when moyu/symbol-font
-      (dolist (script '(symbol mathematical))
-        (set-fontset-font t script moyu/symbol-font)))
-    (when moyu/emoji-font
-      (set-fontset-font t 'symbol moyu/emoji-font nil 'append)))
-  (run-hooks 'after-setting-font-hook))
+*** Face fonts
+#+name: face-fonts
+| Face              | Family            | Size |
+|-------------------+-------------------+------|
+| default           | Jet Brains Mono   |   16 |
+| fixed-pitch       | Noto Sans CJK SC  |   16 |
+| fixed-pitch-serif | Noto Serif CJK SC |   16 |
+#+begin_src emacs-lisp :tangle yes :var face-fonts=face-fonts
+(mapcar (lambda (row)
+          (cl-destructuring-bind (face family size) row
+            (set-face-attribute (read face) nil
+                                :width 'normal :weight 'normal :slant 'normal
+                                :font (font-spec :family family :size size))))
+        face-fonts)
+#+end_src
 
-(defun moyu/init-theme ()
-  "Initialize Emacs theme."
-  (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
-    (disable-theme custom-enabled-themes)
-    (load-theme moyu/theme t)))
+*** Fontset fonts
+#+name: fontset-fonts
+| Char set | family          | weight | slant  |
+|----------+-----------------+--------+--------|
+| unicode  | Weather Icons   | normal | normal |
+| unicode  | github-octicons | normal | normal |
+| unicode  | FontAwesome     | normal | normal |
+| unicode  | all-the-icons   | normal | normal |
+| unicode  | file-icons      | normal | normal |
+| unicode  | Material Icons  | normal | normal |
 
-(let ((hook (if (daemonp) 'server-after-make-frame-hook 'after-init-hook)))
-  (add-hook hook #'moyu/init-fonts)
-  (add-hook hook #'moyu/init-theme))
+#+begin_src emacs-lisp :tangle yes :var fontset-fonts=fontset-fonts
+(mapcar (lambda (row)
+          (cl-destructuring-bind (char-set family weight slant) row
+            (set-fontset-font t (read char-set)
+                              (font-spec :family family
+                                         :weight (read weight)
+                                         :slant (read slant))
+                              nil 'append)))
+        fontset-fonts)
+(run-hooks 'after-setting-font-hook)
+#+end_src
+
+** Theme
+#+begin_src emacs-lisp :tangle yes
+(use-package doom-themes
+  :ensure t)
+
+(when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
+  (disable-theme custom-enabled-themes)
+  (load-theme moyu/theme t))
 #+end_src
 
 ** Modeline
@@ -1484,3 +1478,4 @@ should manage.
   (setq popper-group-function #'popper-group-by-project
         popper-mode-line nil))
 #+end_src
+
