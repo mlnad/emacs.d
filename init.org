@@ -838,7 +838,9 @@ Generate enviroment file when not exists. And load enviroment file.
 ** C/C++
 #+begin_src emacs-lisp :tangle yes
 (use-package c-ts-mode
-  :config)
+  :mode ("\\.c\\'" . c-ts-mode)
+  :mode ("\\.\\(cpp\\|cc\\|C\\|c\\+\\+\\|hpp\\)\\'" . c++-ts-mode)
+  :mode ("\\.h\\'" . c-or-c++-ts-mode))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
