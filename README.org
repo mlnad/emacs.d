@@ -51,12 +51,12 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 * Installation
 1. Clone this repository:
    #+begin_src shell
-   git clone https://github.com/yourusername/moyu-emacs.git ~/.emacs.d
+   git clone https://github.com/mlnad/moyu-emacs.git ~/.emacs.d
    #+end_src
 
 2. Install dependencies:
    #+begin_src shell
-   sudo apt install ripgrep fd-find
+   sudo apt install ripgrep fd-find tree-sitter
    #+end_src
 
 3. Start Emacs - packages will be automatically installed

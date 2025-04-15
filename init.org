@@ -429,6 +429,12 @@ Generate enviroment file when not exists. And load enviroment file.
   (which-key-setup-side-window-bottom))
 #+end_src
 
+*** hideshow
+#+begin_src emacs-lisp :tangle yes
+(use-package hideshow
+  :hook (prog-mode . hs-minor-mode))
+#+end_src
+
 * Completion
 ** orderless
 #+begin_src emacs-lisp :tangle yes
