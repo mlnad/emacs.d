@@ -1330,12 +1330,19 @@ If some elements are missing, the will be stripped out."
 | fixed-pitch       | Noto Sans CJK SC  |   16 |
 | fixed-pitch-serif | Noto Serif CJK SC |   16 |
 #+begin_src emacs-lisp :tangle yes :var face-fonts=face-fonts
-(mapcar (lambda (row)
-          (cl-destructuring-bind (face family size) row
-            (set-face-attribute (read face) nil
-                                :width 'normal :weight 'normal :slant 'normal
-                                :font (font-spec :family family :size size))))
-        face-fonts)
+(defvar moyu/face-fonts
+  face-fonts)
+
+(defun moyu/apply-face-fonts ()
+  (mapcar (lambda (row)
+            (cl-destructuring-bind (face family size) row
+              (set-face-attribute (read face) nil
+                                  :width 'normal :weight 'normal :slant 'normal
+                                  :font (font-spec :family family :size size))))
+          moyu/face-fonts))
+
+(add-hook 'after-init-hook #'moyu/apply-face-fonts)
+(add-hook 'server-after-make-frame-hook #'moyu/apply-face-fonts)
 #+end_src
 
 *** Fontset fonts
@@ -1350,15 +1357,22 @@ If some elements are missing, the will be stripped out."
 | unicode  | Material Icons  | normal | normal |
 
 #+begin_src emacs-lisp :tangle yes :var fontset-fonts=fontset-fonts
-(mapcar (lambda (row)
-          (cl-destructuring-bind (char-set family weight slant) row
-            (set-fontset-font t (read char-set)
-                              (font-spec :family family
-                                         :weight (read weight)
-                                         :slant (read slant))
-                              nil 'append)))
-        fontset-fonts)
-(run-hooks 'after-setting-font-hook)
+(defvar moyu/fontset-fonts
+  fontset-fonts)
+
+(defun moyu/apply-fontset-fonts ()
+  (mapcar (lambda (row)
+            (cl-destructuring-bind (char-set family weight slant) row
+              (set-fontset-font t (read char-set)
+                                (font-spec :family family
+                                           :weight (read weight)
+                                           :slant (read slant))
+                                nil 'append)))
+          moyu/fontset-fonts)
+  (run-hooks 'after-setting-font-hook))
+
+(add-hook 'after-init-hook #'moyu/apply-fontset-fonts)
+(add-hook 'server-after-make-frame-hook #'moyu/apply-fontset-fonts)
 #+end_src
 
 ** Theme
@@ -1366,9 +1380,13 @@ If some elements are missing, the will be stripped out."
 (use-package doom-themes
   :ensure t)
 
-(when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
-  (disable-theme custom-enabled-themes)
-  (load-theme moyu/theme t))
+(defun moyu/apply-theme ()
+  (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
+    (disable-theme custom-enabled-themes)
+    (load-theme moyu/theme t)))
+
+(add-hook 'after-init-hook #'moyu/apply-theme)
+(add-hook 'server-after-make-frame-hook #'moyu/apply-theme)
 #+end_src
 
 ** Modeline
