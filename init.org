@@ -539,7 +539,9 @@ Generate enviroment file when not exists. And load enviroment file.
   ;; See also `corfu-excluded-modes'.
   :init
   (global-corfu-mode 1)
-  (corfu-popupinfo-mode 1))
+  (corfu-popupinfo-mode 1)
+  :config
+  (setq text-mode-ispell-word-completion nil))
 #+end_src
 
 ** cape
@@ -854,6 +856,12 @@ Generate enviroment file when not exists. And load enviroment file.
 #+end_src
 
 ** Docker
+*** docker
+#+begin_src emacs-lisp :tangle yes
+(use-package docker
+  :ensure t
+  :bind ("C-c d" . docker))
+#+end_src
 *** dockerfile
 #+begin_src emacs-lisp :tangle yes
 (use-package dockerfile-ts-mode)
