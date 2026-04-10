@@ -668,8 +668,8 @@ Generate enviroment file when not exists. And load enviroment file.
 
 ** AI
 #+name: ai-providers
-| Provider    | Model                    | Env               |
-|-------------+--------------------------------+-------------------|
+| Provider    | Model                  | Env               |
+|-------------+------------------------+-------------------|
 | deepseek-v3 | deepseek/deepseek-chat | DEEPSEEK_API_KEY  |
 | deepseek-r1 | r1                     | DEEPSEEK_API_KEY  |
 | claude      | anthropic/claude-3-5   | ANTHROPIC_API_KEY |
