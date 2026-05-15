@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+:; # -*- mode: emacs-lisp; lexical-binding: t -*-
+:; case "$EMACS" in *term*) EMACS=emacs ;; *) EMACS="${EMACS:-emacs}" ;; esac
+:; emacs_bin="$EMACS ${DEBUG:+--debug-init} -q --no-site-file --batch"
+:; tmpdir=`$emacs_bin --eval '(princ (temporary-file-directory))' 2>/dev/null`
+:; [ -z "$tmpdir" ] && { >&2 echo "Error: failed to run Emacs ('$EMACS'). Is Emacs installed and in \$PATH?"; exit 1; }
+:; EMACSD="$(cd "$(dirname "$0")/.." && pwd)"
+:; $emacs_bin --load "$EMACSD/bin/moyue.el" --eval "(moyue-main)" -- "$@"
+:; exit $?
+
+;; Shell bootstrap above loads bin/moyue.el which defines the full framework.
