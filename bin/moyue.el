@@ -141,14 +141,25 @@ Reads arguments from `argv' (populated by Emacs batch mode)."
       (kill-emacs 1))))
 
 (moyue-defcommand "install" ""
-  "Install packages declared in init.el via use-package."
-  (let ((init-el (expand-file-name "init.el" user-emacs-directory)))
+  "Tangle init.org then load init.el to install all declared packages."
+  (require 'org)
+  (let* ((init-org (expand-file-name "init.org" user-emacs-directory))
+         (init-el  (expand-file-name "init.el"  user-emacs-directory)))
+    ;; Step 1: tangle
+    (if (file-exists-p init-org)
+        (progn
+          (message "Step 1/2  Tangling %s ..." init-org)
+          (org-babel-tangle-file init-org)
+          (message "Tangle done."))
+      (message "moyue install: init.org not found: %s" init-org)
+      (kill-emacs 1))
+    ;; Step 2: install packages
     (if (file-exists-p init-el)
         (progn
-          (message "Loading %s to install packages ..." init-el)
+          (message "Step 2/2  Loading %s to install packages ..." init-el)
           (load-file init-el)
           (message "Packages installed successfully."))
-      (message "moyue install: init.el not found: %s" init-el)
+      (message "moyue install: init.el not found after tangle: %s" init-el)
       (kill-emacs 1))))
 
 (moyue-defcommand "test" "[SUITE|PATTERN]"
