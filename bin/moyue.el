@@ -194,6 +194,71 @@ Reads arguments from `argv' (populated by Emacs batch mode)."
        (ert-run-tests-batch-and-exit (read suite))))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; itest: Docker-based integration test
+;;;; ──────────────────────────────────────────────────────────────────────────
+
+(defun moyue--itest-docker-p ()
+  "Return non-nil if the `docker' binary is available."
+  (executable-find "docker"))
+
+(defun moyue--itest-image-exists-p (image)
+  "Return non-nil if Docker image IMAGE (name[:tag]) is present locally."
+  (= 0 (call-process "docker" nil nil nil
+                     "image" "inspect" "--format={{.Id}}" image)))
+
+(defun moyue--itest-build (dockerfile-dir rebuild)
+  "Build Docker image `moyue-base' from DOCKERFILE-DIR.
+When REBUILD is non-nil pass --no-cache to `docker build'."
+  (message "itest: building Docker image moyue-base ...")
+  (let ((args `("build"
+                ,@(when rebuild '("--no-cache"))
+                "-t" "moyue-base"
+                ,dockerfile-dir)))
+    (apply #'call-process "docker" nil t nil args)))
+
+(defun moyue--itest-run (emacs-dir)
+  "Run the integration test container, mounting EMACS-DIR read-only.
+Returns the process exit code."
+  (let* ((container-cmd
+          (concat
+           ;; clean up any leftover elpa volume from previous run
+           "rm -rf /root/.emacs.d/elpa && "
+           "/root/.emacs.d/bin/moyue install && "
+           "/root/.emacs.d/bin/moyue test config"))
+         (args `("run" "--rm"
+                 "-v" ,(concat (expand-file-name emacs-dir) ":/root/.emacs.d:ro")
+                 "--tmpfs" "/root/.emacs.d/elpa"
+                 "--env" "HOME=/root"
+                 "moyue-base"
+                 "sh" "-c" ,container-cmd)))
+    (apply #'call-process "docker" nil t nil args)))
+
+(moyue-defcommand "itest" "[--rebuild]"
+  "Run integration tests inside Docker (builds image, mounts .emacs.d, runs install+test)."
+  (unless (moyue--itest-docker-p)
+    (message "moyue itest: `docker' not found in PATH")
+    (kill-emacs 1))
+  (let* ((rebuild  (member "--rebuild" args))
+         (emacs-dir (expand-file-name user-emacs-directory))
+         ;; Dockerfile lives in emacs-dir
+         (dockerfile-dir emacs-dir)
+         (build-needed (or rebuild
+                           (not (moyue--itest-image-exists-p "moyue-base")))))
+    ;; Build image if needed
+    (when build-needed
+      (let ((rc (moyue--itest-build dockerfile-dir rebuild)))
+        (unless (= rc 0)
+          (message "itest: docker build failed (exit %d)" rc)
+          (kill-emacs rc))))
+    ;; Run integration test container
+    (message "itest: launching test container ...")
+    (let ((rc (moyue--itest-run emacs-dir)))
+      (if (= rc 0)
+          (message "itest: ALL TESTS PASSED")
+        (message "itest: TESTS FAILED (exit %d)" rc))
+      (kill-emacs rc))))
+
+;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Optional extension: auto-load commands from bin/commands/*.el
 ;;;; ──────────────────────────────────────────────────────────────────────────
 
