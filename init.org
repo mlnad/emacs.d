@@ -383,6 +383,7 @@ Generate enviroment file when not exists. And load enviroment file.
   :custom
   (treesit-font-lock-level 4)
   :init
+  ;; Define grammar sources for auto-download. Emacs 29+
   (setq treesit-language-source-alist
         '((bash . ("https://github.com/tree-sitter/tree-sitter-bash"))
           (c . ("https://github.com/tree-sitter/tree-sitter-c"))
@@ -413,7 +414,23 @@ Generate enviroment file when not exists. And load enviroment file.
           (vue . ("https://github.com/merico-dev/tree-sitter-vue"))
           (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))
           (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
-          (zig . ("https://github.com/GrayJack/tree-sitter-zig")))))
+          (zig . ("https://github.com/GrayJack/tree-sitter-zig"))))
+  ;; Remap classic modes to their tree-sitter equivalents (Emacs 29+).
+  ;; This ensures ts-modes are activated automatically for matching files.
+  (setq major-mode-remap-alist
+        '((c-mode           . c-ts-mode)
+          (c++-mode         . c++-ts-mode)
+          (cmake-mode       . cmake-ts-mode)
+          (css-mode         . css-ts-mode)
+          (dockerfile-mode  . dockerfile-ts-mode)
+          (json-mode        . json-ts-mode)
+          (python-mode      . python-ts-mode)
+          (sh-mode          . bash-ts-mode)
+          (yaml-mode        . yaml-ts-mode)))
+  :config
+  ;; Auto-compile missing grammars on first use (requires cc/c++)
+  (mapc #'treesit-require
+        '(bash c cpp cmake css dockerfile python json rust sh yaml)))
 #+end_src
 
 *** which-key
