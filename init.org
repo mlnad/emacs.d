@@ -119,7 +119,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 Initialize package manager. Elpa packages will be installed into named folders,
 packages will be reinstalled after Emacs is updated.
 #+begin_src emacs-lisp :tangle yes
-(defvar moyu/avaliable-package-mirrors
+(defvar moyu/available-package-mirrors
   '((default . (("melpa" . "https://melpa.org/packages/")
                 ("gnu"   . "https://elpa.gnu.org/packages/")))
     (emacs-ustc . (("gnu"   . "http://mirrors.ustc.edu.cn/elpa/gnu/")
@@ -127,11 +127,11 @@ packages will be reinstalled after Emacs is updated.
                     ("nongnu" . "http://mirrors.ustc.edu.cn/elpa/nongnu/")))
     (emacs-tuna . (("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
                    ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
-                   ("nongnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")))
-    "A list of package mirrors, keyed by mirror name."))
+                   ("nongnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/"))))
+  "A list of package mirrors, keyed by mirror name.")
 
 (defvar moyu/used-package-mirror
-  (let ((mirror (alist-get moyu/package-mirror moyu/avaliable-package-mirrors)))
+  (let ((mirror (alist-get moyu/package-mirror moyu/available-package-mirrors)))
     (unless mirror
       (error "Unknown package mirror: %s" moyu/package-mirror))
     mirror))
@@ -583,7 +583,6 @@ Generate enviroment file when not exists. And load enviroment file.
           ;; cape-dict
           ;; cape-elisp-symbol
           ;; cape-line
-          cape-dabbrev
           cape-abbrev))
   :config
   (advice-add #'eglot-completion-at-point :around #'cape-wrap-nonexclusive))
@@ -593,9 +592,7 @@ Generate enviroment file when not exists. And load enviroment file.
 #+begin_src emacs-lisp :tangle yes
 (use-package marginalia
   :ensure t
-  :hook (after-init . marginalia-mode)
-  :init
-  (marginalia-mode))
+  :hook (after-init . marginalia-mode))
 #+end_src
 
 ** embark
@@ -772,7 +769,7 @@ Generate enviroment file when not exists. And load enviroment file.
 
 (use-package elisp-mode
   :mode ("\\.Cask\\'" . emacs-lisp-mode)
-  :hook (emacs-lisp-mode . flymake-mode-on)
+  :hook (emacs-lisp-mode . flymake-mode)
   :config
   (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode)
   (add-hook 'emacs-lisp-mode-hook (lambda ()
@@ -945,7 +942,7 @@ Generate enviroment file when not exists. And load enviroment file.
         org-highlight-latex-and-related '(native script entities))
   (setq org-todo-keywords org/todo-keywords)
   ;; org agenda
-  (setq-default org-agenda-files (list (concat "agendas/" moyu/notes-dir))
+  (setq-default org-agenda-files (list (expand-file-name "agendas" moyu/notes-dir))
                 org-agenda-skip-unavailable-files t
                 org-agenda-span 20
                 org-agenda-start-on-weekday nil
@@ -1363,7 +1360,7 @@ If some elements are missing, the will be stripped out."
   face-fonts)
 
 (defun moyu/apply-face-fonts ()
-  (mapcar (lambda (row)
+  (mapc #'(lambda (row)
             (cl-destructuring-bind (face family size) row
               (set-face-attribute (read face) nil
                                   :width 'normal :weight 'normal :slant 'normal
@@ -1390,7 +1387,7 @@ If some elements are missing, the will be stripped out."
   fontset-fonts)
 
 (defun moyu/apply-fontset-fonts ()
-  (mapcar (lambda (row)
+  (mapc #'(lambda (row)
             (cl-destructuring-bind (char-set family weight slant) row
               (set-fontset-font t (read char-set)
                                 (font-spec :family family
@@ -1411,7 +1408,7 @@ If some elements are missing, the will be stripped out."
 
 (defun moyu/apply-theme ()
   (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
-    (disable-theme custom-enabled-themes)
+    (mapc #'disable-theme custom-enabled-themes)
     (load-theme moyu/theme t)))
 
 (add-hook 'after-init-hook #'moyu/apply-theme)
