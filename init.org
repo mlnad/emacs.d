@@ -428,9 +428,13 @@ Generate enviroment file when not exists. And load enviroment file.
           (sh-mode          . bash-ts-mode)
           (yaml-mode        . yaml-ts-mode)))
   :config
-  ;; Auto-compile missing grammars on first use (requires cc/c++)
-  (mapc #'treesit-require
-        '(bash c cpp cmake css dockerfile python json rust sh yaml)))
+  ;; Safely ensure grammars are available (they can be auto-installed on first use).
+  ;; treesit-install-language-grammar requires compiler tools (gcc/clang)
+  (when (fboundp 'treesit-install-language-grammar)
+    (dolist (lang '(bash c cpp cmake css dockerfile python json rust yaml))
+      ;; Only attempt install if grammar not yet loaded
+      (unless (treesit-language-available-p lang)
+        (ignore-errors (treesit-install-language-grammar lang))))))
 #+end_src
 
 *** which-key
@@ -1529,4 +1533,3 @@ should manage.
   (setq popper-group-function #'popper-group-by-project
         popper-mode-line nil))
 #+end_src
-
