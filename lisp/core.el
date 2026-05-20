@@ -97,5 +97,49 @@ INITIAL for the initial input."
          (abbreviate-file-name path)
        (file-name-nondirectory path)))))
 
+;;;; ── Tests ───────────────────────────────────────────────────────────────
+;; Run:  emacs -q --batch -l lisp/core.el --eval "(ert-run-tests-batch-and-exit)"
+
+(with-eval-after-load 'ert
+
+  ;;; find--file-in-dir
+
+  (ert-deftest core/find--file-in-dir-errors-on-nonexistent ()
+    "Signals an error when the directory does not exist."
+    (should-error (find--file-in-dir "/no/such/directory/xyz")))
+
+  (ert-deftest core/find--file-in-dir-errors-on-file-path ()
+    "Signals an error when a file path is given instead of a directory."
+    (let ((tmp (make-temp-file "core-test-file-")))
+      (unwind-protect
+          (should-error (find--file-in-dir tmp))
+        (ignore-errors (delete-file tmp)))))
+
+  ;;; insert-file-path
+
+  (ert-deftest core/insert-file-path-inserts-filename ()
+    "No prefix arg → inserts only the non-directory part of the path."
+    (with-temp-buffer
+      (let ((buffer-file-name "/some/path/to/myfile.el"))
+        (insert-file-path nil)
+        (should (equal (buffer-string) "myfile.el")))))
+
+  (ert-deftest core/insert-file-path-inserts-abbreviated-path ()
+    "Prefix arg → inserts the abbreviated (~ expanded) full path."
+    (with-temp-buffer
+      (let ((buffer-file-name (expand-file-name "init.el" user-emacs-directory)))
+        (insert-file-path '(4))
+        (should (string-match-p "init\\.el" (buffer-string)))
+        (should (string-match-p "~" (buffer-string))))))
+
+  (ert-deftest core/insert-file-path-falls-back-to-default-directory ()
+    "When buffer-file-name is nil, falls back to default-directory."
+    (with-temp-buffer
+      (let ((buffer-file-name nil)
+            (default-directory "/tmp/"))
+        (insert-file-path nil)
+        ;; (file-name-nondirectory "/tmp/") → ""
+        (should (equal (buffer-string) ""))))))
+
 (provide 'core)
 ;;; core.el ends here

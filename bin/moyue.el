@@ -389,11 +389,19 @@ When :ensure is pkg label, install that label."
                                  (plist-get result :skipped))))))
 
 (moyue-defcommand "test" "[SUITE|PATTERN]"
-                  "Run test suites. SUITE: all (default), framework, config. Or pass a regexp PATTERN."
+                  "Run test suites. SUITE: all (default), lisp, framework, config. Or pass a regexp PATTERN."
                   (require 'ert)
                   (let* ((suite      (or (car args) "all"))
+                         (lisp-dir   (expand-file-name "../lisp/" moyue--bin-dir))
                          (fw-test    (expand-file-name "moyue-test.el"  moyue--bin-dir))
                          (cfg-test   (expand-file-name "config-test.el" moyue--bin-dir))
+                         (load-lisp  (lambda ()
+                                       (add-to-list 'load-path lisp-dir)
+                                       (require 'ert)
+                                       ;; Load each lisp source so with-eval-after-load 'ert fires.
+                                       (dolist (src (directory-files lisp-dir t "\\.el$"))
+                                         (unless (string-match-p "-test\\.el$" src)
+                                           (load src nil 'nomessage)))))
                          (load-fw    (lambda () (if (file-exists-p fw-test)
                                                     (load fw-test nil 'nomessage)
                                                   (message "moyue test: not found: %s" fw-test)
@@ -403,6 +411,9 @@ When :ensure is pkg label, install that label."
                                                   (message "moyue test: not found: %s" cfg-test)
                                                   (kill-emacs 1)))))
                     (pcase suite
+                      ("lisp"
+                       (funcall load-lisp)
+                       (ert-run-tests-batch-and-exit "^env-ext/\\|^core/"))
                       ("framework"
                        (funcall load-fw)
                        (ert-run-tests-batch-and-exit t))
@@ -410,11 +421,13 @@ When :ensure is pkg label, install that label."
                        (funcall load-cfg)
                        (ert-run-tests-batch-and-exit t))
                       ("all"
+                       (funcall load-lisp)
                        (funcall load-fw)
                        (funcall load-cfg)
                        (ert-run-tests-batch-and-exit t))
                       (_
                        ;; Treat as an ERT selector: load all test files then filter by pattern.
+                       (funcall load-lisp)
                        (funcall load-fw)
                        (when (file-exists-p cfg-test) (load cfg-test nil 'nomessage))
                        (ert-run-tests-batch-and-exit (read suite))))))
