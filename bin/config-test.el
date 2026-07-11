@@ -130,5 +130,78 @@ The test is registered under the `config/' namespace for easy filtering:
 (config-check-package docker)
 (config-check-package aidermacs)
 
+;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Font configuration tests
+;;;; ──────────────────────────────────────────────────────────────────────────
+
+;; Bootstrap: load the face-fonts definitions from the tangled init.el so that
+;; `moyu/face-fonts' and `moyu/apply-face-fonts' are available without loading
+;; all of init.el (which needs a live display).
+(let ((init-el (expand-file-name "init.el" user-emacs-directory)))
+  (when (file-exists-p init-el)
+    (with-temp-buffer
+      (insert-file-contents init-el)
+      (goto-char (point-min))
+      ;; Org-babel tangles `:var face-fonts=face-fonts' as a let block; find it.
+      (when (search-forward "(let ((face-fonts" nil t)
+        (goto-char (match-beginning 0))
+        (ignore-errors (eval (read (current-buffer))))))))
+
+(config-defcheck face-fonts-structure
+  "Every row in `moyu/face-fonts' is a (string string positive-number) triple."
+  (should (boundp 'moyu/face-fonts))
+  (should (listp moyu/face-fonts))
+  (should (> (length moyu/face-fonts) 0))
+  (dolist (row moyu/face-fonts)
+    (should (= (length row) 3))
+    (cl-destructuring-bind (face family size) row
+      (should (stringp face))
+      (should (and (stringp family) (not (string-empty-p family))))
+      (should (and (numberp size) (> size 0))))))
+
+(config-defcheck face-fonts-default-row
+  "The face-fonts table must contain a `default' row."
+  (should (boundp 'moyu/face-fonts))
+  (should (cl-find "default" moyu/face-fonts :key #'car :test #'string=)))
+
+(config-defcheck face-fonts-cjk-rows
+  "face-fonts must contain a single CJK font row."
+  (should (boundp 'moyu/face-fonts))
+  (should (cl-find "cjk" moyu/face-fonts :key #'car :test #'string=))
+  (should (= (length (cl-remove-if-not
+                      (lambda (row) (string-prefix-p "cjk" (car row)))
+                      moyu/face-fonts))
+             1)))
+
+(config-defcheck face-fonts-latin-unified
+  "The Latin face rows (default, fixed-pitch, fixed-pitch-serif) share one font family."
+  (should (boundp 'moyu/face-fonts))
+  (let* ((latin-rows (cl-remove-if (lambda (r) (string-prefix-p "cjk" (car r)))
+                                   moyu/face-fonts))
+         (families (mapcar #'cadr latin-rows)))
+    (should (cl-every (lambda (f) (string= f (car families))) families))))
+
+(config-defcheck face-fonts-apply-dispatches-correctly
+  "`moyu/apply-face-fonts' routes each row to the right handler."
+  (should (fboundp 'moyu/apply-face-fonts))
+  (let ((latin-calls 0) (cjk-calls 0))
+    (cl-letf (((symbol-function 'display-graphic-p)     (lambda ()       t))
+              ((symbol-function 'set-face-attribute)     (lambda (&rest _) (cl-incf latin-calls)))
+              ((symbol-function 'set-fontset-font)       (lambda (&rest _) (cl-incf cjk-calls))))
+      (moyu/apply-face-fonts))
+    ;; default + fixed-pitch + fixed-pitch-serif → set-face-attribute ×3
+    (should (= latin-calls 3))
+    ;; cjk → set-fontset-font ×4 (han cjk-misc bopomofo kana)
+    (should (= cjk-calls 4))))
+
+(config-defcheck face-fonts-skipped-without-display
+  "`moyu/apply-face-fonts' does nothing when there is no graphical display."
+  (should (fboundp 'moyu/apply-face-fonts))
+  (let ((called nil))
+    (cl-letf (((symbol-function 'display-graphic-p) (lambda () nil))
+              ((symbol-function 'set-face-attribute) (lambda (&rest _) (setq called t))))
+      (moyu/apply-face-fonts))
+    (should-not called)))
+
 (provide 'config-test)
 ;;; config-test.el ends here

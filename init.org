@@ -1353,25 +1353,39 @@ If some elements are missing, the will be stripped out."
 
 *** Face fonts
 #+name: face-fonts
-| Face              | Family            | Size |
-|-------------------+-------------------+------|
-| default           | Jet Brains Mono   |   16 |
-| fixed-pitch       | Noto Sans CJK SC  |   16 |
-| fixed-pitch-serif | Noto Serif CJK SC |   16 |
+| Face              | Family         | Size |
+|-------------------+----------------+------|
+| default           | JetBrains Mono |   16 |
+| fixed-pitch       | JetBrains Mono |   16 |
+| fixed-pitch-serif | JetBrains Mono |   16 |
+| cjk               | LXGW WenKai    |   16 |
 #+begin_src emacs-lisp :tangle yes :var face-fonts=face-fonts
-(defvar moyu/face-fonts
-  face-fonts)
+(defvar moyu/face-fonts face-fonts
+  "Font configuration table.
+Each row is (FACE FAMILY SIZE).  Special FACE values:
+  cjk  — CJK font family for the default fontset")
 
 (defun moyu/apply-face-fonts ()
-  (mapc #'(lambda (row)
-            (cl-destructuring-bind (face family size) row
-              (set-face-attribute (read face) nil
-                                  :width 'normal :weight 'normal :slant 'normal
-                                  :font (font-spec :family family :size size))))
-          moyu/face-fonts))
+  (when (display-graphic-p)
+    (dolist (row moyu/face-fonts)
+      (cl-destructuring-bind (face family size) row
+        (cond
+         ((string= face "cjk")
+          ;; Deliberately leave :weight and :slant unspecified so Emacs can
+          ;; select the corresponding LXGW WenKai variant for the active face.
+          (dolist (cs '(han cjk-misc bopomofo kana))
+            (set-fontset-font t cs (font-spec :family family :size size))))
+         (t
+          (set-face-attribute (read face) nil
+                              :width 'normal :weight 'normal :slant 'normal
+                              :font (font-spec :family family :size size))))))))
 
-(add-hook 'after-init-hook #'moyu/apply-face-fonts)
-(add-hook 'server-after-make-frame-hook #'moyu/apply-face-fonts)
+(add-hook 'window-setup-hook #'moyu/apply-face-fonts)
+(add-hook 'after-make-frame-functions
+          (lambda (frame)
+            (with-selected-frame frame
+              (when (display-graphic-p)
+                (moyu/apply-face-fonts)))))
 #+end_src
 
 *** Fontset fonts
