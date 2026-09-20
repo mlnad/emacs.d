@@ -1,33 +1,123 @@
 #!/bin/sh
 
-help_desc="Options:
-\n\t    build : build the docker image.
-\n\t    run : run emacs in the builded container"
+EMACSD_DIR=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+DOCKERFILE="$EMACSD_DIR/Dockerfile"
+IMAGE_NAME="moyu_emacs"
+DEFAULT_DISTRO="archlinux"
+DISTROS="archlinux ubuntu alpine"
 
-EMACSD_DIR=$(cd $(dirname $0)/..; pwd)
-DOCKERFILE=$EMACSD_DIR/Dockerfile
-IMAGE_NAME=moyu_emacs
+# Extra docker arguments, e.g. DOCKEMACS_BUILD_ARGS="--network=host".
+# Word splitting is intentional: the value is a whitespace-separated list.
+EXTRA_BUILD_ARGS=${DOCKEMACS_BUILD_ARGS:-}
+EXTRA_RUN_ARGS=${DOCKEMACS_RUN_ARGS:-}
 
-if [ $# -ne 1 ]
-then
-   echo ${help_desc}
-   return 1
+usage() {
+    cat <<'EOF'
+Usage: dockemacs COMMAND [DISTRO]
+
+Commands:
+  build [DISTRO]  Build the Docker image for DISTRO (default: archlinux).
+  run   [DISTRO]  Run terminal Emacs in the image for DISTRO.
+  distros         List the supported distributions.
+
+Distributions:
+  DISTRO       BASE IMAGE
+  archlinux    archlinux:latest   (default)
+  ubuntu       ubuntu:latest
+  alpine       alpine:latest
+
+Environment:
+  DOCKEMACS_BUILD_ARGS  extra arguments for `docker build'
+  DOCKEMACS_RUN_ARGS    extra arguments for `docker run'
+
+Examples:
+  dockemacs build                 # moyu_emacs:archlinux
+  dockemacs build ubuntu          # moyu_emacs:ubuntu
+  dockemacs run alpine
+  DOCKEMACS_BUILD_ARGS=--network=host dockemacs build ubuntu
+EOF
+}
+
+die() {
+    echo "dockemacs: $*" >&2
+    exit 1
+}
+
+# Return 0 when DISTRO is supported.
+is_distro() {
+    case "$1" in
+        archlinux|ubuntu|alpine) return 0 ;;
+        *)                       return 1 ;;
+    esac
+}
+
+# Echo the Docker Hub base image that backs DISTRO.
+base_image() {
+    case "$1" in
+        archlinux) echo "archlinux:latest" ;;
+        ubuntu)    echo "ubuntu:latest" ;;
+        alpine)    echo "alpine:latest" ;;
+    esac
+}
+
+if [ "$#" -lt 1 ]; then
+    usage >&2
+    exit 2
 fi
 
-echo "Emacs working directory: $EMACSD_DIR"
+COMMAND=$1
+shift
 
-case $1 in
-   build)  echo "Building $IMAGE_NAME at $EMACSD_DIR/bin based on $DOCKERFILE"
-           cd $EMACSD_DIR
-           docker build -f "$DOCKERFILE" -t "$IMAGE_NAME" $EMACSD_DIR
+case "$COMMAND" in
+    -h|--help|help)
+        usage
+        exit 0
+        ;;
+    distros)
+        for d in $DISTROS; do
+            printf '%-12s %s\n' "$d" "$(base_image "$d")"
+        done
+        exit 0
+        ;;
+esac
 
-           if [ $? -eq 0 ]; then
-              echo "Build Success: $IMAGE_NAME"
-           else
-              echo "Build Failed"
-              return 1
-           fi
-          ;;
-   run) echo "Run Emacs in containter $IMAGE_NAME"
-        docker run -it --rm --volume "$(pwd):/root/.emacs.d" $IMAGE_NAME;;
+if [ "$#" -gt 1 ]; then
+    usage >&2
+    exit 2
+fi
+
+DISTRO=${1:-$DEFAULT_DISTRO}
+if ! is_distro "$DISTRO"; then
+    die "unsupported distribution '$DISTRO' (supported: $DISTROS)"
+fi
+BASE_IMAGE=$(base_image "$DISTRO")
+IMAGE="${IMAGE_NAME}:${DISTRO}"
+
+case "$COMMAND" in
+    build)
+        echo "Emacs working directory: $EMACSD_DIR"
+        echo "Building $IMAGE from $DOCKERFILE (BASE_IMAGE=$BASE_IMAGE)"
+        if docker build -f "$DOCKERFILE" \
+                --build-arg "BASE_IMAGE=$BASE_IMAGE" \
+                $EXTRA_BUILD_ARGS \
+                -t "$IMAGE" "$EMACSD_DIR"; then
+            echo "Build succeeded: $IMAGE"
+        else
+            die "build failed for $IMAGE"
+        fi
+        ;;
+    run)
+        if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+            die "image $IMAGE not found; run 'dockemacs build $DISTRO' first"
+        fi
+        echo "Running terminal Emacs in container $IMAGE"
+        exec docker run -it --rm \
+            $EXTRA_RUN_ARGS \
+            --volume "$EMACSD_DIR:/root/.emacs.d" \
+            "$IMAGE" emacs -nw
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
 esac

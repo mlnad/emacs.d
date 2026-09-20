@@ -1,0 +1,8 @@
+# Never send runtime state or the package cache to the Docker daemon:
+# the image only ships the toolchain, the configuration is mounted at run time.
+.cache/
+elpa/
+.git/
+.github/
+tree-sitter/
+*.elc

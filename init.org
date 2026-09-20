@@ -449,6 +449,7 @@ Generate enviroment file when not exists. And load enviroment file.
 *** which-key
 #+begin_src emacs-lisp :tangle yes
 (use-package which-key
+  :ensure t
   :hook (after-init . which-key-mode)
   :init
   (setq which-key-add-column-padding 1)

@@ -61,6 +61,56 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 
 3. Start Emacs - packages will be automatically installed
 
+* Docker
+The [[file:Dockerfile][Dockerfile]] builds a lean base image (Emacs + git + a C toolchain)
+for three distributions; the configuration itself is never baked in, it is
+mounted at run time.
+
+| Distribution | Base image         | Emacs package |
+|--------------+--------------------+---------------|
+| archlinux    | =archlinux:latest= | =emacs=       |
+| ubuntu       | =ubuntu:latest=    | =emacs-nox=   |
+| alpine       | =alpine:latest=    | =emacs-nox=   |
+
+Arch Linux is the default everywhere.
+
+** dockemacs
+Run Emacs interactively inside a container:
+#+begin_src shell
+bin/dockemacs build [DISTRO]   # build moyu_emacs:DISTRO
+bin/dockemacs run   [DISTRO]   # run terminal Emacs in that image
+bin/dockemacs distros          # list the supported distributions
+#+end_src
+
+Extra Docker arguments can be injected through the environment, which is useful
+behind a proxy or on a restricted network:
+#+begin_src shell
+DOCKEMACS_BUILD_ARGS="--network=host" bin/dockemacs build ubuntu
+DOCKEMACS_RUN_ARGS="--network=host"   bin/dockemacs run ubuntu
+#+end_src
+
+** moyue itest
+Run the integration test suite (=moyue install= + =moyue test config=) inside a
+container:
+#+begin_src shell
+bin/moyue itest                  # archlinux
+bin/moyue itest ubuntu
+bin/moyue itest alpine --rebuild
+bin/moyue itest all              # every distribution, in order
+#+end_src
+
+=moyue itest= builds =moyue-base:DISTRO= on first use, then mounts the checkout
+read-only at =/mnt/emacs.d=, copies it into a writable tmpfs at
+=/root/.emacs.d= and runs the suite there, so the host tree is never modified.
+
+Extra Docker arguments can be injected through the environment, which is useful
+behind a proxy or on a restricted network:
+#+begin_src shell
+MOYUE_ITEST_BUILD_ARGS="--network=host" \
+MOYUE_ITEST_RUN_ARGS="--network=host" \
+  bin/moyue itest ubuntu
+#+end_src
+
 * Customization
 It will automatically create a =~/.emacs.d/.cache/userconfig= file to override
 the default settings.

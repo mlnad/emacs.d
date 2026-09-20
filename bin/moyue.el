@@ -102,6 +102,10 @@ and the rest are its arguments."
 Reads arguments from `argv' (populated by Emacs batch mode)."
   (moyue-dispatch (moyue--process-argv argv)))
 
+(defun moyue--config-root ()
+  "Return the configuration root, i.e. the parent of the bin/ directory."
+  (file-name-as-directory (expand-file-name ".." moyue--bin-dir)))
+
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Built-in commands
 ;;;; ──────────────────────────────────────────────────────────────────────────
@@ -239,6 +243,15 @@ When :ensure is pkg label, install that label."
             (eval form)
             (setq done t))))))))
 
+(defun moyue--test-configure-packages ()
+  "Point package.el at the package directory used by the configuration.
+`init.el' installs into elpa/<major>.<minor>/ (see `package-user-dir'),
+so on a clean checkout `config-test' would otherwise look in elpa/ and
+report every package as missing."
+  (let ((init-el (expand-file-name "init.el" (moyue--config-root))))
+    (when (file-exists-p init-el)
+      (moyue--configure-package-archives-from-init init-el))))
+
 (defun moyue--install-package-list (packages)
   "Install PACKAGES with package.el and return a result plist."
   (unless (bound-and-true-p package--initialized)
@@ -307,8 +320,7 @@ When :ensure is pkg label, install that label."
 (moyue-defcommand "install" ""
                   "Tangle init.org, collect ensured packages, then install from manifest."
                   (require 'org)
-                  (let* ((config-root (file-name-as-directory
-                                       (expand-file-name ".." moyue--bin-dir)))
+                  (let* ((config-root (moyue--config-root))
                          (user-emacs-directory config-root)
                          (default-directory config-root)
                          (init-tangle-src (expand-file-name "init.org" config-root))
@@ -355,8 +367,7 @@ When :ensure is pkg label, install that label."
 
 (moyue-defcommand "update" ""
                   "Update packages from `.cache/installed-packages.el`."
-                  (let* ((config-root (file-name-as-directory
-                                       (expand-file-name ".." moyue--bin-dir)))
+                  (let* ((config-root (moyue--config-root))
                          (user-emacs-directory config-root)
                          (default-directory config-root)
                          (init-tangle-dst (expand-file-name "init.el" config-root))
@@ -406,10 +417,12 @@ When :ensure is pkg label, install that label."
                                                     (load fw-test nil 'nomessage)
                                                   (message "moyue test: not found: %s" fw-test)
                                                   (kill-emacs 1))))
-                         (load-cfg   (lambda () (if (file-exists-p cfg-test)
-                                                    (load cfg-test nil 'nomessage)
-                                                  (message "moyue test: not found: %s" cfg-test)
-                                                  (kill-emacs 1)))))
+                         (load-cfg   (lambda ()
+                                       (moyue--test-configure-packages)
+                                       (if (file-exists-p cfg-test)
+                                           (load cfg-test nil 'nomessage)
+                                         (message "moyue test: not found: %s" cfg-test)
+                                         (kill-emacs 1)))))
                     (pcase suite
                       ("lisp"
                        (funcall load-lisp)
@@ -429,6 +442,7 @@ When :ensure is pkg label, install that label."
                        ;; Treat as an ERT selector: load all test files then filter by pattern.
                        (funcall load-lisp)
                        (funcall load-fw)
+                       (moyue--test-configure-packages)
                        (when (file-exists-p cfg-test) (load cfg-test nil 'nomessage))
                        (ert-run-tests-batch-and-exit (read suite))))))
 
@@ -436,66 +450,186 @@ When :ensure is pkg label, install that label."
 ;;;; itest: Docker-based integration test
 ;;;; ──────────────────────────────────────────────────────────────────────────
 
+(defconst moyue--itest-distros
+  '(("archlinux" . "archlinux:latest")
+    ("ubuntu"    . "ubuntu:latest")
+    ("alpine"    . "alpine:latest"))
+  "Alist of distribution name -> base image used by `moyue itest'.")
+
+(defconst moyue--itest-default-distro "archlinux"
+  "Distribution used by `moyue itest' when none is requested.")
+
 (defun moyue--itest-docker-p ()
   "Return non-nil if the `docker' binary is available."
   (executable-find "docker"))
+
+(defun moyue--itest-distro-names ()
+  "Return the list of supported distribution names."
+  (mapcar #'car moyue--itest-distros))
+
+(defun moyue--itest-resolve-distro (name)
+  "Expand NAME into a list of distributions.
+NAME may be a supported distribution or \"all\"."
+  (cond
+   ((equal name "all") (moyue--itest-distro-names))
+   ((assoc name moyue--itest-distros) (list name))
+   (t (error "unsupported distribution '%s' (supported: %s, all)"
+             name (string-join (moyue--itest-distro-names) ", ")))))
+
+(defun moyue--itest-base-image (distro)
+  "Return the Docker Hub base image backing DISTRO."
+  (or (cdr (assoc distro moyue--itest-distros))
+      (error "unsupported distribution '%s' (supported: %s)"
+             distro (string-join (moyue--itest-distro-names) ", "))))
+
+(defun moyue--itest-image (distro)
+  "Return the integration-test image tag built for DISTRO."
+  (format "moyue-base:%s" distro))
+
+(defun moyue--itest-parse-args (args)
+  "Parse `moyue itest' ARGS into a property list.
+Returns (:distros DISTROS :rebuild BOOL).  A distribution may be given
+positionally or via --distro=NAME / --distro NAME (--image is accepted
+as an alias); \"all\" selects every supported distribution.  With no
+distribution the value of `moyue--itest-default-distro' is used."
+  (let ((distros '())
+        (rebuild nil)
+        (rest args))
+    (while rest
+      (let ((arg (pop rest)))
+        (cond
+         ((member arg '("--rebuild" "-r"))
+          (setq rebuild t))
+         ((member arg '("--all" "-a"))
+          (setq distros (append distros (moyue--itest-distro-names))))
+         ((string-prefix-p "--distro=" arg)
+          (setq distros (append distros
+                                (moyue--itest-resolve-distro
+                                 (substring arg (length "--distro="))))))
+         ((string-prefix-p "--image=" arg)
+          (setq distros (append distros
+                                (moyue--itest-resolve-distro
+                                 (substring arg (length "--image="))))))
+         ((member arg '("--distro" "--image"))
+          (unless rest (error "%s requires a value" arg))
+          (setq distros (append distros (moyue--itest-resolve-distro (pop rest)))))
+         ((string-prefix-p "-" arg)
+          (error "unknown option '%s'" arg))
+         (t
+          (setq distros (append distros (moyue--itest-resolve-distro arg)))))))
+    (list :distros (delete-dups
+                    (or distros (list moyue--itest-default-distro)))
+          :rebuild rebuild)))
+
+(defun moyue--itest-env-args (variable)
+  "Return the extra Docker arguments stored in environment VARIABLE.
+The value is split on whitespace, so callers can inject e.g.
+--network=host or proxy settings without editing this file."
+  (let ((value (getenv variable)))
+    (when value
+      (split-string value "[ \t\n]+" t))))
 
 (defun moyue--itest-image-exists-p (image)
   "Return non-nil if Docker image IMAGE (name[:tag]) is present locally."
   (= 0 (call-process "docker" nil nil nil
                      "image" "inspect" "--format={{.Id}}" image)))
 
-(defun moyue--itest-build (dockerfile-dir rebuild)
-  "Build Docker image `moyue-base' from DOCKERFILE-DIR.
+(defun moyue--itest-build-args (distro rebuild)
+  "Return the `docker build' argument list for DISTRO.
+When REBUILD is non-nil add --no-cache."
+  (append
+   (list "build")
+   (when rebuild '("--no-cache"))
+   (moyue--itest-env-args "MOYUE_ITEST_BUILD_ARGS")
+   (list "--build-arg" (format "BASE_IMAGE=%s" (moyue--itest-base-image distro))
+         "-t" (moyue--itest-image distro)
+         (moyue--config-root))))
+
+(defun moyue--itest-build (distro rebuild)
+  "Build the integration-test image for DISTRO.
 When REBUILD is non-nil pass --no-cache to `docker build'."
-  (message "itest: building Docker image moyue-base ...")
-  (let ((args `("build"
-                ,@(when rebuild '("--no-cache"))
-                "-t" "moyue-base"
-                ,dockerfile-dir)))
-    (apply #'call-process "docker" nil t nil args)))
+  (message "itest: building %s (BASE_IMAGE=%s) ..."
+           (moyue--itest-image distro)
+           (moyue--itest-base-image distro))
+  (apply #'call-process "docker" nil t nil
+         (moyue--itest-build-args distro rebuild)))
 
-(defun moyue--itest-run (emacs-dir)
-  "Run the integration test container, mounting EMACS-DIR read-only.
-Returns the process exit code."
-  (let* ((container-cmd
-          (concat
-           ;; clean up any leftover elpa volume from previous run
-           "rm -rf /root/.emacs.d/elpa && "
-           "/root/.emacs.d/bin/moyue install && "
-           "/root/.emacs.d/bin/moyue test config"))
-         (args `("run" "--rm"
-                 "-v" ,(concat (expand-file-name emacs-dir) ":/root/.emacs.d:ro")
-                 "--tmpfs" "/root/.emacs.d/elpa"
-                 "--env" "HOME=/root"
-                 "moyue-base"
-                 "sh" "-c" ,container-cmd)))
-    (apply #'call-process "docker" nil t nil args)))
+(defun moyue--itest-container-command ()
+  "Return the shell command executed inside the integration-test container.
+The checkout is mounted read-only at /mnt/emacs.d and copied into the
+writable tmpfs at /root/.emacs.d, because `moyue install' has to tangle
+init.el and populate .cache/ while keeping the host tree untouched."
+  (concat
+   ;; Skip the heavy host-only directories while copying.
+   "tar -C /mnt/emacs.d --exclude=./elpa --exclude=./.cache "
+   "--exclude=./.git -cf - . | tar -C /root/.emacs.d -xf - && "
+   ;; The tmpfs is mounted with exec, but go through sh as well so the
+   ;; script never depends on its executable bit surviving the copy.
+   "sh /root/.emacs.d/bin/moyue install && "
+   "sh /root/.emacs.d/bin/moyue test config"))
 
-(moyue-defcommand "itest" "[--rebuild]"
-                  "Run integration tests inside Docker (builds image, mounts .emacs.d, runs install+test)."
+(defun moyue--itest-run-args (distro)
+  "Return the `docker run' argument list for DISTRO."
+  (append
+   (list "run" "--rm"
+         "-v" (concat (moyue--config-root) ":/mnt/emacs.d:ro")
+         "--tmpfs" "/root/.emacs.d:exec"
+         "--env" "HOME=/root"
+         "--env" "EMACS_DIR=/root/.emacs.d")
+   (moyue--itest-env-args "MOYUE_ITEST_RUN_ARGS")
+   (list (moyue--itest-image distro)
+         "sh" "-c" (moyue--itest-container-command))))
+
+(defun moyue--itest-run (distro)
+  "Run the integration-test container for DISTRO and return its exit code."
+  (apply #'call-process "docker" nil t nil
+         (moyue--itest-run-args distro)))
+
+(defun moyue--itest-usage ()
+  "Print the `moyue itest' help text."
+  (message "Usage: moyue itest [DISTRO|all] [--distro=DISTRO] [--rebuild]\n\n%s\n\n%s"
+           (string-join
+            (mapcar (lambda (d) (format "  %-10s %s" (car d) (cdr d)))
+                    moyue--itest-distros)
+            "\n")
+           (concat
+            "Environment:\n"
+            "  MOYUE_ITEST_BUILD_ARGS  extra `docker build' arguments\n"
+            "  MOYUE_ITEST_RUN_ARGS    extra `docker run' arguments")))
+
+(moyue-defcommand "itest" "[DISTRO|all] [--distro=DISTRO] [--rebuild]"
+                  "Run integration tests inside Docker for one or more distributions."
+                  (when (member "--help" args)
+                    (moyue--itest-usage)
+                    (kill-emacs 0))
                   (unless (moyue--itest-docker-p)
                     (message "moyue itest: `docker' not found in PATH")
                     (kill-emacs 1))
-                  (let* ((rebuild  (member "--rebuild" args))
-                         (emacs-dir (expand-file-name user-emacs-directory))
-                         ;; Dockerfile lives in emacs-dir
-                         (dockerfile-dir emacs-dir)
-                         (build-needed (or rebuild
-                                           (not (moyue--itest-image-exists-p "moyue-base")))))
-                    ;; Build image if needed
-                    (when build-needed
-                      (let ((rc (moyue--itest-build dockerfile-dir rebuild)))
-                        (unless (= rc 0)
-                          (message "itest: docker build failed (exit %d)" rc)
-                          (kill-emacs rc))))
-                    ;; Run integration test container
-                    (message "itest: launching test container ...")
-                    (let ((rc (moyue--itest-run emacs-dir)))
-                      (if (= rc 0)
-                          (message "itest: ALL TESTS PASSED")
-                        (message "itest: TESTS FAILED (exit %d)" rc))
-                      (kill-emacs rc))))
+                  (let* ((opts    (moyue--itest-parse-args args))
+                         (distros (plist-get opts :distros))
+                         (rebuild (plist-get opts :rebuild))
+                         (failed  '()))
+                    (dolist (distro distros)
+                      (let ((image (moyue--itest-image distro))
+                            (ok t))
+                        (message "\n=== itest: %s (%s) ==="
+                                 distro (moyue--itest-base-image distro))
+                        (when (or rebuild (not (moyue--itest-image-exists-p image)))
+                          (unless (= 0 (moyue--itest-build distro rebuild))
+                            (setq ok nil)
+                            (message "itest: docker build failed for %s" distro)))
+                        (when ok
+                          (unless (= 0 (moyue--itest-run distro))
+                            (setq ok nil)
+                            (message "itest: TESTS FAILED for %s" distro)))
+                        (unless ok (push distro failed))))
+                    (if failed
+                        (progn
+                          (message "\nitest: FAILED: %s"
+                                   (string-join (nreverse failed) ", "))
+                          (kill-emacs 1))
+                      (message "\nitest: ALL TESTS PASSED (%s)"
+                               (string-join distros ", ")))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Optional extension: auto-load commands from bin/commands/*.el

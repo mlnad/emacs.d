@@ -210,5 +210,166 @@
      (should (string-match-p "\\[NAME\\]" out))
      (should (string-match-p "greeting" out)))))
 
+;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Tests: configuration root + package directory discovery
+;;;; ──────────────────────────────────────────────────────────────────────────
+
+(ert-deftest moyue-test/config-root-is-parent-of-bin ()
+  "moyue--config-root points at the directory that holds bin/."
+  (let ((root (moyue--config-root)))
+    (should (file-name-absolute-p root))
+    (should (file-directory-p (expand-file-name "bin" root)))
+    (should (file-exists-p (expand-file-name "bin/moyue.el" root)))))
+
+;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Tests: itest distribution handling
+;;;; ──────────────────────────────────────────────────────────────────────────
+
+(ert-deftest moyue-test/itest-defaults-to-archlinux ()
+  "With no arguments `itest' targets the default distribution."
+  (let ((opts (moyue--itest-parse-args nil)))
+    (should (equal (plist-get opts :distros) (list moyue--itest-default-distro)))
+    (should-not (plist-get opts :rebuild))))
+
+(ert-deftest moyue-test/itest-positional-distro ()
+  "A bare positional argument selects that distribution."
+  (should (equal (plist-get (moyue--itest-parse-args '("ubuntu")) :distros)
+                 '("ubuntu"))))
+
+(ert-deftest moyue-test/itest-distro-equals-form ()
+  "\"--distro=NAME\" selects NAME."
+  (should (equal (plist-get (moyue--itest-parse-args '("--distro=alpine")) :distros)
+                 '("alpine"))))
+
+(ert-deftest moyue-test/itest-distro-separate-value ()
+  "\"--distro NAME\" selects NAME."
+  (should (equal (plist-get (moyue--itest-parse-args '("--distro" "ubuntu")) :distros)
+                 '("ubuntu"))))
+
+(ert-deftest moyue-test/itest-image-alias ()
+  "\"--image=NAME\" is accepted as an alias for \"--distro\"."
+  (should (equal (plist-get (moyue--itest-parse-args '("--image=alpine")) :distros)
+                 '("alpine")))
+  (should (equal (plist-get (moyue--itest-parse-args '("--image" "ubuntu")) :distros)
+                 '("ubuntu"))))
+
+(ert-deftest moyue-test/itest-rebuild-flag ()
+  "\"--rebuild\" and \"-r\" set :rebuild."
+  (should (plist-get (moyue--itest-parse-args '("--rebuild")) :rebuild))
+  (should (plist-get (moyue--itest-parse-args '("-r" "ubuntu")) :rebuild)))
+
+(ert-deftest moyue-test/itest-all-expands-every-distro ()
+  "\"all\" and \"--all\" expand to every supported distribution."
+  (should (equal (plist-get (moyue--itest-parse-args '("all")) :distros)
+                 (moyue--itest-distro-names)))
+  (should (equal (plist-get (moyue--itest-parse-args '("--all")) :distros)
+                 (moyue--itest-distro-names))))
+
+(ert-deftest moyue-test/itest-dedupes-distros ()
+  "Repeating a distribution keeps a single entry."
+  (should (equal (plist-get (moyue--itest-parse-args
+                             '("ubuntu" "--distro=ubuntu")) :distros)
+                 '("ubuntu"))))
+
+(ert-deftest moyue-test/itest-unknown-distro-signals ()
+  "An unsupported distribution is rejected."
+  (should-error (moyue--itest-parse-args '("gentoo")) :type 'error))
+
+(ert-deftest moyue-test/itest-unknown-option-signals ()
+  "An unknown option is rejected."
+  (should-error (moyue--itest-parse-args '("--bogus")) :type 'error))
+
+(ert-deftest moyue-test/itest-missing-value-signals ()
+  "An option that requires a value rejects a missing one."
+  (should-error (moyue--itest-parse-args '("--distro")) :type 'error))
+
+(ert-deftest moyue-test/itest-image-tags-are-distro-scoped ()
+  "Each distribution gets its own image tag."
+  (should (equal (moyue--itest-image "archlinux") "moyue-base:archlinux"))
+  (should (equal (moyue--itest-image "ubuntu")    "moyue-base:ubuntu"))
+  (should (equal (moyue--itest-image "alpine")    "moyue-base:alpine")))
+
+(ert-deftest moyue-test/itest-base-image-mapping ()
+  "Each distribution maps to the expected Docker Hub image."
+  (should (equal (moyue--itest-base-image "archlinux") "archlinux:latest"))
+  (should (equal (moyue--itest-base-image "ubuntu")    "ubuntu:latest"))
+  (should (equal (moyue--itest-base-image "alpine")    "alpine:latest"))
+  (should-error (moyue--itest-base-image "gentoo") :type 'error))
+
+(ert-deftest moyue-test/itest-distro-names ()
+  "The supported distribution list covers the three supported images."
+  (should (equal (moyue--itest-distro-names)
+                 '("archlinux" "ubuntu" "alpine"))))
+
+(ert-deftest moyue-test/itest-env-args-splits-whitespace ()
+  "Extra Docker arguments are split on whitespace."
+  (let ((process-environment
+         (cons "MOYUE_TEST_ARGS=--network=host  --pull" process-environment)))
+    (should (equal (moyue--itest-env-args "MOYUE_TEST_ARGS")
+                   '("--network=host" "--pull")))))
+
+(ert-deftest moyue-test/itest-env-args-nil-when-unset-or-empty ()
+  "Extra Docker arguments are nil when the variable is unset or empty."
+  (let ((process-environment
+         (cons "MOYUE_TEST_ARGS_EMPTY=" process-environment)))
+    (should-not (moyue--itest-env-args "MOYUE_TEST_ARGS_EMPTY"))
+    (should-not (moyue--itest-env-args "MOYUE_TEST_ARGS_UNSET"))))
+
+(ert-deftest moyue-test/itest-build-args ()
+  "`docker build' arguments carry the base image, tag and context."
+  (let ((args (moyue--itest-build-args "ubuntu" nil)))
+    (should (equal (car args) "build"))
+    (should (member "--build-arg" args))
+    (should (member "BASE_IMAGE=ubuntu:latest" args))
+    (should (member "moyue-base:ubuntu" args))
+    (should (equal (car (last args)) (moyue--config-root)))
+    (should-not (member "--no-cache" args)))
+  (should (member "--no-cache" (moyue--itest-build-args "alpine" t))))
+
+(ert-deftest moyue-test/itest-build-args-honors-env ()
+  "Extra `docker build' arguments come from MOYUE_ITEST_BUILD_ARGS."
+  (let ((process-environment
+         (cons "MOYUE_ITEST_BUILD_ARGS=--network=host" process-environment)))
+    (should (member "--network=host" (moyue--itest-build-args "alpine" nil)))))
+
+(ert-deftest moyue-test/itest-run-args-mount-source-read-only ()
+  "The checkout is mounted read-only at /mnt/emacs.d."
+  (should (member (concat (moyue--config-root) ":/mnt/emacs.d:ro")
+                  (moyue--itest-run-args "alpine"))))
+
+(ert-deftest moyue-test/itest-run-args-tmpfs-is-executable ()
+  "The writable tmpfs is mounted with exec, else bin/moyue cannot run."
+  (let ((args (moyue--itest-run-args "alpine")))
+    (should (member "--tmpfs" args))
+    (should (member "/root/.emacs.d:exec" args))))
+
+(ert-deftest moyue-test/itest-run-args-ends-with-image-and-command ()
+  "`docker run' ends with the distro image plus the shell command."
+  (let* ((args (moyue--itest-run-args "ubuntu"))
+         (tail (last args 4)))
+    (should (equal (car args) "run"))
+    (should (member "--rm" args))
+    (should (equal (nth 0 tail) "moyue-base:ubuntu"))
+    (should (equal (nth 1 tail) "sh"))
+    (should (equal (nth 2 tail) "-c"))
+    (should (equal (nth 3 tail) (moyue--itest-container-command)))))
+
+(ert-deftest moyue-test/itest-run-args-honors-env ()
+  "Extra `docker run' arguments come from MOYUE_ITEST_RUN_ARGS."
+  (let ((process-environment
+         (cons "MOYUE_ITEST_RUN_ARGS=--network=host" process-environment)))
+    (should (member "--network=host" (moyue--itest-run-args "alpine")))))
+
+(ert-deftest moyue-test/itest-container-command-copies-and-tests ()
+  "The container command copies the read-only tree then installs and tests."
+  (let ((cmd (moyue--itest-container-command)))
+    (should (string-match-p "tar -C /mnt/emacs.d" cmd))
+    (should (string-match-p "--exclude=./elpa" cmd))
+    (should (string-match-p "--exclude=./\\.cache" cmd))
+    (should (string-match-p "--exclude=./\\.git" cmd))
+    ;; Invoked through sh so a noexec tmpfs cannot break the run.
+    (should (string-match-p "sh /root/.emacs.d/bin/moyue install" cmd))
+    (should (string-match-p "sh /root/.emacs.d/bin/moyue test config" cmd))))
+
 (provide 'moyue-test)
 ;;; moyue-test.el ends here
