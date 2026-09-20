@@ -29,6 +29,7 @@ The file is divided into several major sections:
 
 * Early init
 #+begin_src emacs-lisp :tangle "early-init.el"
+;;; early-init.el --- Framework -*- lexical-binding: t; -*-
 (setq gc-cons-threshold (* 128 1024 1024)
       package-enable-at-startup nil
       idle-update-delay 1.0)
@@ -316,7 +317,15 @@ Generate enviroment file when not exists. And load enviroment file.
                                         search-ring
                                         regexp-search-ring
                                         extended-command-history
-                                        kill-ring)))
+                                        kill-ring))
+  ;; `evil-jumps-history' holds marker chains that share structure.  savehist
+  ;; writes with `print-circle' bound to t, so those entries are emitted as
+  ;; `#N=' definitions plus `#N#' references, while its per-element write/read
+  ;; check can then discard the definitions.  The result is a savehist file
+  ;; with dangling `#N#' refs that fails to load on the next startup
+  ;; ("Invalid read syntax: \"#1#\""), losing the whole history.  Exclude it
+  ;; here; `evil-jumps' keeps its own state.
+  (add-to-list 'savehist-ignored-variables 'evil-jumps-history))
 #+end_src
 
 *** saveplace
@@ -608,6 +617,7 @@ Generate enviroment file when not exists. And load enviroment file.
 
 (use-package embark-consult
   :ensure t
+  :demand t
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
@@ -818,6 +828,18 @@ Generate enviroment file when not exists. And load enviroment file.
          (ielm-mode . lispy-mode))
   :config
   (setq lispy-close-quotes-at-end-p t))
+
+;; `lispy' ships with an empty `Package-Requires', so `:ensure t' above pulls
+;; in no dependency at all.  Declare them explicitly, otherwise a fresh
+;; `moyue install' produces a lispy that cannot be loaded
+;; ("Cannot open load file: iedit" / "swiper").  `ivy' and `lv' arrive as
+;; dependencies of `swiper' and `hydra'.  `ace-window' is required lazily.
+(use-package zoutline :ensure t :defer t)
+(use-package avy :ensure t :defer t)
+(use-package hydra :ensure t :defer t)
+(use-package iedit :ensure t :defer t)
+(use-package swiper :ensure t :defer t)
+(use-package ace-window :ensure t :defer t)
 #+end_src
 
 ** Rust
@@ -925,6 +947,13 @@ Generate enviroment file when not exists. And load enviroment file.
         org-preview-latex-image-directory (concat moyu/cache-directory "org/latex/")
         org-list-allow-alphabetical t
         org-pretty-entities t)
+  ;; Keep Org's persistent cache inside our own cache directory.  Org reads and
+  ;; writes it while setting up `org-mode'; if that I/O signals an error (cache
+  ;; dir missing/unwritable, or a stale index from another Org version), the
+  ;; mode specification is aborted and the buffer is left without font-lock and
+  ;; without org-modern/org-indent -- i.e. org loses all its colors while other
+  ;; major modes keep theirs.
+  (setq org-persist-directory (moyu/cache-it "org/org-persist/"))
   ;; org babels
   (setq org-src-preserve-indentation t
         org-src-tab-acts-natively t

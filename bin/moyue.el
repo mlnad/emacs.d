@@ -230,7 +230,7 @@ When :ensure is pkg label, install that label."
           (cond
            ((and (consp form)
                  (eq (car form) 'defvar)
-                 (memq (cadr form) '(moyu/avaliable-package-mirrors
+                 (memq (cadr form) '(moyu/available-package-mirrors
                                      moyu/used-package-mirror)))
             (eval form))
            ((and (consp form)
