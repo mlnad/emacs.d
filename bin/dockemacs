@@ -3,7 +3,7 @@
 EMACSD_DIR=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 DOCKERFILE="$EMACSD_DIR/Dockerfile"
 IMAGE_NAME="moyu_emacs"
-DEFAULT_DISTRO="archlinux"
+DEFAULT_DISTRO="alpine"
 DISTROS="archlinux ubuntu alpine"
 
 # Extra docker arguments, e.g. DOCKEMACS_BUILD_ARGS="--network=host".
@@ -22,9 +22,9 @@ Commands:
 
 Distributions:
   DISTRO       BASE IMAGE
-  archlinux    archlinux:latest   (default)
+  alpine       alpine:latest    (default)
+  archlinux    archlinux:latest
   ubuntu       ubuntu:latest
-  alpine       alpine:latest
 
 Environment:
   DOCKEMACS_BUILD_ARGS  extra arguments for `docker build'
