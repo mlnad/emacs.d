@@ -1,0 +1,1372 @@
+#!/usr/bin/env bash
+#
+# install-emacs -- build GNU Emacs 31.1 from source into ${HOME}/.local
+#
+# For a server where Emacs is not installed and where the build environment may
+# be incomplete: no root, no package manager, missing development headers, no
+# X11, no native-compilation toolchain.
+#
+# Strategy
+#   1. Check the toolchain (C compiler, make, tar, downloader, pkg-config).
+#      A missing C compiler cannot be conjured out of nothing, so the script
+#      stops with an exact list of what to ask the admin for.
+#   2. For every optional library Emacs wants, try in order:
+#        (a) is it already usable? (pkg-config module, or header + library)
+#        (b) install its distro -dev/-devel package (as root, or via sudo);
+#            skipped entirely with --no-deps
+#        (c) build the library from source into ${PREFIX}
+#      A library that cannot be provided only disables its feature: Emacs is
+#      always configured with an explicit --with-X / --without-X, never left
+#      to autodetect a header whose library is absent.
+#   3. Download emacs-31.1.tar.xz from ftp.gnu.org (with mirrors and a .tar.gz
+#      fallback), configure, compile and install into ${PREFIX}, with RPATHs
+#      into ${PREFIX}/lib so the result does not need LD_LIBRARY_PATH.
+#
+# Nothing is installed system-wide unless the distro package manager route is
+# used for a *missing* dependency; the Emacs build itself always goes to
+# ${PREFIX}.  Run with --dry-run to see the whole plan without changing
+# anything (no package installs, no downloads, no builds).
+#
+# Usage:  bin/install-emacs [options]      (see --help)
+#
+set -Eeuo pipefail
+
+# ---------------------------------------------------------------------------
+# Defaults
+# ---------------------------------------------------------------------------
+EMACS_VERSION="31.1"
+PREFIX="${EMACS_PREFIX:-${HOME}/.local}"
+SRC_DIR="${EMACS_BUILD_DIR:-${HOME}/.cache/emacs-build}"
+_ncpu="$( (command -v nproc >/dev/null 2>&1 && nproc) || echo 2)"
+MAKE_JOBS="${EMACS_JOBS:-$(( _ncpu > 16 ? 16 : _ncpu ))}"
+GNU_MIRROR="${EMACS_MIRROR:-https://ftp.gnu.org/gnu}"
+TARBALL_KIND="xz"            # xz | gz
+RUN_TESTS=0
+STRICT=0
+ASSUME_YES=0
+DRY_RUN=0
+FORCE_DEPS=0
+NO_DEPS=0
+DEPS_MODE="auto"             # auto | all | minimal
+NATIVE_COMP="auto"           # auto | yes | no
+TREE_SITTER="auto"           # auto | yes | no
+WITH_IMAGES=1
+WITH_SOUND=0                 # servers are usually headless; opt in with --with-sound
+WITH_X="auto"                # auto | yes | no
+WITH_MAILUTILS=0
+WITH_DEBUG=0
+EXTRA_CONFIGURE_ARGS=()
+
+# Feature selection from the command line.  WANT_FEATURES non-empty means
+# "only these"; SKIP_FEATURES always removes.
+declare -a WANT_FEATURES=()
+declare -a SKIP_FEATURES=()
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+readonly PROG="${0##*/}"
+readonly MIN_GLIB="2.38"     # Emacs >= 31 refuses older GLib
+readonly TS_MIN_VERSION="0.20.2"   # what Emacs 31 wants from libtree-sitter
+
+# Features that are only attempted when the user asks for them explicitly
+# (they pull in big or unusual dependencies, or are irrelevant on a server).
+readonly OPT_IN_FEATURES="m17n x11 xpm xft gtk pango cairo xrender sound alsa pulse mailutils"
+# Features that are only meaningful with an X display.
+readonly X_FEATURES="x11 xpm xft gtk pango cairo xrender"
+# Emacs's configure only honours these when a window system is being built: the
+# jpeg/png/gif/tiff/webp/rsvg and HarfBuzz checks are wrapped in
+#   if HAVE_X11 || HAVE_W32 || HAVE_NS || pgtk ...
+# so for a terminal-only build they are dead weight (librsvg alone drags in a
+# large Rust stack).  They are skipped when there is no window system.
+readonly X_ONLY_FEATURES="x11 xpm xft xrender gtk pango cairo jpeg png gif tiff webp rsvg harfbuzz"
+BUILD_X=0
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+if [ -t 1 ] && [ "${NO_COLOR:-}" = "" ]; then
+  readonly C_RESET=$'\033[0m' C_BOLD=$'\033[1m' C_RED=$'\033[31m'
+  readonly C_GREEN=$'\033[32m' C_YELLOW=$'\033[33m' C_BLUE=$'\033[34m'
+else
+  readonly C_RESET='' C_BOLD='' C_RED='' C_GREEN='' C_YELLOW='' C_BLUE=''
+fi
+
+_ts()  { date '+%H:%M:%S'; }
+log()  { printf '%s[%s]%s %s\n'          "$C_BLUE"   "$(_ts)" "$C_RESET" "$*"; }
+step() { printf '\n%s%s==> %s%s\n'       "$C_BOLD"   "$C_BLUE" "$*" "$C_RESET"; }
+ok()   { printf '%s  ok%s %s\n'          "$C_GREEN"  "$C_RESET" "$*"; }
+warn() { printf '%s[%s] warning:%s %s\n' "$C_YELLOW" "$(_ts)" "$C_RESET" "$*" >&2; }
+err()  { printf '%s[%s] error:%s %s\n'   "$C_RED"    "$(_ts)" "$C_RESET" "$*" >&2; }
+die()  { err "$*"; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# Everything intended for the user goes to stderr, so functions whose stdout is
+# captured can log freely.
+say()  { printf '%s\n' "$*"; }
+
+# ---------------------------------------------------------------------------
+# Usage
+# ---------------------------------------------------------------------------
+usage() {
+  cat <<EOF
+${C_BOLD}${PROG}${C_RESET} -- build GNU Emacs ${EMACS_VERSION} from source into \${HOME}/.local
+
+${C_BOLD}USAGE${C_RESET}
+  ${PROG} [options]
+
+${C_BOLD}LOCATIONS${C_RESET}
+  --prefix DIR          install prefix             (default: \$EMACS_PREFIX or \$HOME/.local)
+  --srcdir DIR          download/build directory   (default: \$EMACS_BUILD_DIR or ~/.cache/emacs-build)
+  --mirror URL          GNU mirror base URL        (default: ${GNU_MIRROR})
+  --version VER         Emacs version to build     (default: ${EMACS_VERSION})
+  --jobs N              parallel make jobs         (default: number of CPUs, capped at 16)
+
+${C_BOLD}DEPENDENCIES${C_RESET}
+  --deps {auto,all,minimal}
+                        auto    : use what exists, install what is easy,
+                                  build the rest from source
+                        all     : check/rebuild every dependency, prefer source
+                        minimal : only hard requirements (gnutls, ncurses, libxml2, zlib)
+  --no-deps             never call a package manager; use what exists or build from source
+  --strict              abort if a hard dependency cannot be provided
+  --no-images           disable JPEG/PNG/GIF/TIFF/WebP/SVG/XPM support
+  --with-sound          enable ALSA/PulseAudio sound support
+  --with-x              build the X11 GUI (default: only if X11 is already present)
+  --without-x           definitely build the terminal-only Emacs
+  --with-gtk            prefer the GTK3 toolkit when X11 is built
+  --tree-sitter[=MODE]  MODE = auto|yes|no          (default: auto)
+  --native-comp[=MODE]  MODE = auto|yes|no          (default: auto, needs libgccjit)
+
+${C_BOLD}FEATURE SELECTION${C_RESET}
+  --features "A B C"    attempt only these features
+  --without  "A B"      never attempt these features
+      feature names: gnutls ncurses xml2 zlib gmp harfbuzz json lcms2 sqlite3
+                     tree-sitter native-comp jpeg png gif tiff webp rsvg
+                     m17n x11 xpm xft gtk pango cairo xrender sound alsa pulse
+                     selinux mailutils
+
+${C_BOLD}BEHAVIOUR${C_RESET}
+  -y, --yes             never prompt (assume yes)
+  -n, --dry-run         print the whole plan; change nothing at all
+  --force-deps          re-check/rebuild dependencies even if already present
+  --tests               run 'make check' after compiling (slow)
+  --with-debug          -O0 -g3 with runtime checking (very slow Emacs)
+  -h, --help            this help
+
+  Extra arguments after a lone '--' are passed straight to ./configure, e.g.
+    ${PROG} -- --with-wide-int --enable-check-lisp-object-type
+
+${C_BOLD}ENVIRONMENT${C_RESET}
+  EMACS_PREFIX EMACS_BUILD_DIR EMACS_MIRROR EMACS_JOBS
+  CC CFLAGS LDFLAGS PKG_CONFIG_PATH   honoured for the Emacs build
+  http_proxy https_proxy all_proxy    honoured for downloads
+  DISTRO_DEPS_MAP                     file overriding package names
+
+${C_BOLD}EXAMPLES${C_RESET}
+  ${PROG}                                   # the common case
+  ${PROG} --deps minimal --no-images        # fast, terminal-only build
+  ${PROG} --no-deps --deps all              # no root at all: build deps from source
+  ${PROG} --n                               # show the plan, touch nothing
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Small helpers
+# ---------------------------------------------------------------------------
+confirm() {
+  local prompt="$1" reply
+  [ "$ASSUME_YES" = 1 ] && return 0
+  if [ ! -t 0 ]; then
+    warn "stdin is not a terminal and --yes was not given; assuming 'no' (${prompt})"
+    return 1
+  fi
+  read -r -p "${prompt} [y/N] " reply </dev/tty || return 1
+  [[ "$reply" =~ ^[Yy] ]]
+}
+
+run() {  # run a mutating command; in dry-run mode only print it
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s %s\n' "$C_YELLOW" "$C_RESET" "$*"
+    return 0
+  fi
+  "$@"
+}
+
+fetch() {  # fetch URL DEST
+  local url="$1" dest="$2" part="${2}.part"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s download %s\n' "$C_YELLOW" "$C_RESET" "$url"
+    return 0
+  fi
+  rm -f "$part"
+  if have curl; then
+    curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 -C - -o "$part" "$url"
+  elif have wget; then
+    wget -c -O "$part" "$url"
+  else
+    die "neither curl nor wget is available; cannot download sources"
+  fi
+  mv -f "$part" "$dest"
+}
+
+extract() {  # extract ARCHIVE DESTDIR
+  local archive="$1" dest="$2"
+  mkdir -p "$dest"
+  run tar -xf "$archive" -C "$dest" && return 0
+  case "$archive" in
+    *.tar.xz|*.txz) run sh -c "xz -dc $(printf '%q' "$archive") | tar -x -C $(printf '%q' "$dest")" ;;
+    *.tar.gz|*.tgz) run sh -c "gzip -dc $(printf '%q' "$archive") | tar -x -C $(printf '%q' "$dest")" ;;
+    *) die "cannot extract ${archive}: unsupported archive format" ;;
+  esac
+}
+
+pkg_config_exists() {
+  have pkg-config || return 1
+  local m
+  for m in "$@"; do
+    pkg-config --exists "$m" 2>/dev/null || return 1
+  done
+}
+
+# header_lib_exists HEADER LIB...
+# A system library only counts as usable when both the header and the library
+# are present; otherwise Emacs would be configured against a header it cannot
+# link.
+header_lib_exists() {
+  local header="$1"; shift
+  local d l hit=0
+  for d in "${PREFIX}/include" /usr/local/include /usr/include \
+           /usr/include/x86_64-linux-gnu /usr/include/aarch64-linux-gnu; do
+    [ -e "${d}/${header}" ] && { hit=1; break; }
+  done
+  [ "$hit" = 1 ] || return 1
+  for l in "$@"; do
+    hit=0
+    for d in "${PREFIX}/lib" "${PREFIX}/lib64" /usr/local/lib /usr/lib \
+             /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu \
+             /usr/lib64 /lib /lib64; do
+      if [ -e "${d}/lib${l}.so" ] || [ -e "${d}/lib${l}.a" ] ||
+         ls "${d}/lib${l}.so."* >/dev/null 2>&1; then hit=1; break; fi
+    done
+    [ "$hit" = 1 ] || return 1
+  done
+  return 0
+}
+
+# header_exists HEADER -- like header_lib_exists but without a library to check.
+header_exists() {
+  local header="$1" d
+  for d in "${PREFIX}/include" /usr/local/include /usr/include \
+           /usr/include/x86_64-linux-gnu /usr/include/aarch64-linux-gnu; do
+    [ -e "${d}/${header}" ] && return 0
+  done
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# Feature selection helpers
+# All of these are defined before resolve_dependencies runs.
+# ---------------------------------------------------------------------------
+# The order matters: the display chain first (X11, then the toolkit that may
+# replace it), then image libraries, then everything else.
+FEATURE_ORDER=(
+  # X11 first: everything below that Emacs gates on a window system depends on
+  # this answer, so it must be resolved before harfbuzz/images are considered.
+  x11 xpm xft xrender gtk pango cairo
+  harfbuzz jpeg png gif tiff webp rsvg
+  gnutls ncurses xml2 zlib
+  gmp json lcms2 sqlite3
+  sound alsa pulse
+  tree-sitter native-comp
+  m17n selinux mailutils
+)
+
+# Set from the features that dependency resolution actually provided, so the
+# configure flags can never disagree with what was resolved.
+declare -a AVAILABLE=()
+
+is_available() {
+  local x
+  for x in ${AVAILABLE[@]+"${AVAILABLE[@]}"}; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+
+feature_want() {
+  local f="$1" x
+  if [ "${#WANT_FEATURES[@]}" -gt 0 ]; then
+    for x in "${WANT_FEATURES[@]}"; do [ "$x" = "$f" ] && { say soft; return; }; done
+    say skip; return
+  fi
+  if [ "$DEPS_MODE" = minimal ] && ! is_hard_feature "$f"; then say skip; return; fi
+  for x in "${SKIP_FEATURES[@]}"; do [ "$x" = "$f" ] && { say skip; return; }; done
+  # --with-x / --with-sound turn their whole feature group on.
+  if [ "$WITH_X" = yes ] && is_x_feature "$f"; then say soft; return; fi
+  if [ "$WITH_SOUND" = 1 ] && { [ "$f" = sound ] || [ "$f" = alsa ] || [ "$f" = pulse ]; }; then
+    say soft; return
+  fi
+  is_hard_feature "$f" && { say hard; return; }
+  is_optin_feature "$f" && { say optin; return; }
+  say soft
+}
+
+is_hard_feature() {
+  case "$1" in gnutls|ncurses|xml2|zlib) return 0 ;; *) return 1 ;; esac
+}
+is_optin_feature() {
+  local x
+  for x in $OPT_IN_FEATURES; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+is_x_feature() {
+  local x
+  for x in $X_FEATURES; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+is_x_only_feature() {
+  local x
+  for x in $X_ONLY_FEATURES; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+# True when the user explicitly excluded the feature (--without, --deps minimal,
+# --no-images, ...).
+is_excluded_feature() {
+  local x
+  for x in "${SKIP_FEATURES[@]}"; do [ "$x" = "$1" ] && return 0; done
+  return 1
+}
+
+# Decide once whether a window system is being built.  Emacs's configure gates
+# image/HarfBuzz support on this (see X_ONLY_FEATURES); it is derived from
+# whether X11 was actually provided, after dependency resolution.
+update_window_system() {
+  if [[ " ${provided[*]-} " == *" x11 "* ]]; then
+    BUILD_X=1
+  else
+    BUILD_X=0
+  fi
+}
+
+feature_present() {  # KIND REST
+  case "$1" in
+    # Quoted: a spec may carry a version constraint ("tree-sitter >= 0.20.2").
+    pkgconfig) pkg_config_exists "$2" ;;
+    headers)   header_lib_exists $2 ;;
+    *)         return 1 ;;
+  esac
+}
+
+# pkg-config is optional on minimal servers; when it *is* present but a .pc
+# file is missing, fall back to a plain header check for the few libraries
+# whose headers live in a per-library subdirectory.
+check_spec_present() {  # KIND REST
+  local kind="$1" rest="$2"
+  feature_present "$kind" "$rest" && return 0
+  [ "$kind" = pkgconfig ] || return 1
+  have pkg-config || return 1
+  case "$rest" in
+    "libxml-2.0") header_lib_exists "libxml/parser.h" xml2 ;;
+    *) return 1 ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# Feature table
+# ---------------------------------------------------------------------------
+# A found flag of "-" means: pass nothing (configure copes on its own).
+# For most features a missing library still gets an explicit --with-X=ifavailable
+# or --without-X, so a stray header never yields a half-configured Emacs.
+feature_check_spec() {
+  case "$1" in
+    gnutls)      say "headers gnutls/gnutls.h gnutls" ;;
+    ncurses)     say "headers ncurses.h ncurses" ;;
+    xml2)        say "pkgconfig libxml-2.0" ;;   # libxml-2.0.pc is not always installed; see fallback below
+    zlib)        say "headers zlib.h z" ;;
+    gmp)         say "headers gmp.h gmp" ;;
+    harfbuzz)    say "pkgconfig harfbuzz" ;;
+    json)        say "headers jansson.h jansson" ;;
+    lcms2)       say "headers lcms2.h lcms2" ;;
+    sqlite3)     say "headers sqlite3.h sqlite3" ;;
+    jpeg)        say "headers jpeglib.h jpeg" ;;
+    png)         say "headers png.h png" ;;
+    gif)         say "headers gif_lib.h gif" ;;
+    tiff)        say "headers tiff.h tiff" ;;
+    webp)        say "headers webp/decode.h webp" ;;
+    rsvg)        say "pkgconfig librsvg-2.0" ;;
+    m17n)        say "headers m17n.h m17n" ;;
+    x11)         say "headers X11/Xlib.h X11" ;;
+    xpm)         say "headers X11/xpm.h Xpm" ;;
+    xft)         say "headers X11/Xft/Xft.h Xft" ;;
+    xrender)     say "headers X11/extensions/Xrender.h Xrender" ;;
+    gtk)         say "pkgconfig gtk+-3.0" ;;
+    pango)       say "pkgconfig pango-1.0" ;;
+    cairo)       say "pkgconfig cairo" ;;
+    sound|alsa)  say "headers alsa/asoundlib.h asound" ;;
+    pulse)       say "headers pulse/pulseaudio.h pulse" ;;
+    selinux)     say "headers selinux/selinux.h selinux" ;;
+    mailutils)   say "pkgconfig mailutils" ;;
+    tree-sitter)
+      # The release tarball does NOT bundle libtree-sitter itself (only the
+      # grammar sources under admin/), so tree-sitter support needs a real
+      # system library here, just like every other optional feature.
+      say "pkgconfig tree-sitter >= ${TS_MIN_VERSION}" ;;
+    native-comp)
+      # ONLY libgccjit enables native compilation; a bare libgccjit.h is not
+      # enough because the build needs the driver/header pair at run time.
+      if pkg_config_exists libgccjit; then say "pkgconfig libgccjit"; else say "none"; fi ;;
+    *) return 1 ;;
+  esac
+}
+
+feature_found_flag() {
+  case "$1" in
+    gnutls)      say "--with-gnutls" ;;
+    ncurses)     say "-" ;;                  # ncurses/terminfo is found automatically
+    xml2)        say "--with-xml2" ;;
+    zlib)        say "-" ;;                  # no --with-zlib option in 31.1; autodetected
+    gmp)         say "-" ;;
+    harfbuzz)    say "--with-harfbuzz" ;;
+    json)        say "-" ;;
+    lcms2)       say "--with-lcms2" ;;
+    sqlite3)     say "--with-sqlite3" ;;
+    jpeg)        say "--with-jpeg" ;;
+    png)         say "--with-png" ;;
+    gif)         say "--with-gif" ;;
+    tiff)        say "--with-tiff" ;;
+    webp)        say "--with-webp" ;;
+    rsvg)        say "--with-rsvg" ;;
+    m17n)        say "--with-m17n-flt" ;;
+    x11)         say "--with-x" ;;
+    xpm)         say "--with-xpm" ;;
+    xft)         say "--with-xft" ;;
+    xrender)     say "-" ;;                  # autodetected under X11
+    gtk|pango|cairo) say "-" ;;              # handled by the toolkit logic
+    sound|alsa)  say "--with-sound=alsa" ;;
+    pulse)       say "-" ;;                  # implied by --with-sound=alsa|yes
+    selinux)     say "--with-selinux=ifavailable" ;;   # header may exist but be unusable (musl)
+    mailutils)   say "--with-mailutils" ;;
+    tree-sitter) say "--with-tree-sitter" ;;
+    native-comp) say "--with-native-compilation=aot" ;;
+    *) return 1 ;;
+  esac
+}
+
+feature_missing_flag() {
+  case "$1" in
+    gnutls)      say "--with-gnutls=ifavailable" ;;
+    ncurses)     say "-" ;;
+    xml2)        say "--with-xml2=ifavailable" ;;
+    zlib)        say "-" ;;                  # no --with-zlib option; absence is fine
+    gmp|json)    say "-" ;;                  # no options; absence is fine
+    harfbuzz)    say "--with-harfbuzz=ifavailable" ;;
+    lcms2)       say "--with-lcms2=ifavailable" ;;
+    sqlite3)     say "--with-sqlite3=ifavailable" ;;
+    jpeg)        say "--with-jpeg=ifavailable" ;;
+    png)         say "--with-png=ifavailable" ;;
+    gif)         say "--with-gif=ifavailable" ;;
+    tiff)        say "--with-tiff=ifavailable" ;;
+    webp)        say "--with-webp=ifavailable" ;;
+    rsvg)        say "--with-rsvg=ifavailable" ;;
+    m17n)        say "-" ;;                  # already off by default
+    x11)         say "--without-x" ;;
+    xpm)         say "--with-xpm=ifavailable" ;;
+    xft)         say "--with-xft=ifavailable" ;;
+    xrender)     say "-" ;;
+    # No --with-pango / --with-gtk options exist: the toolkit is chosen with
+    # --with-x-toolkit, and GTK pulls in Pango on its own.
+    gtk|pango|cairo) say "-" ;;
+    sound|alsa)  say "--with-sound=no" ;;
+    pulse)       say "-" ;;
+    selinux)     say "--with-selinux=ifavailable" ;;
+    mailutils)   say "--with-mailutils=no" ;;
+    tree-sitter) say "--with-tree-sitter=ifavailable" ;;   # ifavailable, never fail
+    native-comp) say "--without-native-compilation" ;;
+    *) return 1 ;;
+  esac
+}
+
+# A hard "off" flag, used when the user explicitly excluded a feature
+# (--without, --no-images, --deps minimal).  Without this, `--with-X=ifavailable'
+# would re-enable a feature that happens to be installed, ignoring the request.
+# "-" means the feature has no configure option of its own.
+feature_off_flag() {
+  case "$1" in
+    gnutls)      say "--without-gnutls" ;;
+    ncurses|zlib|gmp|json) say "-" ;;   # autodetected, no option to turn off
+    xml2)        say "--without-xml2" ;;
+    harfbuzz)    say "--without-harfbuzz" ;;
+    lcms2)       say "--without-lcms2" ;;
+    sqlite3)     say "--without-sqlite3" ;;
+    jpeg)        say "--without-jpeg" ;;
+    png)         say "--without-png" ;;
+    gif)         say "--without-gif" ;;
+    tiff)        say "--without-tiff" ;;
+    webp)        say "--without-webp" ;;
+    rsvg)        say "--without-rsvg" ;;
+    m17n)        say "--with-m17n-flt=no" ;;
+    x11)         say "--without-x" ;;
+    xpm)         say "--without-xpm" ;;
+    xft)         say "--without-xft" ;;
+    xrender)     say "-" ;;
+    gtk|pango)   say "-" ;;                   # only via --with-x-toolkit
+    cairo)       say "--without-cairo" ;;
+    sound|alsa|pulse) say "--with-sound=no" ;;
+    selinux)     say "--without-selinux" ;;
+    mailutils)   say "--with-mailutils=no" ;;
+    tree-sitter) say "--without-tree-sitter" ;;
+    native-comp) say "--without-native-compilation" ;;
+    *) return 1 ;;
+  esac
+}
+
+# name|url|configure args -- only recipes that genuinely build with nothing but
+# a C compiler and make (no cmake, no nasm, no extra libraries).  Everything
+# else is left to the distro package manager and simply disabled if absent.
+feature_source_recipe() {
+  case "$1" in
+    ncurses)     say "ncurses|https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz|--with-shared --without-normal --without-debug --without-ada --without-manpages --without-tests --enable-pc-files --with-pkg-config-libdir=${PREFIX}/lib/pkgconfig" ;;
+    xml2)        say "libxml2|https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.5.tar.xz|--without-python --without-lzma" ;;
+    zlib)        say "zlib|https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz|" ;;
+    gmp)         say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|--disable-static" ;;
+    lcms2)       say "lcms2|https://github.com/mm2/Little-CMS/releases/download/lcms2.16/lcms2-2.16.tar.gz|" ;;
+    png)         say "libpng|https://download.sourceforge.net/libpng/libpng-1.6.45.tar.xz|" ;;
+    gif)         say "giflib|https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.2.2.tar.gz|" ;;
+    tiff)        say "libtiff|https://download.osgeo.org/libtiff/tiff-4.7.0.tar.xz|--disable-tools --disable-tests --disable-docs" ;;
+    webp)        say "libwebp|https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0.tar.gz|" ;;
+    *) return 1 ;;
+  esac
+}
+
+# Alpine names every -dev package differently again.  Verified against
+# `apk search -x` on Alpine 3.24.
+apk_pkg_names() {
+  case "$1" in
+    base)        say "build-base bash xz tar ca-certificates coreutils linux-headers" ;;
+    kernel-headers) say "linux-headers" ;;
+    downloader)  say "ca-certificates curl" ;;
+    git)         say "git" ;;
+    pkgconfig)   say "pkgconf" ;;
+    texinfo)     say "texinfo" ;;
+    gnutls)      say "gnutls-dev" ;;
+    ncurses)     say "ncurses-dev" ;;
+    xml2)        say "libxml2-dev" ;;
+    zlib)        say "zlib-dev" ;;
+    gmp)         say "gmp-dev" ;;
+    harfbuzz)    say "harfbuzz-dev" ;;
+    json)        say "jansson-dev" ;;
+    lcms2)       say "lcms2-dev" ;;
+    sqlite3)     say "sqlite-dev" ;;
+    jpeg)        say "libjpeg-turbo-dev" ;;
+    png)         say "libpng-dev" ;;
+    gif)         say "giflib-dev" ;;
+    tiff)        say "tiff-dev" ;;
+    webp)        say "libwebp-dev" ;;
+    rsvg)        say "librsvg-dev" ;;
+    m17n)        say "m17n-lib-dev" ;;   # no libotf package on Alpine
+    x11)         say "libx11-dev libxext-dev" ;;
+    xpm)         say "libxpm-dev" ;;
+    xft)         say "libxft-dev fontconfig-dev" ;;
+    xrender)     say "libxrender-dev" ;;
+    gtk)         say "gtk+3.0-dev glib-dev" ;;
+    pango)       say "pango-dev" ;;
+    cairo)       say "cairo-dev" ;;
+    sound|alsa)  say "alsa-lib-dev" ;;
+    pulse)       say "pulseaudio-dev" ;;
+    selinux)     say "libselinux-dev" ;;
+    mailutils)   say "mailutils-dev" ;;
+    tree-sitter) say "tree-sitter-dev" ;;
+    native-comp) say "libgccjit-dev" ;;
+    *) return 1 ;;
+  esac
+}
+
+# Package names for the families that do not follow the Debian naming scheme.
+family_pkg_names() {  # FEATURE
+  case "$PKG_FAMILY" in
+    pacman) arch_pkg_names "$1" ;;
+    apk)    apk_pkg_names "$1" ;;
+    *)      return 1 ;;
+  esac
+}
+
+# Arch (and derived) package names differ from the Debian ones for the split
+# -dev packages, so keep a small map for the common cases.
+arch_pkg_names() {
+  case "$1" in
+    base)        say "base-devel" ;;
+    kernel-headers) say "linux-api-headers" ;;
+    texinfo)     say "texinfo" ;;
+    pkgconfig)   say "pkgconf" ;;
+    gnutls)      say "gnutls" ;;
+    ncurses)     say "ncurses" ;;
+    xml2)        say "libxml2" ;;
+    zlib)        say "zlib" ;;
+    gmp)         say "gmp" ;;
+    harfbuzz)    say "harfbuzz" ;;
+    json)        say "jansson" ;;
+    lcms2)       say "lcms2" ;;
+    sqlite3)     say "sqlite" ;;
+    jpeg)        say "libjpeg-turbo" ;;
+    png)         say "libpng" ;;
+    gif)         say "giflib" ;;
+    tiff)        say "libtiff" ;;
+    webp)        say "libwebp" ;;
+    rsvg)        say "librsvg" ;;
+    m17n)        say "m17n-lib libotf" ;;
+    x11)         say "libx11 libxext" ;;
+    xpm)         say "libxpm" ;;
+    xft)         say "libxft fontconfig" ;;
+    xrender)     say "libxrender" ;;
+    gtk)         say "gtk3 glib2" ;;
+    pango)       say "pango" ;;
+    cairo)       say "cairo" ;;
+    sound|alsa)  say "alsa-lib" ;;
+    pulse)       say "libpulse" ;;
+    selinux)     say "libselinux" ;;
+    tree-sitter) say "tree-sitter" ;;
+    native-comp) say "libgccjit" ;;
+    *) return 1 ;;
+  esac
+}
+
+pkg_names_for() {  # FEATURE -> "deb rpm" generic names
+  case "$1" in
+    base)        say "build-essential|gcc gcc-c++ make" ;;
+    kernel-headers) say "linux-libc-dev|kernel-headers" ;;
+    downloader)  say "ca-certificates|ca-certificates" ;;
+    git)         say "git|git" ;;
+    pkgconfig)   say "pkg-config|pkgconf pkgconfig" ;;
+    texinfo)     say "texinfo|texinfo" ;;
+    gnutls)      say "libgnutls28-dev|gnutls-devel" ;;
+    ncurses)     say "libncurses-dev|ncurses-devel" ;;
+    xml2)        say "libxml2-dev|libxml2-devel" ;;
+    zlib)        say "zlib1g-dev|zlib-devel" ;;
+    gmp)         say "libgmp-dev|gmp-devel" ;;
+    harfbuzz)    say "libharfbuzz-dev|harfbuzz-devel" ;;
+    json)        say "libjansson-dev|jansson-devel" ;;
+    lcms2)       say "liblcms2-dev|lcms2-devel" ;;
+    sqlite3)     say "libsqlite3-dev|sqlite-devel" ;;
+    jpeg)        say "libjpeg-dev|libjpeg-turbo-devel" ;;
+    png)         say "libpng-dev|libpng-devel" ;;
+    gif)         say "libgif-dev|giflib-devel" ;;
+    tiff)        say "libtiff-dev|libtiff-devel" ;;
+    webp)        say "libwebp-dev|libwebp-devel" ;;
+    rsvg)        say "librsvg2-dev|librsvg2-devel" ;;
+    m17n)        say "libm17n-dev libotf-dev|m17n-lib-devel libotf-devel" ;;
+    x11)         say "libx11-dev libxext-dev|libX11-devel libXext-devel" ;;
+    xpm)         say "libxpm-dev|libXpm-devel" ;;
+    xft)         say "libxft-dev libfontconfig1-dev|libXft-devel fontconfig-devel" ;;
+    xrender)     say "libxrender-dev|libXrender-devel" ;;
+    gtk)         say "libgtk-3-dev libglib2.0-dev|gtk3-devel glib2-devel" ;;
+    pango)       say "libpango1.0-dev|pango-devel" ;;
+    cairo)       say "libcairo2-dev|cairo-devel" ;;
+    sound|alsa)  say "libasound2-dev|alsa-lib-devel" ;;
+    pulse)       say "libpulse-dev|pulseaudio-libs-devel" ;;
+    selinux)     say "libselinux1-dev|libselinux-devel" ;;
+    mailutils)   say "libmailutils-dev|mailutils-devel" ;;
+    tree-sitter) say "libtree-sitter-dev|tree-sitter-devel" ;;
+    native-comp) say "libgccjit-14-dev|libgccjit-devel" ;;
+    *) return 1 ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# Platform / package managers
+# ---------------------------------------------------------------------------
+detect_os() {
+  OS_ID="unknown"; OS_LIKE=""
+  if [ -r /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    OS_ID="${ID:-unknown}"; OS_LIKE="${ID_LIKE:-}"
+  fi
+  case "${OS_ID} ${OS_LIKE}" in
+    *debian*|*ubuntu*)                              PKG_FAMILY="deb" ;;
+    *fedora*|*rhel*|*centos*|*rocky*|*almalinux*|*ol*) PKG_FAMILY="rpm" ;;
+    *opensuse*|*suse*|*sles*)                       PKG_FAMILY="zypper" ;;
+    *arch*|*manjaro*|*endeavouros*)                 PKG_FAMILY="pacman" ;;
+    *alpine*)                                       PKG_FAMILY="apk" ;;
+    *void*)                                         PKG_FAMILY="xbps" ;;
+    *gentoo*)                                       PKG_FAMILY="portage" ;;
+    *nixos*)                                        PKG_FAMILY="nix" ;;
+    *)                                              PKG_FAMILY="unknown" ;;
+  esac
+  log "detected OS: ${OS_ID} (package family: ${PKG_FAMILY})"
+}
+
+have_root() { [ "$(id -u)" = 0 ]; }
+
+SUDO=""
+detect_sudo() {
+  SUDO=""
+  have_root && return 0
+  have sudo || return 1
+  if sudo -n true 2>/dev/null; then SUDO="sudo -n"; return 0; fi
+  if [ "$DRY_RUN" = 1 ]; then SUDO="sudo"; return 0; fi
+  if [ -t 0 ] && confirm "sudo will ask for your password; continue?"; then
+    SUDO="sudo"; return 0
+  fi
+  SUDO=""
+  return 1
+}
+
+as_root() {
+  if have_root; then run "$@"; return $?; fi
+  if [ -n "$SUDO" ]; then run $SUDO "$@"; return $?; fi
+  if have pkexec && [ "$DRY_RUN" = 0 ] && [ -t 0 ]; then run pkexec "$@"; return $?; fi
+  return 127
+}
+
+DISTRO_DEPS_MAP="${DISTRO_DEPS_MAP:-}"
+pkg_names_override() {  # FEATURE FAMILY
+  [ -n "$DISTRO_DEPS_MAP" ] && [ -r "$DISTRO_DEPS_MAP" ] || return 1
+  local line
+  line="$(awk -F'|' -v f="$1" -v fam="$2" '$1==fam && $2==f { print $3; exit }' "$DISTRO_DEPS_MAP")"
+  [ -n "$line" ] || return 1
+  say "$line"
+}
+
+install_pkgs() {  # install_pkgs FEATURE...
+  local feature names spec deb rpm used=0
+  for feature in "$@"; do
+    if names="$(family_pkg_names "$feature")"; then
+      :
+    elif names="$(pkg_names_override "$feature" "$PKG_FAMILY")"; then
+      :
+    elif spec="$(pkg_names_for "$feature")"; then
+      deb="${spec%%|*}"; rpm="${spec#*|}"
+      case "$PKG_FAMILY" in
+        rpm) names="$rpm" ;;
+        *)   names="$deb" ;;
+      esac
+    else
+      warn "no package-name mapping for '${feature}'; skipping"
+      continue
+    fi
+    # shellcheck disable=SC2086
+    case "$PKG_FAMILY" in
+      deb)     as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $names && used=1 || warn "could not install: ${names}" ;;
+      rpm)     if have dnf; then as_root dnf install -y $names && used=1 || warn "could not install: ${names}"
+               elif have yum; then as_root yum install -y $names && used=1 || warn "could not install: ${names}"
+               else warn "neither dnf nor yum available"; fi ;;
+      pacman)  as_root pacman -S --needed --noconfirm $names && used=1 || warn "could not install: ${names}" ;;
+      zypper)  as_root zypper --non-interactive install $names && used=1 || warn "could not install: ${names}" ;;
+      apk)     as_root apk add --no-cache $names && used=1 || warn "could not install: ${names}" ;;
+      xbps)    as_root xbps-install -Sy $names && used=1 || warn "could not install: ${names}" ;;
+      nix)     as_root nix-env -iA "nixpkgs.${feature}" && used=1 || warn "could not install: ${feature}" ;;
+      portage) warn "Gentoo: install by hand -> ${names}" ;;
+      *)       warn "unknown package manager: install by hand -> ${names}" ;;
+    esac
+  done
+  [ "$used" = 1 ]
+}
+
+APT_UPDATED=0
+apt_update_once() {
+  [ "$PKG_FAMILY" = deb ] || return 0
+  [ "$APT_UPDATED" = 1 ] && return 0
+  APT_UPDATED=1
+  log "refreshing apt package lists"
+  as_root env DEBIAN_FRONTEND=noninteractive apt-get update -qq || \
+    warn "apt-get update failed; continuing with cached lists"
+}
+
+try_system_packages() {  # FEATURE
+  [ "$NO_DEPS" = 1 ] && { log "--no-deps: not touching the package manager for '$1'"; return 1; }
+  [ "$PKG_FAMILY" = unknown ] && return 1
+  if ! family_pkg_names "$1" >/dev/null 2>&1; then
+    pkg_names_for "$1" >/dev/null 2>&1 || return 1
+  fi
+  apt_update_once
+  log "installing '${1}' via ${PKG_FAMILY}"
+  install_pkgs "$1"
+}
+
+# ---------------------------------------------------------------------------
+# Source builds for dependencies
+# ---------------------------------------------------------------------------
+build_dep() {  # build_dep NAME URL [CONFIGURE_ARGS...]
+  local name="$1" url="$2"; shift 2
+  local -a cfg=("$@")
+  local depdir="${SRC_DIR}/deps"
+  local dir="${depdir}/${name}"
+  local archive="${depdir}/${name}.tar"
+  local stamp="${PREFIX}/.emacs-built-${name}"
+  local sub src
+
+  if [ "$FORCE_DEPS" != 1 ] && [ -f "$stamp" ]; then
+    ok "dependency '${name}' was already built into ${PREFIX}"
+    return 0
+  fi
+
+  step "Building dependency '${name}' from source"
+  log "url: ${url}"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s configure/build/install %s -> %s\n' \
+      "$C_YELLOW" "$C_RESET" "$name" "$PREFIX"
+    return 0
+  fi
+
+  mkdir -p "$depdir" "${PREFIX}/lib" "${PREFIX}/include"
+  [ -f "$archive" ] || fetch "$url" "$archive"
+  rm -rf "$dir" "${dir}.tmp"
+  mkdir -p "${dir}.tmp"
+  extract "$archive" "${dir}.tmp"
+  sub="$(find "${dir}.tmp" -mindepth 1 -maxdepth 1 -type d | head -n1)"
+  src="${sub:-${dir}.tmp}"
+  mv "$src" "$dir"; rm -rf "${dir}.tmp"
+
+  export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PREFIX}/lib64/pkgconfig:${PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+  export CPPFLAGS="-I${PREFIX}/include ${CPPFLAGS:-}"
+  export LDFLAGS="-L${PREFIX}/lib -L${PREFIX}/lib64 -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib64 ${LDFLAGS:-}"
+
+  (
+    cd "$dir" || exit 1
+    if [ -x ./autogen.sh ] && [ ! -x ./configure ]; then NOCONFIGURE=1 ./autogen.sh >/dev/null 2>&1 || true; fi
+    makefile_only=0
+    if [ -x ./configure ]; then
+      ./configure --prefix="$PREFIX" --disable-static "${cfg[@]+"${cfg[@]}"}" || exit 1
+    elif [ -f Makefile ] || [ -f makefile ]; then
+      makefile_only=1      # some libraries ship only a Makefile
+    else
+      echo "'${name}' has neither ./configure nor a Makefile" >&2
+      exit 1
+    fi
+    make -j"$MAKE_JOBS" || exit 1
+    if [ "$makefile_only" = 1 ]; then
+      make install PREFIX="$PREFIX" || exit 1
+    else
+      make install || exit 1
+    fi
+  ) || { warn "building dependency '${name}' failed; its feature will be disabled"; return 1; }
+
+  : > "$stamp"
+  ok "installed '${name}' into ${PREFIX}"
+}
+
+# ---------------------------------------------------------------------------
+# Dependency resolution
+# ---------------------------------------------------------------------------
+resolve_dependencies() {
+  step "Resolving build dependencies"
+  local f spec want kind rest name url cargs rc total="${#FEATURE_ORDER[@]}" i=0
+  local -a missing_hard=() provided=() from_source=() unavailable=() x_skipped=()
+
+  check_toolchain
+
+  for f in "${FEATURE_ORDER[@]}"; do
+    i=$((i + 1))
+    want="$(feature_want "$f")"
+    [ "$want" = skip ] && continue
+
+    if [ "$want" = optin ]; then
+      unavailable+=("$f")
+      continue
+    fi
+
+    # A terminal-only Emacs ignores image and HarfBuzz support entirely, so do
+    # not spend time installing those libraries.  X11 is resolved first (see
+    # FEATURE_ORDER), so its presence in `provided` is the decision.
+    if [ "$f" != x11 ] && is_x_only_feature "$f" \
+       && [[ " ${provided[*]-} " != *" x11 "* ]]; then
+      x_skipped+=("$f")
+      unavailable+=("$f")
+      continue
+    fi
+
+    spec="$(feature_check_spec "$f" 2>/dev/null || true)"
+    if [ -z "$spec" ] || [ "$spec" = none ]; then
+      case "$f" in
+        native-comp)
+          log "native compilation needs libgccjit.a plus libgccjit.h; building without it (Emacs still works, just no .eln files)" ;;
+        *)
+          warn "feature '${f}' cannot be detected here; not requesting it explicitly" ;;
+      esac
+      unavailable+=("$f")
+      continue
+    fi
+
+    kind="${spec%% *}"; rest="${spec#* }"
+    log "checking ${f} (${i}/${total})"
+
+    if [ "$FORCE_DEPS" != 1 ] && check_spec_present "$kind" "$rest"; then
+      provided+=("$f")
+      continue
+    fi
+
+    # (b) distro package
+    if try_system_packages "$f"; then
+      if [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; then
+        provided+=("$f")
+        continue
+      fi
+    fi
+
+    # (c) build from source
+    if recipe="$(feature_source_recipe "$f" 2>/dev/null)"; then
+      IFS='|' read -r name url cargs <<<"$recipe"
+      rc=0
+      # shellcheck disable=SC2086
+      build_dep "$name" "$url" $cargs || rc=$?
+      if [ "$rc" = 0 ] && { [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; }; then
+        from_source+=("$f")
+        provided+=("$f")
+        continue
+      fi
+    fi
+
+    unavailable+=("$f")
+    if [ "$want" = hard ]; then
+      missing_hard+=("$f")
+    else
+      warn "optional feature '${f}' will be disabled (no library available)"
+    fi
+  done
+
+  update_window_system
+  if [ "$BUILD_X" = 0 ]; then
+    log "building the terminal-only Emacs (no window system)"
+  fi
+
+  [ "${#provided[@]}"   -gt 0 ] && ok "usable: ${provided[*]}"
+  [ "${#from_source[@]}" -gt 0 ] && ok "built from source: ${from_source[*]}"
+  [ "${#x_skipped[@]}"  -gt 0 ] && \
+    log "terminal-only build: not installing ${x_skipped[*]} (ignored without a window system)"
+  if [ "${#provided[@]}" -gt 0 ]; then
+    AVAILABLE=("${provided[@]}")
+  else
+    AVAILABLE=()
+  fi
+
+  if [ "${#missing_hard[@]}" -gt 0 ]; then
+    err "required dependencies could not be provided: ${missing_hard[*]}"
+    err "Install their development packages, or accept a reduced Emacs with:"
+    err "  ${PROG} --without \"${missing_hard[*]}\""
+    if [ "$STRICT" = 1 ]; then exit 1; fi
+    if [ "$ASSUME_YES" = 1 ]; then die "aborting: required dependencies missing"; fi
+    confirm "Build Emacs anyway without ${missing_hard[*]}?" || exit 1
+  fi
+  return 0
+}
+
+check_toolchain() {
+  local missing=()
+  if ! have cc && ! have gcc && ! have clang; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages base || true; fi
+    { have cc || have gcc || have clang; } || missing+=("a C compiler (gcc or clang)")
+  fi
+  if ! have make; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages base || true; fi
+    have make || missing+=("'make'")
+  fi
+  have tar || missing+=("'tar'")
+  # Linux kernel headers are a hard build requirement: Emacs's gnulib
+  # copy-file-range.c includes <linux/version.h>.  Minimal images (Alpine's
+  # build-base, for one) do not ship them with the compiler, and the failure
+  # only shows up deep inside `make'.
+  if [ "$(uname -s)" = Linux ] && ! header_exists linux/version.h; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages kernel-headers || true; fi
+    header_exists linux/version.h || missing+=("Linux kernel headers (linux/version.h)")
+  fi
+  if ! have curl && ! have wget; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages downloader || true; fi
+    { have curl || have wget; } || missing+=("curl or wget")
+  fi
+  if ! have pkg-config; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages pkgconfig || true; fi
+    # pkgconf (Alpine, Arch) ships a pkg-config symlink, so re-check: warning
+    # about a package that was just installed successfully is just noise.
+    if ! have pkg-config; then
+      warn "pkg-config is missing: optional features that need it (harfbuzz, gtk, rsvg, ...) will be skipped"
+    fi
+  fi
+  if ! have makeinfo; then
+    if [ "$NO_DEPS" = 0 ]; then try_system_packages texinfo || true; fi
+    have makeinfo || log "makeinfo not found: Emacs will build without Info manuals (fine)"
+  fi
+  if [ "${#missing[@]}" -gt 0 ]; then
+    err "cannot build without: ${missing[*]}"
+    err "Ask the administrator to provide them; the script cannot install a compiler by itself."
+    exit 1
+  fi
+  log "toolchain: $({ command -v cc || command -v gcc || command -v clang; } | head -n1), $(make --version | head -n1)"
+}
+
+# ---------------------------------------------------------------------------
+# Emacs download
+# ---------------------------------------------------------------------------
+emacs_tarball_name() {  # emacs_tarball_name KIND
+  case "$1" in
+    xz) say "emacs-${EMACS_VERSION}.tar.xz" ;;
+    gz) say "emacs-${EMACS_VERSION}.tar.gz" ;;
+  esac
+}
+
+mirror_list() {
+  # The user's mirror wins, then well-known mirrors, then GNU itself.
+  printf '%s\n' "$GNU_MIRROR" \
+    "https://mirrors.kernel.org/gnu" "https://ftp.gnu.org/gnu" \
+    "https://mirror.rit.edu/gnu" "https://ftp.jaist.ac.jp/pub/GNU" | awk '!seen[$0]++'
+}
+
+download_emacs() {  # prints the archive path on stdout; logs go to stderr
+  step "Downloading GNU Emacs ${EMACS_VERSION}" >&2
+  local kind name archive url
+  mkdir -p "$SRC_DIR"
+
+  # Fresh tarball first (they are >60 MiB), then the archive format fallback.
+  for kind in "$TARBALL_KIND" xz gz; do
+    name="$(emacs_tarball_name "$kind")"
+    archive="${SRC_DIR}/${name}"
+    if [ -s "$archive" ]; then
+      ok "using cached ${archive}" >&2
+      TARBALL_KIND="$kind"
+      say "$archive"
+      return 0
+    fi
+  done
+
+  for kind in "$TARBALL_KIND" xz gz; do
+    name="$(emacs_tarball_name "$kind")"
+    archive="${SRC_DIR}/${name}"
+    while read -r url; do
+      [ -n "$url" ] || continue
+      log "trying ${url}/emacs/${name}" >&2
+      if fetch "${url}/emacs/${name}" "$archive"; then
+        ok "downloaded ${archive}" >&2
+        TARBALL_KIND="$kind"
+        say "$archive"
+        return 0
+      fi
+    done < <(mirror_list)
+    warn "could not fetch ${name} from any mirror" >&2
+  done
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# Emacs configure / build / install
+# ---------------------------------------------------------------------------
+configure_emacs() {
+  local srcdir="$1"; shift
+  local -a flags=() extra=("$@") f flag
+  local have_gtk=0 use_x=0
+
+  step "Configuring Emacs"
+  flags+=(--prefix="$PREFIX")
+  flags+=(--localstatedir="${PREFIX}/var")
+  flags+=(--with-modules --with-threads)
+  flags+=(--with-file-notification=inotify)
+
+  # Toolkit decision.  BUILD_X was settled once in resolve_dependencies, so the
+  # flags here always agree with the features that were resolved.
+  use_x="$BUILD_X"
+  if [ "$use_x" = 0 ]; then
+    flags+=(--without-x --without-x-toolkit)
+  elif ! is_available x11; then
+    # --with-x was requested but X11 is not actually present.
+    warn "--with-x requested but libX11 is not available; building the terminal-only Emacs"
+    use_x=0
+    flags+=(--without-x --without-x-toolkit)
+  else
+    if is_available gtk; then have_gtk=1; fi
+    if [ "$have_gtk" = 1 ]; then
+      flags+=(--with-x-toolkit=gtk3)
+      is_available cairo && flags+=(--with-cairo)
+    else
+      flags+=(--with-x-toolkit=lucid)
+      flags+=(--with-cairo=no)
+    fi
+  fi
+
+  # Every other feature gets an explicit yes/no, so a stray header on the
+  # machine can never produce a half-configured Emacs.
+  for f in "${FEATURE_ORDER[@]}"; do
+    case "$f" in
+      # handled explicitly above / by the image and sound blocks below
+      x11|xpm|xft|xrender|gtk|pango|cairo) continue ;;
+      jpeg|png|gif|tiff|webp|rsvg)
+        [ "$WITH_IMAGES" = 1 ] && [ "$use_x" = 1 ] || continue ;;
+      ncurses) continue ;;
+    esac
+    # Nothing X11-only is worth a flag when no window system is being built.
+    if [ "$use_x" = 0 ] && is_x_only_feature "$f"; then continue; fi
+    if is_available "$f"; then
+      flag="$(feature_found_flag "$f" 2>/dev/null || true)"
+    elif is_excluded_feature "$f"; then
+      # Explicitly excluded: use a hard off switch, never *ifavailable*.
+      flag="$(feature_off_flag "$f" 2>/dev/null || true)"
+    else
+      flag="$(feature_missing_flag "$f" 2>/dev/null || true)"
+    fi
+    # Only force mailutils off when the user did not ask for it.
+    if [ "$f" = mailutils ] && [ "$WITH_MAILUTILS" = 1 ] && ! is_available mailutils; then
+      flag="-"
+    fi
+    [ -n "$flag" ] && [ "$flag" != "-" ] && flags+=("$flag")
+  done
+  # xpm is its own flag even when X11 is absent (harmless).
+  if [ "$use_x" = 1 ]; then
+    if is_available xpm; then flags+=(--with-xpm); else flags+=(--with-xpm=ifavailable); fi
+  fi
+  if [ "$WITH_IMAGES" = 0 ]; then
+    flags+=(--without-jpeg --without-png --without-gif --without-tiff --without-webp --without-rsvg)
+  fi
+  if [ "$WITH_SOUND" = 0 ]; then
+    flags+=(--with-sound=no)
+  else
+    flags+=(--with-sound=yes)
+  fi
+  [ "$WITH_MAILUTILS" = 1 ] && flags+=(--with-mailutils) || flags+=(--with-mailutils=no)
+  if [ "$WITH_DEBUG" = 1 ]; then
+    flags+=(--enable-checking=yes,glyphs)
+    export CFLAGS="-O0 -g3 ${CFLAGS:-}"
+  fi
+  case "$TREE_SITTER" in
+    no)  flags+=(--without-tree-sitter) ;;
+    yes) flags+=(--with-tree-sitter) ;;
+  esac
+  [ "$NATIVE_COMP" = no ] && flags+=(--without-native-compilation)
+
+  export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PREFIX}/lib64/pkgconfig:${PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+  export CPPFLAGS="-I${PREFIX}/include ${CPPFLAGS:-}"
+  # No --enable-link-time-optimization: fragile across compilers.  RPATH keeps
+  # the installed binary independent of LD_LIBRARY_PATH.
+  # RPATH matters: libraries this script builds into ${PREFIX} must be found by
+  # the installed Emacs at run time (patchelf is optional, not required).
+  export LDFLAGS="-L${PREFIX}/lib -L${PREFIX}/lib64 -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib64 ${LDFLAGS:-}"
+
+  # Drop duplicates while keeping the last occurrence's meaning: a feature that
+  # maps to the same flag twice (sound/alsa) must not confuse ./configure.
+  mapfile -t flags < <(printf '%s\n' "${flags[@]}" | awk '!seen[$0]++')
+
+  local -a cmd=(./configure "${flags[@]}")
+  [ "${#extra[@]}" -gt 0 ] && cmd+=("${extra[@]}")
+  printf '  %s\n' "${cmd[*]}"
+
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s (cd %s && ./configure ...)\n' "$C_YELLOW" "$C_RESET" "$srcdir"
+    return 0
+  fi
+
+  if [ -f "${srcdir}/config.status" ]; then
+    log "re-running configure in an existing tree; removing stale config.status"
+    rm -f "${srcdir}/config.status"
+  fi
+  if ! ( cd "$srcdir" && "${cmd[@]}" ); then
+    err "configure failed"
+    [ -f "${srcdir}/config.log" ] && { err "tail of config.log:"; tail -n 60 "${srcdir}/config.log" >&2 || true; }
+    die "fix the reported problem and re-run; already-downloaded sources are reused"
+  fi
+  ok "configure finished"
+  if [ -f "${srcdir}/src/config.h" ]; then
+    log "configure summary:"
+    grep -E "^(Does Emacs use|  Does Emacs use)" "${srcdir}/config.log" 2>/dev/null | tail -n 40 >&2 || true
+  fi
+}
+
+build_emacs() {
+  local srcdir="$1"
+  step "Compiling Emacs (make -j${MAKE_JOBS})"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s make -j%s -C %s\n' "$C_YELLOW" "$C_RESET" "$MAKE_JOBS" "$srcdir"
+    return 0
+  fi
+  if ! ( cd "$srcdir" && make -j"$MAKE_JOBS" ); then
+    err "compilation failed"
+    die "object files are kept in ${srcdir}; fix the error and re-run"
+  fi
+  ok "compiled"
+  if [ "$RUN_TESTS" = 1 ]; then
+    step "Running 'make check' (slow)"
+    ( cd "$srcdir" && make check ) || warn "'make check' reported failures"
+  fi
+}
+
+install_emacs() {
+  local srcdir="$1"
+  step "Installing into ${PREFIX}"
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s make -C %s install\n' "$C_YELLOW" "$C_RESET" "$srcdir"
+    return 0
+  fi
+  ( cd "$srcdir" && make install )
+  ok "installed"
+}
+
+install_rpath() {
+  local exe="${PREFIX}/bin/emacs-${EMACS_VERSION}"
+  [ "$DRY_RUN" = 1 ] && return 0
+  have patchelf || return 0
+  [ -f "$exe" ] || return 0
+  patchelf --set-rpath "${PREFIX}/lib:${PREFIX}/lib64" "$exe" 2>/dev/null || true
+}
+
+write_launcher() {
+  local launcher="${PREFIX}/bin/emacs-local"
+  [ "$DRY_RUN" = 1 ] && return 0
+  cat >"$launcher" <<EOF
+#!/bin/sh
+# Written by ${PROG}: always runs the Emacs built in ${PREFIX}.
+exec "${PREFIX}/bin/emacs-${EMACS_VERSION}" "\$@"
+EOF
+  chmod 755 "$launcher" 2>/dev/null || true
+}
+
+post_install() {
+  local emacs="${PREFIX}/bin/emacs-${EMACS_VERSION}" out
+  step "Post-install check"
+  if [ "$DRY_RUN" = 1 ] || [ ! -x "$emacs" ]; then
+    log "skipping the version check"
+  else
+    if out="$("$emacs" --version 2>&1 | head -n1)"; then ok "installed: ${out}"; else warn "cannot run ${emacs}: ${out}"; fi
+    "$emacs" --batch --eval \
+      '(princ (format "  tree-sitter: %s   native-comp: %s\n"
+                      (if (fboundp (quote treesit-available-p)) (treesit-available-p) "n/a")
+                      (if (fboundp (quote native-comp-available-p)) (native-comp-available-p) "n/a")))' \
+      2>/dev/null || true
+  fi
+
+  cat <<EOF
+
+${C_BOLD}Done.${C_RESET}
+  binary  : ${PREFIX}/bin/emacs-${EMACS_VERSION}
+  launcher: ${PREFIX}/bin/emacs-local
+  sources : ${SRC_DIR}/emacs-${EMACS_VERSION}
+
+If ${PREFIX}/bin is not on your PATH yet:
+  echo 'export PATH="${PREFIX}/bin:\$PATH"' >> ~/.profile
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+parse_args() {
+  local arg
+  declare -a extra=()
+  while [ "$#" -gt 0 ]; do
+    arg="$1"
+    case "$arg" in
+      --prefix)    PREFIX="$2"; shift 2 ;;
+      --prefix=*)  PREFIX="${arg#*=}"; shift ;;
+      --srcdir)    SRC_DIR="$2"; shift 2 ;;
+      --srcdir=*)  SRC_DIR="${arg#*=}"; shift ;;
+      --mirror)    GNU_MIRROR="$2"; shift 2 ;;
+      --mirror=*)  GNU_MIRROR="${arg#*=}"; shift ;;
+      --version)   EMACS_VERSION="$2"; shift 2 ;;
+      --version=*) EMACS_VERSION="${arg#*=}"; shift ;;
+      --jobs)      MAKE_JOBS="$2"; shift 2 ;;
+      --jobs=*)    MAKE_JOBS="${arg#*=}"; shift ;;
+      -j[0-9]*)    MAKE_JOBS="${arg#-j}"; shift ;;
+      --deps)      DEPS_MODE="$2"; shift 2 ;;
+      --deps=*)    DEPS_MODE="${arg#*=}"; shift ;;
+      --no-deps)   NO_DEPS=1; shift ;;
+      --strict)    STRICT=1; shift ;;
+      --no-images) WITH_IMAGES=0; shift ;;
+      --with-images) WITH_IMAGES=1; shift ;;
+      --with-sound) WITH_SOUND=1; shift ;;
+      --no-sound)  WITH_SOUND=0; shift ;;
+      --with-x)    WITH_X=yes; shift ;;
+      --without-x) WITH_X=no; shift ;;
+      --with-gtk)  WANT_FEATURES+=(gtk pango cairo xft xrender xpm); shift ;;
+      --tree-sitter)   TREE_SITTER=yes; shift ;;
+      --tree-sitter=*) TREE_SITTER="${arg#*=}"; shift ;;
+      --native-comp)   NATIVE_COMP=yes; shift ;;
+      --native-comp=*) NATIVE_COMP="${arg#*=}"; shift ;;
+      --with-mailutils) WITH_MAILUTILS=1; shift ;;
+      --with-debug) WITH_DEBUG=1; shift ;;
+      --features)  # shellcheck disable=SC2206
+                   WANT_FEATURES+=($2); shift 2 ;;
+      --features=*) # shellcheck disable=SC2206
+                   WANT_FEATURES+=(${arg#*=}); shift ;;
+      --without)   # shellcheck disable=SC2206
+                   SKIP_FEATURES+=($2); shift 2 ;;
+      --without=*) # shellcheck disable=SC2206
+                   SKIP_FEATURES+=(${arg#*=}); shift ;;
+      --only)      # shellcheck disable=SC2206
+                   WANT_FEATURES=($2); shift 2 ;;
+      --force-deps) FORCE_DEPS=1; shift ;;
+      -y|--yes)    ASSUME_YES=1; shift ;;
+      -n|--dry-run) DRY_RUN=1; shift ;;
+      --tests)     RUN_TESTS=1; shift ;;
+      --)          shift; extra+=("$@"); break ;;
+      -h|--help)   usage; exit 0 ;;
+      *)           die "unknown option: ${arg} (try --help)" ;;
+    esac
+  done
+
+  case "$DEPS_MODE" in
+    auto)    : ;;
+    all)     FORCE_DEPS=1 ;;
+    minimal)
+      # "Only the hard requirements": also mark everything else excluded, so
+      # configure gets deterministic --without-* flags instead of linking in
+      # whatever happens to be installed.
+      SKIP_FEATURES+=(jpeg png gif tiff webp rsvg gmp sqlite3 json harfbuzz m17n \
+                      lcms2 tree-sitter native-comp x11 xpm xft xrender gtk pango \
+                      cairo sound alsa pulse selinux mailutils) ;;
+    *)       die "--deps expects auto, all or minimal (got '${DEPS_MODE}')" ;;
+  esac
+  case "$NATIVE_COMP" in auto|yes|no) : ;; *) die "--native-comp expects auto, yes or no" ;; esac
+  case "$TREE_SITTER" in auto|yes|no|system) : ;; *) die "--tree-sitter expects auto, yes, no or system" ;; esac
+  case "$WITH_X" in auto|yes|no) : ;; *) die "internal error: WITH_X=${WITH_X}" ;; esac
+
+  PREFIX="${PREFIX%/}"
+  SRC_DIR="${SRC_DIR%/}"
+  [ -n "$PREFIX" ] || die "--prefix may not be empty"
+  EXTRA_CONFIGURE_ARGS=("${extra[@]+"${extra[@]}"}")
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+main() {
+  parse_args "$@"
+  detect_os
+  detect_sudo || warn "no root and no usable sudo: dependencies will only be built from source"
+
+  if [ "$DEPS_MODE" = all ] && [ "$NO_DEPS" = 0 ]; then
+    log "DEPS_MODE=all keeps the package manager enabled but prefers source builds"
+  fi
+
+  local existing
+  existing="$(command -v "emacs-${EMACS_VERSION}" 2>/dev/null || true)"
+  if [ -n "$existing" ] && [ "$FORCE_DEPS" != 1 ] && [ "$DRY_RUN" != 1 ]; then
+    ok "emacs-${EMACS_VERSION} already present at ${existing}"
+    [ "$ASSUME_YES" = 1 ] || confirm "Build and install it again into ${PREFIX}?" || exit 0
+  fi
+
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '%s[plan]%s prefix=%s  srcdir=%s  version=%s  jobs=%s\n' \
+      "$C_YELLOW" "$C_RESET" "$PREFIX" "$SRC_DIR" "$EMACS_VERSION" "$MAKE_JOBS"
+  fi
+
+  mkdir -p "$SRC_DIR" "$PREFIX"
+
+  resolve_dependencies
+
+  local archive srcdir
+  archive="$(download_emacs)" || die "could not download Emacs ${EMACS_VERSION} from any mirror"
+  srcdir="${SRC_DIR}/emacs-${EMACS_VERSION}"
+  if [ ! -d "$srcdir" ]; then
+    step "Extracting ${archive##*/}"
+    if [ "$DRY_RUN" = 1 ]; then
+      printf '  %s[plan]%s tar -xf %s -C %s\n' "$C_YELLOW" "$C_RESET" "$archive" "$SRC_DIR"
+    else
+      extract "$archive" "$SRC_DIR"
+    fi
+  else
+    log "reusing the existing source tree ${srcdir}"
+  fi
+  [ "$DRY_RUN" = 1 ] || [ -d "$srcdir" ] || die "extraction did not produce ${srcdir}"
+
+  configure_emacs "$srcdir" "${EXTRA_CONFIGURE_ARGS[@]+"${EXTRA_CONFIGURE_ARGS[@]}"}"
+  build_emacs "$srcdir"
+  install_emacs "$srcdir"
+  install_rpath "$srcdir"
+  write_launcher
+  post_install
+}
+
+main "$@"
