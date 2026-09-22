@@ -12,8 +12,9 @@
 #      stops with an exact list of what to ask the admin for.
 #   2. For every optional library Emacs wants, try in order:
 #        (a) is it already usable? (pkg-config module, or header + library)
-#        (b) install its distro -dev/-devel package (as root, or via sudo);
-#            skipped entirely with --no-deps
+#        (b) install its distro -dev/-devel package, but ONLY when this script
+#            is already running as root, and only if not disabled with
+#            --no-system-packages / --no-deps
 #        (c) build the library from source into ${PREFIX}
 #      A library that cannot be provided only disables its feature: Emacs is
 #      always configured with an explicit --with-X / --without-X, never left
@@ -22,10 +23,14 @@
 #      fallback), configure, compile and install into ${PREFIX}, with RPATHs
 #      into ${PREFIX}/lib so the result does not need LD_LIBRARY_PATH.
 #
-# Nothing is installed system-wide unless the distro package manager route is
-# used for a *missing* dependency; the Emacs build itself always goes to
-# ${PREFIX}.  Run with --dry-run to see the whole plan without changing
-# anything (no package installs, no downloads, no builds).
+# PRIVILEGES: this script never invokes sudo or pkexec and never asks for a
+# password.  As a normal user it touches nothing outside ${PREFIX} and
+# ${SRC_DIR}: every dependency is either used where it already is or built from
+# source into ${PREFIX}.  Only a root invocation may use the distro package
+# manager, and --no-system-packages turns even that off.
+#
+# Run with --dry-run to see the whole plan without changing anything (no
+# package installs, no downloads, no builds).
 #
 # Usage:  bin/install-emacs [options]      (see --help)
 #
@@ -55,6 +60,7 @@ WITH_SOUND=0                 # servers are usually headless; opt in with --with-
 WITH_X="auto"                # auto | yes | no
 WITH_MAILUTILS=0
 WITH_DEBUG=0
+NO_SYSTEM_PKGS=0             # 1 = never touch the system package manager, even as root
 EXTRA_CONFIGURE_ARGS=()
 
 # Feature selection from the command line.  WANT_FEATURES non-empty means
@@ -129,6 +135,8 @@ ${C_BOLD}DEPENDENCIES${C_RESET}
                         all     : check/rebuild every dependency, prefer source
                         minimal : only hard requirements (gnutls, ncurses, libxml2, zlib)
   --no-deps             never call a package manager; use what exists or build from source
+  --no-system-packages  never touch system packages even when running as root
+                        (this script itself never uses sudo/pkexec)
   --strict              abort if a hard dependency cannot be provided
   --no-images           disable JPEG/PNG/GIF/TIFF/WebP/SVG/XPM support
   --with-sound          enable ALSA/PulseAudio sound support
@@ -164,10 +172,18 @@ ${C_BOLD}ENVIRONMENT${C_RESET}
   DISTRO_DEPS_MAP                     file overriding package names
 
 ${C_BOLD}EXAMPLES${C_RESET}
-  ${PROG}                                   # the common case
+  ${PROG}                                   # the common case (never uses sudo)
+  ${PROG} --no-system-packages              # only \${PREFIX}: not even root installs
   ${PROG} --deps minimal --no-images        # fast, terminal-only build
-  ${PROG} --no-deps --deps all              # no root at all: build deps from source
-  ${PROG} --n                               # show the plan, touch nothing
+  ${PROG} --deps all                        # prefer building every dep from source
+  ${PROG} -n                                # show the plan, touch nothing
+
+${C_BOLD}PRIVILEGES${C_RESET}
+  No sudo, no pkexec, no password prompt, ever.  As a normal user the script
+  writes only to \${PREFIX} and \${SRC_DIR} and satisfies dependencies from
+  what already exists or by building them from source.  Only a run that is
+  already root may use the distro package manager, and --no-system-packages
+  disables even that.
 EOF
 }
 
@@ -227,6 +243,37 @@ pkg_config_exists() {
   for m in "$@"; do
     pkg-config --exists "$m" 2>/dev/null || return 1
   done
+}
+
+# lib_exists LIBNAME (without the leading lib / trailing .so)
+lib_exists() {
+  local lib="$1" d
+  for d in "${PREFIX}/lib" "${PREFIX}/lib64" /usr/local/lib /usr/lib \
+           /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu \
+           /usr/lib64 /lib /lib64; do
+    if [ -e "${d}/lib${lib}.so" ] || [ -e "${d}/lib${lib}.a" ] ||
+       ls "${d}/lib${lib}.so."* >/dev/null 2>&1; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# ncurses comes in several layouts: a distro package usually has ncurses.h +
+# libncurses(w)/libtinfo, while a source build installs include/ncursesw/ and
+# libncursesw.so only.  Accept any of them (Emacs itself probes tputs in
+# tinfo/ncurses/terminfo/curses/termcap/tinfow/ncursesw).
+curses_available() {
+  pkg_config_exists ncursesw && return 0
+  pkg_config_exists ncurses && return 0
+  local h lib
+  for h in ncurses.h ncursesw/ncurses.h ncurses/ncurses.h curses.h; do
+    header_exists "$h" || continue
+    for lib in ncursesw ncurses tinfo tinfow terminfo curses termcap; do
+      lib_exists "$lib" && return 0
+    done
+  done
+  return 1
 }
 
 # header_lib_exists HEADER LIB...
@@ -352,6 +399,7 @@ feature_present() {  # KIND REST
     # Quoted: a spec may carry a version constraint ("tree-sitter >= 0.20.2").
     pkgconfig) pkg_config_exists "$2" ;;
     headers)   header_lib_exists $2 ;;
+    curses)    curses_available ;;
     *)         return 1 ;;
   esac
 }
@@ -379,7 +427,7 @@ check_spec_present() {  # KIND REST
 feature_check_spec() {
   case "$1" in
     gnutls)      say "headers gnutls/gnutls.h gnutls" ;;
-    ncurses)     say "headers ncurses.h ncurses" ;;
+    ncurses)     say "curses -" ;;
     xml2)        say "pkgconfig libxml-2.0" ;;   # libxml-2.0.pc is not always installed; see fallback below
     zlib)        say "headers zlib.h z" ;;
     gmp)         say "headers gmp.h gmp" ;;
@@ -519,20 +567,27 @@ feature_off_flag() {
   esac
 }
 
-# name|url|configure args -- only recipes that genuinely build with nothing but
-# a C compiler and make (no cmake, no nasm, no extra libraries).  Everything
+# name|url|env|configure args -- only recipes that genuinely build with nothing
+# but a C compiler and make (no cmake, no nasm, no extra libraries); everything
 # else is left to the distro package manager and simply disabled if absent.
+# The env field is a space-separated list of NAME=VALUE (no spaces in values).
 feature_source_recipe() {
   case "$1" in
-    ncurses)     say "ncurses|https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz|--with-shared --without-normal --without-debug --without-ada --without-manpages --without-tests --enable-pc-files --with-pkg-config-libdir=${PREFIX}/lib/pkgconfig" ;;
-    xml2)        say "libxml2|https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.5.tar.xz|--without-python --without-lzma" ;;
-    zlib)        say "zlib|https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz|" ;;
-    gmp)         say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|--disable-static" ;;
-    lcms2)       say "lcms2|https://github.com/mm2/Little-CMS/releases/download/lcms2.16/lcms2-2.16.tar.gz|" ;;
-    png)         say "libpng|https://download.sourceforge.net/libpng/libpng-1.6.45.tar.xz|" ;;
-    gif)         say "giflib|https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.2.2.tar.gz|" ;;
-    tiff)        say "libtiff|https://download.osgeo.org/libtiff/tiff-4.7.0.tar.xz|--disable-tools --disable-tests --disable-docs" ;;
-    webp)        say "libwebp|https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0.tar.gz|" ;;
+    # --without-cxx: ncurses' C++ binding does not compile with GCC 15.
+    ncurses)     say "ncurses|https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz||--with-shared --without-normal --without-debug --without-cxx --without-cxx-binding --without-ada --without-manpages --without-tests --enable-pc-files --with-pkg-config-libdir=${PREFIX}/lib/pkgconfig" ;;
+    xml2)        say "libxml2|https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.5.tar.xz||--without-python --without-lzma" ;;
+    # zlib's hand-written configure aborts on unknown options: no extra args.
+    zlib)        say "zlib|https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz||" ;;
+    # GMP's configure probe uses K&R-style "void g()" then calls g(...) with
+    # arguments, which is a hard error under C23 (the GCC 15 default).  Its
+    # configure also insists on m4 (see the m4 package in `base'); without m4
+    # this build fails and bignum support is simply left out.
+    gmp)         say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|CFLAGS=-std=gnu17|--disable-static" ;;
+    lcms2)       say "lcms2|https://github.com/mm2/Little-CMS/releases/download/lcms2.16/lcms2-2.16.tar.gz||" ;;
+    png)         say "libpng|https://download.sourceforge.net/libpng/libpng-1.6.45.tar.xz||" ;;
+    gif)         say "giflib|https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.2.2.tar.gz||" ;;
+    tiff)        say "libtiff|https://download.osgeo.org/libtiff/tiff-4.7.0.tar.xz||--disable-tools --disable-tests --disable-docs" ;;
+    webp)        say "libwebp|https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0.tar.gz||" ;;
     *) return 1 ;;
   esac
 }
@@ -541,7 +596,7 @@ feature_source_recipe() {
 # `apk search -x` on Alpine 3.24.
 apk_pkg_names() {
   case "$1" in
-    base)        say "build-base bash xz tar ca-certificates coreutils linux-headers" ;;
+    base)        say "build-base bash xz tar ca-certificates coreutils linux-headers m4" ;;
     kernel-headers) say "linux-headers" ;;
     downloader)  say "ca-certificates curl" ;;
     git)         say "git" ;;
@@ -593,7 +648,7 @@ family_pkg_names() {  # FEATURE
 # -dev packages, so keep a small map for the common cases.
 arch_pkg_names() {
   case "$1" in
-    base)        say "base-devel" ;;
+    base)        say "base-devel m4" ;;
     kernel-headers) say "linux-api-headers" ;;
     texinfo)     say "texinfo" ;;
     pkgconfig)   say "pkgconf" ;;
@@ -631,7 +686,7 @@ arch_pkg_names() {
 
 pkg_names_for() {  # FEATURE -> "deb rpm" generic names
   case "$1" in
-    base)        say "build-essential|gcc gcc-c++ make" ;;
+    base)        say "build-essential m4|gcc gcc-c++ make m4" ;;
     kernel-headers) say "linux-libc-dev|kernel-headers" ;;
     downloader)  say "ca-certificates|ca-certificates" ;;
     git)         say "git|git" ;;
@@ -696,25 +751,30 @@ detect_os() {
 
 have_root() { [ "$(id -u)" = 0 ]; }
 
-SUDO=""
-detect_sudo() {
-  SUDO=""
-  have_root && return 0
-  have sudo || return 1
-  if sudo -n true 2>/dev/null; then SUDO="sudo -n"; return 0; fi
-  if [ "$DRY_RUN" = 1 ]; then SUDO="sudo"; return 0; fi
-  if [ -t 0 ] && confirm "sudo will ask for your password; continue?"; then
-    SUDO="sudo"; return 0
-  fi
-  SUDO=""
-  return 1
+# This script never invokes sudo or pkexec.  The system package manager is used
+# only when the script is *already* running as root (containers, a machine you
+# own) and the user did not opt out; otherwise every dependency is either used
+# from where it already is or built into ${PREFIX}.
+can_manage_packages() {
+  [ "$NO_DEPS" = 1 ] && return 1
+  [ "$NO_SYSTEM_PKGS" = 1 ] && return 1
+  have_root || return 1
+  [ "$PKG_FAMILY" != unknown ] || return 1
+  return 0
 }
 
-as_root() {
-  if have_root; then run "$@"; return $?; fi
-  if [ -n "$SUDO" ]; then run $SUDO "$@"; return $?; fi
-  if have pkexec && [ "$DRY_RUN" = 0 ] && [ -t 0 ]; then run pkexec "$@"; return $?; fi
-  return 127
+# Explain why the package manager is not being used (once per run).
+NO_PKG_EXPLAINED=0
+explain_no_packages() {
+  [ "$NO_PKG_EXPLAINED" = 1 ] && return 0
+  NO_PKG_EXPLAINED=1
+  if [ "$NO_DEPS" = 1 ]; then
+    log "--no-deps: the package manager will not be touched"
+  elif [ "$NO_SYSTEM_PKGS" = 1 ]; then
+    log "--no-system-packages: the package manager will not be touched"
+  elif ! have_root; then
+    log "not root (sudo is never used): each dependency is used as-is or built into ${PREFIX}"
+  fi
 }
 
 DISTRO_DEPS_MAP="${DISTRO_DEPS_MAP:-}"
@@ -745,15 +805,15 @@ install_pkgs() {  # install_pkgs FEATURE...
     fi
     # shellcheck disable=SC2086
     case "$PKG_FAMILY" in
-      deb)     as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $names && used=1 || warn "could not install: ${names}" ;;
-      rpm)     if have dnf; then as_root dnf install -y $names && used=1 || warn "could not install: ${names}"
-               elif have yum; then as_root yum install -y $names && used=1 || warn "could not install: ${names}"
+      deb)     run env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $names && used=1 || warn "could not install: ${names}" ;;
+      rpm)     if have dnf; then run dnf install -y $names && used=1 || warn "could not install: ${names}"
+               elif have yum; then run yum install -y $names && used=1 || warn "could not install: ${names}"
                else warn "neither dnf nor yum available"; fi ;;
-      pacman)  as_root pacman -S --needed --noconfirm $names && used=1 || warn "could not install: ${names}" ;;
-      zypper)  as_root zypper --non-interactive install $names && used=1 || warn "could not install: ${names}" ;;
-      apk)     as_root apk add --no-cache $names && used=1 || warn "could not install: ${names}" ;;
-      xbps)    as_root xbps-install -Sy $names && used=1 || warn "could not install: ${names}" ;;
-      nix)     as_root nix-env -iA "nixpkgs.${feature}" && used=1 || warn "could not install: ${feature}" ;;
+      pacman)  run pacman -S --needed --noconfirm $names && used=1 || warn "could not install: ${names}" ;;
+      zypper)  run zypper --non-interactive install $names && used=1 || warn "could not install: ${names}" ;;
+      apk)     run apk add --no-cache $names && used=1 || warn "could not install: ${names}" ;;
+      xbps)    run xbps-install -Sy $names && used=1 || warn "could not install: ${names}" ;;
+      nix)     run nix-env -iA "nixpkgs.${feature}" && used=1 || warn "could not install: ${feature}" ;;
       portage) warn "Gentoo: install by hand -> ${names}" ;;
       *)       warn "unknown package manager: install by hand -> ${names}" ;;
     esac
@@ -767,26 +827,46 @@ apt_update_once() {
   [ "$APT_UPDATED" = 1 ] && return 0
   APT_UPDATED=1
   log "refreshing apt package lists"
-  as_root env DEBIAN_FRONTEND=noninteractive apt-get update -qq || \
+  run env DEBIAN_FRONTEND=noninteractive apt-get update -qq || \
     warn "apt-get update failed; continuing with cached lists"
 }
 
 try_system_packages() {  # FEATURE
-  [ "$NO_DEPS" = 1 ] && { log "--no-deps: not touching the package manager for '$1'"; return 1; }
-  [ "$PKG_FAMILY" = unknown ] && return 1
-  if ! family_pkg_names "$1" >/dev/null 2>&1; then
-    pkg_names_for "$1" >/dev/null 2>&1 || return 1
+  local f="$1"
+  can_manage_packages || { explain_no_packages; return 1; }
+  if ! family_pkg_names "$f" >/dev/null 2>&1; then
+    pkg_names_for "$f" >/dev/null 2>&1 || return 1
   fi
   apt_update_once
-  log "installing '${1}' via ${PKG_FAMILY}"
-  install_pkgs "$1"
+  log "installing '${f}' via ${PKG_FAMILY} (already root, no sudo needed)"
+  install_pkgs "$f"
 }
 
 # ---------------------------------------------------------------------------
 # Source builds for dependencies
 # ---------------------------------------------------------------------------
-build_dep() {  # build_dep NAME URL [CONFIGURE_ARGS...]
-  local name="$1" url="$2"; shift 2
+# Make ${PREFIX} visible to pkg-config and to every compiler/linker invocation.
+# Idempotent: calling it twice must not duplicate -I/-L/-rpath flags.
+setup_prefix_env() {
+  case ":${PKG_CONFIG_PATH:-}:" in
+    *":${PREFIX}/lib/pkgconfig:"*) : ;;
+    *) export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PREFIX}/lib64/pkgconfig:${PREFIX}/share/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}" ;;
+  esac
+  case "${CPPFLAGS:-} " in
+    *"-I${PREFIX}/include "*) : ;;
+    *) export CPPFLAGS="-I${PREFIX}/include${CPPFLAGS:+ ${CPPFLAGS}}" ;;
+  esac
+  # -rpath matters twice over: libraries built here must be found by the Emacs
+  # we link later, and by the installed Emacs at run time (patchelf is optional).
+  case "${LDFLAGS:-} " in
+    *"-Wl,-rpath,${PREFIX}/lib "*) : ;;
+    *) export LDFLAGS="-L${PREFIX}/lib -L${PREFIX}/lib64 -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib64${LDFLAGS:+ ${LDFLAGS}}" ;;
+  esac
+  return 0
+}
+
+build_dep() {  # build_dep NAME URL ENV [CONFIGURE_ARGS...]
+  local name="$1" url="$2" dep_env="${3:-}"; shift 3
   local -a cfg=("$@")
   local depdir="${SRC_DIR}/deps"
   local dir="${depdir}/${name}"
@@ -816,16 +896,21 @@ build_dep() {  # build_dep NAME URL [CONFIGURE_ARGS...]
   src="${sub:-${dir}.tmp}"
   mv "$src" "$dir"; rm -rf "${dir}.tmp"
 
-  export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PREFIX}/lib64/pkgconfig:${PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-  export CPPFLAGS="-I${PREFIX}/include ${CPPFLAGS:-}"
-  export LDFLAGS="-L${PREFIX}/lib -L${PREFIX}/lib64 -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib64 ${LDFLAGS:-}"
+  setup_prefix_env
 
   (
     cd "$dir" || exit 1
     if [ -x ./autogen.sh ] && [ ! -x ./configure ]; then NOCONFIGURE=1 ./autogen.sh >/dev/null 2>&1 || true; fi
+    # Per-recipe environment (NAME=VALUE, no spaces in values).
+    if [ -n "$dep_env" ]; then
+      # shellcheck disable=SC2086
+      export $dep_env
+    fi
     makefile_only=0
     if [ -x ./configure ]; then
-      ./configure --prefix="$PREFIX" --disable-static "${cfg[@]+"${cfg[@]}"}" || exit 1
+      # Note: no --disable-static here -- zlib's hand-written configure aborts
+      # on unknown options.  Recipes that want it pass it explicitly.
+      ./configure --prefix="$PREFIX" "${cfg[@]+"${cfg[@]}"}" || exit 1
     elif [ -f Makefile ] || [ -f makefile ]; then
       makefile_only=1      # some libraries ship only a Makefile
     else
@@ -849,10 +934,14 @@ build_dep() {  # build_dep NAME URL [CONFIGURE_ARGS...]
 # ---------------------------------------------------------------------------
 resolve_dependencies() {
   step "Resolving build dependencies"
-  local f spec want kind rest name url cargs rc total="${#FEATURE_ORDER[@]}" i=0
+  local f spec want kind rest name url renv cargs rc total="${#FEATURE_ORDER[@]}" i=0
   local -a missing_hard=() provided=() from_source=() unavailable=() x_skipped=()
 
   check_toolchain
+
+  # Make libraries already sitting in ${PREFIX} (from an earlier run) visible to
+  # pkg-config before anything is checked.
+  setup_prefix_env
 
   for f in "${FEATURE_ORDER[@]}"; do
     i=$((i + 1))
@@ -904,10 +993,10 @@ resolve_dependencies() {
 
     # (c) build from source
     if recipe="$(feature_source_recipe "$f" 2>/dev/null)"; then
-      IFS='|' read -r name url cargs <<<"$recipe"
+      IFS='|' read -r name url renv cargs <<<"$recipe"
       rc=0
       # shellcheck disable=SC2086
-      build_dep "$name" "$url" $cargs || rc=$?
+      build_dep "$name" "$url" "$renv" $cargs || rc=$?
       if [ "$rc" = 0 ] && { [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; }; then
         from_source+=("$f")
         provided+=("$f")
@@ -952,11 +1041,11 @@ resolve_dependencies() {
 check_toolchain() {
   local missing=()
   if ! have cc && ! have gcc && ! have clang; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages base || true; fi
+    try_system_packages base || true
     { have cc || have gcc || have clang; } || missing+=("a C compiler (gcc or clang)")
   fi
   if ! have make; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages base || true; fi
+    try_system_packages base || true
     have make || missing+=("'make'")
   fi
   have tar || missing+=("'tar'")
@@ -965,15 +1054,15 @@ check_toolchain() {
   # build-base, for one) do not ship them with the compiler, and the failure
   # only shows up deep inside `make'.
   if [ "$(uname -s)" = Linux ] && ! header_exists linux/version.h; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages kernel-headers || true; fi
+    try_system_packages kernel-headers || true
     header_exists linux/version.h || missing+=("Linux kernel headers (linux/version.h)")
   fi
   if ! have curl && ! have wget; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages downloader || true; fi
+    try_system_packages downloader || true
     { have curl || have wget; } || missing+=("curl or wget")
   fi
   if ! have pkg-config; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages pkgconfig || true; fi
+    try_system_packages pkgconfig || true
     # pkgconf (Alpine, Arch) ships a pkg-config symlink, so re-check: warning
     # about a package that was just installed successfully is just noise.
     if ! have pkg-config; then
@@ -981,12 +1070,17 @@ check_toolchain() {
     fi
   fi
   if ! have makeinfo; then
-    if [ "$NO_DEPS" = 0 ]; then try_system_packages texinfo || true; fi
+    try_system_packages texinfo || true
     have makeinfo || log "makeinfo not found: Emacs will build without Info manuals (fine)"
   fi
   if [ "${#missing[@]}" -gt 0 ]; then
     err "cannot build without: ${missing[*]}"
-    err "Ask the administrator to provide them; the script cannot install a compiler by itself."
+    err "This script never uses sudo, so it cannot install them itself."
+    err "Ways forward without root:"
+    err "  * ask an administrator for the -dev/-devel packages,"
+    err "  * load a toolchain module (HPC: 'module load gcc'), or use conda/nix/spack,"
+    err "  * make a compiler available on PATH and re-run, or"
+    err "  * re-run as root (then the distro package manager is used directly)."
     exit 1
   fi
   log "toolchain: $({ command -v cc || command -v gcc || command -v clang; } | head -n1), $(make --version | head -n1)"
@@ -1128,13 +1222,9 @@ configure_emacs() {
   esac
   [ "$NATIVE_COMP" = no ] && flags+=(--without-native-compilation)
 
-  export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PREFIX}/lib64/pkgconfig:${PREFIX}/share/pkgconfig:${PKG_CONFIG_PATH:-}"
-  export CPPFLAGS="-I${PREFIX}/include ${CPPFLAGS:-}"
-  # No --enable-link-time-optimization: fragile across compilers.  RPATH keeps
-  # the installed binary independent of LD_LIBRARY_PATH.
-  # RPATH matters: libraries this script builds into ${PREFIX} must be found by
-  # the installed Emacs at run time (patchelf is optional, not required).
-  export LDFLAGS="-L${PREFIX}/lib -L${PREFIX}/lib64 -Wl,-rpath,${PREFIX}/lib -Wl,-rpath,${PREFIX}/lib64 ${LDFLAGS:-}"
+  # Point pkg-config and the linker at everything built into ${PREFIX}; the
+  # helper is idempotent, so re-running configure does not pile up flags.
+  setup_prefix_env
 
   # Drop duplicates while keeping the last occurrence's meaning: a feature that
   # maps to the same flag twice (sound/alsa) must not confuse ./configure.
@@ -1262,6 +1352,7 @@ parse_args() {
       --deps)      DEPS_MODE="$2"; shift 2 ;;
       --deps=*)    DEPS_MODE="${arg#*=}"; shift ;;
       --no-deps)   NO_DEPS=1; shift ;;
+      --no-system-packages|--user-local-only) NO_SYSTEM_PKGS=1; shift ;;
       --strict)    STRICT=1; shift ;;
       --no-images) WITH_IMAGES=0; shift ;;
       --with-images) WITH_IMAGES=1; shift ;;
@@ -1324,9 +1415,17 @@ parse_args() {
 main() {
   parse_args "$@"
   detect_os
-  detect_sudo || warn "no root and no usable sudo: dependencies will only be built from source"
 
-  if [ "$DEPS_MODE" = all ] && [ "$NO_DEPS" = 0 ]; then
+  # Privileges: state plainly what this run is allowed to do.
+  if [ "$NO_SYSTEM_PKGS" = 1 ]; then
+    log "user-local mode: the system package manager will not be touched"
+  elif have_root; then
+    log "running as root: missing dependencies may be installed with ${PKG_FAMILY}"
+  else
+    log "not root: sudo is never used, so dependencies come from what exists or from source builds in ${PREFIX}"
+  fi
+
+  if [ "$DEPS_MODE" = all ] && [ "$NO_DEPS" = 0 ] && can_manage_packages; then
     log "DEPS_MODE=all keeps the package manager enabled but prefers source builds"
   fi
 
