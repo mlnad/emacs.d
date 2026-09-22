@@ -171,16 +171,14 @@ Load the required packages for `init.el`.
 #+end_src
 
 ** Enviroment
-Generate enviroment file when not exists. And load enviroment file.
+The environment is kept in an ordinary Emacs Lisp file,
+=~/.emacs.d/.cache/env.el=, created once by =moyue install= from the login
+shell and editable by hand afterwards. Load it on every startup so that
+Emacs launched from a desktop launcher inherits the shell environment
+(=PATH=, =GOPATH=, =NVM_DIR=, …).
 #+begin_src emacs-lisp :tangle yes
-(let ((env-file (moyu/cache-it "env")))
-  (unless (file-exists-p env-file)
-    (generate-env-file env-file))
-
-  (when (and (or initial-window-system
-                 (daemonp))
-             env-file)
-    (load-env-file env-file 'noerror)))
+;; `moyu/env-load' applies `.cache/env.el' (if present) to this session.
+(moyu/env-load 'noerror)
 #+end_src
 
 * Editor

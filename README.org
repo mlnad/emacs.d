@@ -115,5 +115,20 @@ MOYUE_ITEST_RUN_ARGS="--network=host" \
 It will automatically create a =~/.emacs.d/.cache/userconfig= file to override
 the default settings.
 
+* Environment variables
+Emacs started from a desktop launcher or a systemd unit does not inherit the
+login-shell environment. =moyue install= therefore captures it once into
+=~/.emacs.d/.cache/env.el=, an ordinary Emacs Lisp file:
+
+#+begin_src emacs-lisp
+(setenv "PATH" "/usr/local/bin:/usr/bin:/bin")
+(setenv "GOPATH" "/home/user/go")
+#+end_src
+
+The file is loaded on every Emacs startup. It is only generated when missing,
+so manual edits are kept across later =moyue install= runs. Use
+=moyue install --force-env= or =M-x moyu/reload-env= to regenerate it from the
+shell, and =M-x moyu/env-visit-file= to open it for editing.
+
 * More
 See [[file:init.org][init]] for more information.

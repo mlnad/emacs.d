@@ -252,6 +252,25 @@ report every package as missing."
     (when (file-exists-p init-el)
       (moyue--configure-package-archives-from-init init-el))))
 
+(declare-function moyu/env-file "env-ext")
+(declare-function moyu/env-generate-file "env-ext")
+
+(defun moyue--ensure-env-file (config-root &optional force)
+  "Prepare CONFIG-ROOT/.cache/env.el from the login shell environment.
+The file is written only when it does not exist yet, so hand edits made
+after the first install survive later installs.  With FORCE non-nil it is
+regenerated unconditionally.  Return a cons (FILE . CREATED)."
+  (let* ((user-emacs-directory (file-name-as-directory
+                                (expand-file-name config-root)))
+         (lisp-dir (expand-file-name "lisp" user-emacs-directory)))
+    (add-to-list 'load-path lisp-dir)
+    (require 'env-ext)
+    (let* ((file (moyu/env-file))
+           (created (if (or force (not (file-exists-p file)))
+                        (progn (moyu/env-generate-file file) t)
+                      nil)))
+      (cons file created))))
+
 (defun moyue--install-package-list (packages)
   "Install PACKAGES with package.el and return a result plist."
   (unless (bound-and-true-p package--initialized)
@@ -317,12 +336,15 @@ report every package as missing."
           :skipped skipped
           :failed (nreverse failed))))
 
-(moyue-defcommand "install" ""
-                  "Tangle init.org, collect ensured packages, then install from manifest."
+(moyue-defcommand "install" "[--force-env]"
+                  "Tangle init.org, prepare the environment file, then install from manifest.
+The environment file `.cache/env.el' is created from the login shell on
+the first run only; use --force-env to regenerate it from the shell."
                   (require 'org)
                   (let* ((config-root (moyue--config-root))
                          (user-emacs-directory config-root)
                          (default-directory config-root)
+                         (force-env (and (member "--force-env" args) t))
                          (init-tangle-src (expand-file-name "init.org" config-root))
                          (init-tangle-dst (expand-file-name "init.el" config-root))
                          (early-init-tangle-dst (expand-file-name "early-init.el" config-root))
@@ -331,15 +353,20 @@ report every package as missing."
                          (package-list nil))
                     (if (file-exists-p init-tangle-src)
                         (progn
-                          (message "Step 1/3  Tangling %s ..." init-tangle-src)
+                          (message "Step 1/4  Tangling %s ..." init-tangle-src)
                           (org-babel-tangle-file init-tangle-src)
                           (message "Tangle done."))
                       (message "moyue install: init.org not found: %s" init-tangle-src)
                       (kill-emacs 1))
+                    (let ((env-result (moyue--ensure-env-file config-root force-env)))
+                      (if (cdr env-result)
+                          (message "Step 2/4  Environment file written: %s" (car env-result))
+                        (message "Step 2/4  Environment file kept: %s (edit it by hand)"
+                                 (car env-result))))
                     (if (file-exists-p init-tangle-dst)
                         (progn
                           (when (file-exists-p early-init-tangle-dst)
-                            (message "Step 2/3  Loading %s ..." early-init-tangle-dst)
+                            (message "Step 3/4  Loading %s ..." early-init-tangle-dst)
                             (load-file early-init-tangle-dst))
                           (moyue--configure-package-archives-from-init init-tangle-dst)
                           (setq package-list (moyue--collect-install-packages init-tangle-dst))
@@ -350,7 +377,7 @@ report every package as missing."
                            installed-packages-manifest-file package-list)
                           (message "Collected %d packages -> %s"
                                    (length package-list) installed-packages-manifest-file)
-                          (message "Step 3/3  Installing packages with package.el ...")
+                          (message "Step 4/4  Installing packages with package.el ...")
                           (let* ((result (moyue--install-package-list package-list))
                                  (failed (plist-get result :failed)))
                             (if failed

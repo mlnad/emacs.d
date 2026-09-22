@@ -58,6 +58,24 @@ The test is registered under the `config/' namespace for easy filtering:
   (should (file-directory-p
            (expand-file-name "elpa" user-emacs-directory))))
 
+(config-defcheck env-file-exists
+  "The environment file .cache/env.el must exist (created by `moyue install')."
+  (should (file-exists-p
+           (expand-file-name ".cache/env.el" user-emacs-directory))))
+
+(config-defcheck env-file-is-elisp
+  "The environment file must contain readable Emacs Lisp."
+  (let ((file (expand-file-name ".cache/env.el" user-emacs-directory)))
+    (should (file-readable-p file))
+    (with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (let ((done nil))
+        (while (not done)
+          (condition-case nil
+              (read (current-buffer))
+            (end-of-file (setq done t))))))))
+
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Package installation checks
 ;;;; ──────────────────────────────────────────────────────────────────────────

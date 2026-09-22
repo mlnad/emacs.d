@@ -222,6 +222,42 @@
     (should (file-exists-p (expand-file-name "bin/moyue.el" root)))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Tests: environment file bootstrap (moyue--ensure-env-file)
+;;;; ──────────────────────────────────────────────────────────────────────────
+
+(ert-deftest moyue-test/ensure-env-file-creates-then-keeps ()
+  "The env file is created once and later runs keep manual edits."
+  (skip-unless (and (fboundp 'moyue--ensure-env-file)
+                    (fboundp 'moyu/env-generate-file)))
+  (let* ((root (file-name-as-directory (make-temp-file "moyue-env-" t)))
+         (env-file (expand-file-name ".cache/env.el" root))
+         (saved-load-path load-path))
+    (unwind-protect
+        (cl-letf (((symbol-function 'moyu/env--shell-environ)
+                   (lambda () '("MOYUE_ENV_TEST=first" "PATH=/usr/bin"))))
+          ;; First run: the file is created from the captured environment.
+          (let ((r (moyue--ensure-env-file root nil)))
+            (should (equal env-file (car r)))
+            (should (cdr r))
+            (should (file-exists-p env-file)))
+          ;; A hand edit survives the next run.
+          (with-temp-file env-file
+            (insert ";; edited by hand\n(setenv \"MOYUE_ENV_TEST\" \"edited\")\n"))
+          (let ((r (moyue--ensure-env-file root nil)))
+            (should-not (cdr r))
+            (with-temp-buffer
+              (insert-file-contents env-file)
+              (should (string-match-p "edited" (buffer-string)))))
+          ;; --force-env regenerates it from the shell.
+          (let ((r (moyue--ensure-env-file root 'force)))
+            (should (cdr r))
+            (with-temp-buffer
+              (insert-file-contents env-file)
+              (should (string-match-p "\"PATH\"" (buffer-string))))))
+      (setq load-path saved-load-path)
+      (ignore-errors (delete-directory root t)))))
+
+;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Tests: itest distribution handling
 ;;;; ──────────────────────────────────────────────────────────────────────────
 
