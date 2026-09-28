@@ -74,6 +74,10 @@ declare -a SKIP_FEATURES=()
 readonly PROG="${0##*/}"
 readonly MIN_GLIB="2.38"     # Emacs >= 31 refuses older GLib
 readonly TS_MIN_VERSION="0.20.2"   # what Emacs 31 wants from libtree-sitter
+# From-source stack for TLS.  GnuTLS ships bundled libtasn1/libunistring copies,
+# so only nettle (and its gmp) has to be built underneath it.
+readonly NETTLE_VERSION="3.10.2"
+readonly GNUTLS_VERSION="3.8.13"
 
 # Features that are only attempted when the user asks for them explicitly
 # (they pull in big or unusual dependencies, or are irrelevant on a server).
@@ -132,8 +136,13 @@ ${C_BOLD}DEPENDENCIES${C_RESET}
   --deps {auto,all,minimal}
                         auto    : use what exists, install what is easy,
                                   build the rest from source
-                        all     : check/rebuild every dependency, prefer source
+                        all     : prefer building every dependency from source,
+                                  falling back to the package manager if a
+                                  build fails
                         minimal : only hard requirements (gnutls, ncurses, libxml2, zlib)
+  (gnutls has a from-source recipe: gmp -> nettle -> gnutls, with the libtasn1
+   and libunistring copies bundled in the GnuTLS tarball.  Add
+   --no-system-packages to force that path even when running as root.)
   --no-deps             never call a package manager; use what exists or build from source
   --no-system-packages  never touch system packages even when running as root
                         (this script itself never uses sudo/pkexec)
@@ -571,6 +580,8 @@ feature_off_flag() {
 # but a C compiler and make (no cmake, no nasm, no extra libraries); everything
 # else is left to the distro package manager and simply disabled if absent.
 # The env field is a space-separated list of NAME=VALUE (no spaces in values).
+# A case may `say' several lines: they are built in order, which is how the
+# gnutls entry bootstraps its own prerequisites.
 feature_source_recipe() {
   case "$1" in
     # --without-cxx: ncurses' C++ binding does not compile with GCC 15.
@@ -583,6 +594,15 @@ feature_source_recipe() {
     # configure also insists on m4 (see the m4 package in `base'); without m4
     # this build fails and bignum support is simply left out.
     gmp)         say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|CFLAGS=-std=gnu17|--disable-static" ;;
+    # TLS stack, in dependency order.  GnuTLS 3.8 bundles libtasn1 and
+    # libunistring (lib/minitasn1, lib/unistring) and can drop p11-kit, IDN,
+    # DANE, NLS, docs, tools and tests, so no other library is needed:
+    #   gmp (needed by nettle) -> nettle -> gnutls
+    gnutls)
+      say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|CFLAGS=-std=gnu17|--disable-static"
+      say "nettle|https://ftp.gnu.org/gnu/nettle/nettle-${NETTLE_VERSION}.tar.gz||--disable-documentation --disable-openssl"
+      say "gnutls|https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-${GNUTLS_VERSION}.tar.xz||--disable-doc --disable-tools --disable-tests --disable-nls --disable-libdane --disable-tls13-interop --without-idn --without-p11-kit --with-included-libtasn1 --with-included-unistring"
+      ;;
     lcms2)       say "lcms2|https://github.com/mm2/Little-CMS/releases/download/lcms2.16/lcms2-2.16.tar.gz||" ;;
     png)         say "libpng|https://download.sourceforge.net/libpng/libpng-1.6.45.tar.xz||" ;;
     gif)         say "giflib|https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.2.2.tar.gz||" ;;
@@ -598,6 +618,7 @@ apk_pkg_names() {
   case "$1" in
     base)        say "build-base bash xz tar ca-certificates coreutils linux-headers m4" ;;
     kernel-headers) say "linux-headers" ;;
+    m4)          say "m4" ;;
     downloader)  say "ca-certificates curl" ;;
     git)         say "git" ;;
     pkgconfig)   say "pkgconf" ;;
@@ -650,6 +671,7 @@ arch_pkg_names() {
   case "$1" in
     base)        say "base-devel m4" ;;
     kernel-headers) say "linux-api-headers" ;;
+    m4)          say "m4" ;;
     texinfo)     say "texinfo" ;;
     pkgconfig)   say "pkgconf" ;;
     gnutls)      say "gnutls" ;;
@@ -688,6 +710,7 @@ pkg_names_for() {  # FEATURE -> "deb rpm" generic names
   case "$1" in
     base)        say "build-essential m4|gcc gcc-c++ make m4" ;;
     kernel-headers) say "linux-libc-dev|kernel-headers" ;;
+    m4)          say "m4|m4" ;;
     downloader)  say "ca-certificates|ca-certificates" ;;
     git)         say "git|git" ;;
     pkgconfig)   say "pkg-config|pkgconf pkgconfig" ;;
@@ -983,22 +1006,35 @@ resolve_dependencies() {
       continue
     fi
 
-    # (b) distro package
-    if try_system_packages "$f"; then
+    # (b) distro package.  With --deps all ("prefer source") this is skipped in
+    # favour of building, but kept as a fallback below in case the build fails.
+    if [ "$DEPS_MODE" != all ] && try_system_packages "$f"; then
       if [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; then
         provided+=("$f")
         continue
       fi
     fi
 
-    # (c) build from source
-    if recipe="$(feature_source_recipe "$f" 2>/dev/null)"; then
-      IFS='|' read -r name url renv cargs <<<"$recipe"
+    # (c) build from source.  A recipe may have several steps (gnutls pulls in
+    # gmp and nettle first); they are built in the order given.
+    if recipe="$(feature_source_recipe "$f" 2>/dev/null)" && [ -n "$recipe" ]; then
       rc=0
-      # shellcheck disable=SC2086
-      build_dep "$name" "$url" "$renv" $cargs || rc=$?
+      while IFS='|' read -r name url renv cargs; do
+        [ -n "$name" ] || continue
+        # shellcheck disable=SC2086
+        build_dep "$name" "$url" "$renv" $cargs || { rc=$?; break; }
+      done <<<"$recipe"
       if [ "$rc" = 0 ] && { [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; }; then
         from_source+=("$f")
+        provided+=("$f")
+        continue
+      fi
+    fi
+
+    # (d) --deps all skipped the package manager above; fall back to it now
+    # rather than losing a feature we could not build.
+    if [ "$DEPS_MODE" = all ] && try_system_packages "$f"; then
+      if [ "$DRY_RUN" = 1 ] || check_spec_present "$kind" "$rest"; then
         provided+=("$f")
         continue
       fi
@@ -1068,6 +1104,10 @@ check_toolchain() {
     if ! have pkg-config; then
       warn "pkg-config is missing: optional features that need it (harfbuzz, gtk, rsvg, ...) will be skipped"
     fi
+  fi
+  if ! have m4; then
+    try_system_packages m4 || true
+    have m4 || warn "m4 not found: gmp/nettle cannot be built from source, so a missing gnutls cannot be self-compiled"
   fi
   if ! have makeinfo; then
     try_system_packages texinfo || true
