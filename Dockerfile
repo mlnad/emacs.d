@@ -7,7 +7,7 @@
 #   docker build -t moyue-base:ubuntu    --build-arg BASE_IMAGE=ubuntu:latest    .
 #   docker build -t moyue-base:alpine    --build-arg BASE_IMAGE=alpine:latest    .
 #
-# The image only contains the tools `moyue install' / `moyue test' need,
+# The image only contains the tools `moyue install' / `moyue doctor' need,
 # so the configuration itself is never baked in: it is mounted at run time.
 ARG BASE_IMAGE=archlinux:latest
 

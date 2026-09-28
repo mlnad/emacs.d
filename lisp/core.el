@@ -1,4 +1,4 @@
-;;; core.el -- my functions & macros
+;;; core.el -- my functions & macros -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

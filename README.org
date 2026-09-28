@@ -61,6 +61,19 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 
 3. Start Emacs - packages will be automatically installed
 
+* Health check
+=moyue doctor= verifies that the configuration files are complete and correct:
+=init.org= / =init.el= are present, =elpa/= is populated, =.cache/env.el= is
+readable Lisp, and the declared fonts are well formed. It runs the checks built
+into [[file:bin/moyue.el][bin/moyue.el]] and exits non-zero if any of them fail:
+#+begin_src shell
+bin/moyue doctor                       # every check
+bin/moyue doctor config/emacs-version  # a single check
+#+end_src
+
+The unit tests for the =lisp/= helpers are a separate concern and run with
+=moyue test=.
+
 * Docker
 The [[file:Dockerfile][Dockerfile]] builds a lean base image (Emacs + git + a C toolchain)
 for three distributions; the configuration itself is never baked in, it is
@@ -75,11 +88,24 @@ mounted at run time.
 Arch Linux is the default everywhere.
 
 ** dockemacs
-Run Emacs interactively inside a container:
+=Dockerfile= is driven by =bin/dockemacs=: build an image, run Emacs
+interactively, or run the integration test suite inside it.
 #+begin_src shell
-bin/dockemacs build [DISTRO]   # build moyu_emacs:DISTRO
-bin/dockemacs run   [DISTRO]   # run terminal Emacs in that image
-bin/dockemacs distros          # list the supported distributions
+bin/dockemacs build [DISTRO]                   # build moyue-base:DISTRO
+bin/dockemacs run   [DISTRO]                   # run terminal Emacs in that image
+bin/dockemacs itest [DISTRO|all] [--rebuild]   # install + test inside the image
+bin/dockemacs distros                          # list the supported distributions
+#+end_src
+
+=itest= builds =moyue-base:DISTRO= on first use, then mounts the checkout
+read-only at =/mnt/emacs.d=, copies it into a writable tmpfs at
+=/root/.emacs.d= and runs =moyue install= + =moyue doctor= there, so the
+host tree is never modified:
+#+begin_src shell
+bin/dockemacs itest                # archlinux
+bin/dockemacs itest ubuntu
+bin/dockemacs itest alpine --rebuild
+bin/dockemacs itest all            # every distribution, in order
 #+end_src
 
 Extra Docker arguments can be injected through the environment, which is useful
@@ -89,27 +115,8 @@ DOCKEMACS_BUILD_ARGS="--network=host" bin/dockemacs build ubuntu
 DOCKEMACS_RUN_ARGS="--network=host"   bin/dockemacs run ubuntu
 #+end_src
 
-** moyue itest
-Run the integration test suite (=moyue install= + =moyue test config=) inside a
-container:
-#+begin_src shell
-bin/moyue itest                  # archlinux
-bin/moyue itest ubuntu
-bin/moyue itest alpine --rebuild
-bin/moyue itest all              # every distribution, in order
-#+end_src
-
-=moyue itest= builds =moyue-base:DISTRO= on first use, then mounts the checkout
-read-only at =/mnt/emacs.d=, copies it into a writable tmpfs at
-=/root/.emacs.d= and runs the suite there, so the host tree is never modified.
-
-Extra Docker arguments can be injected through the environment, which is useful
-behind a proxy or on a restricted network:
-#+begin_src shell
-MOYUE_ITEST_BUILD_ARGS="--network=host" \
-MOYUE_ITEST_RUN_ARGS="--network=host" \
-  bin/moyue itest ubuntu
-#+end_src
+=MOYUE_ITEST_BUILD_ARGS= and =MOYUE_ITEST_RUN_ARGS= are accepted as legacy
+aliases for the two variables above.
 
 * Customization
 It will automatically create a =~/.emacs.d/.cache/userconfig= file to override

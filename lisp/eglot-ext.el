@@ -1,4 +1,4 @@
-;;; eglot-ext.el --- extension for eglot.el
+;;; eglot-ext.el --- extension for eglot.el -*- lexical-binding: t; -*-
 ;;;
 ;;; Commentary:
 ;;;

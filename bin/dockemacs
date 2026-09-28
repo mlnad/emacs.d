@@ -1,39 +1,57 @@
 #!/bin/sh
+#
+# dockemacs -- Docker front-end for the MoYu Emacs configuration.
+#
+# One Dockerfile, one image name, three distributions.  The configuration is
+# never baked into the image: `run' mounts the checkout, `itest' copies it into
+# a tmpfs and exercises `moyue install' / `moyue doctor' there.
+#
+# This script is POSIX sh on purpose: it must work on a host that has Docker
+# but no Emacs, which an Emacs-side test runner could never cover.
 
 EMACSD_DIR=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 DOCKERFILE="$EMACSD_DIR/Dockerfile"
-IMAGE_NAME="moyu_emacs"
-DEFAULT_DISTRO="alpine"
+IMAGE_NAME="moyue-base"
+DEFAULT_DISTRO="archlinux"
 DISTROS="archlinux ubuntu alpine"
 
 # Extra docker arguments, e.g. DOCKEMACS_BUILD_ARGS="--network=host".
 # Word splitting is intentional: the value is a whitespace-separated list.
-EXTRA_BUILD_ARGS=${DOCKEMACS_BUILD_ARGS:-}
-EXTRA_RUN_ARGS=${DOCKEMACS_RUN_ARGS:-}
+# The MOYUE_ITEST_* names are the historical spellings and still work.
+EXTRA_BUILD_ARGS=${DOCKEMACS_BUILD_ARGS:-${MOYUE_ITEST_BUILD_ARGS:-}}
+EXTRA_RUN_ARGS=${DOCKEMACS_RUN_ARGS:-${MOYUE_ITEST_RUN_ARGS:-}}
 
 usage() {
     cat <<'EOF'
 Usage: dockemacs COMMAND [DISTRO]
 
 Commands:
-  build [DISTRO]  Build the Docker image for DISTRO (default: archlinux).
-  run   [DISTRO]  Run terminal Emacs in the image for DISTRO.
-  distros         List the supported distributions.
+  build [DISTRO]        Build the Docker image for DISTRO (default: archlinux).
+  run   [DISTRO]        Run terminal Emacs in the image for DISTRO.
+  itest [DISTRO|all]    Run `moyue install' + `moyue doctor' in the image.
+        [--rebuild]     Several DISTROs may be given; `all' means every one.
+                        --rebuild forces `docker build --no-cache'.
+  distros               List the supported distributions.
 
 Distributions:
   DISTRO       BASE IMAGE
-  alpine       alpine:latest    (default)
-  archlinux    archlinux:latest
+  archlinux    archlinux:latest  (default)
   ubuntu       ubuntu:latest
+  alpine       alpine:latest
 
 Environment:
   DOCKEMACS_BUILD_ARGS  extra arguments for `docker build'
   DOCKEMACS_RUN_ARGS    extra arguments for `docker run'
+  MOYUE_ITEST_BUILD_ARGS / MOYUE_ITEST_RUN_ARGS
+                        legacy aliases, used when the DOCKEMACS_* one is unset
 
 Examples:
-  dockemacs build                 # moyu_emacs:archlinux
-  dockemacs build ubuntu          # moyu_emacs:ubuntu
+  dockemacs build                 # moyue-base:archlinux
+  dockemacs build ubuntu          # moyue-base:ubuntu
   dockemacs run alpine
+  dockemacs itest                 # archlinux
+  dockemacs itest all
+  dockemacs itest ubuntu alpine --rebuild
   DOCKEMACS_BUILD_ARGS=--network=host dockemacs build ubuntu
 EOF
 }
@@ -60,6 +78,116 @@ base_image() {
     esac
 }
 
+image_name() {  # image_name DISTRO
+    echo "${IMAGE_NAME}:$1"
+}
+
+image_exists() {  # image_exists IMAGE
+    docker image inspect "$1" >/dev/null 2>&1
+}
+
+# Build the image for DISTRO, passing any further arguments to `docker build'.
+build_image() {  # build_image DISTRO [EXTRA_BUILD_FLAG...]
+    _bi_distro=$1
+    shift
+    _bi_image=$(image_name "$_bi_distro")
+    _bi_base=$(base_image "$_bi_distro")
+    echo "dockemacs: building $_bi_image (BASE_IMAGE=$_bi_base)"
+    # shellcheck disable=SC2086
+    docker build -f "$DOCKERFILE" \
+        --build-arg "BASE_IMAGE=$_bi_base" \
+        -t "$_bi_image" \
+        $EXTRA_BUILD_ARGS \
+        "$@" \
+        "$EMACSD_DIR"
+}
+
+# The shell command executed inside the integration-test container.  The
+# checkout is mounted read-only at /mnt/emacs.d and copied into the writable
+# tmpfs at /root/.emacs.d, because `moyue install' has to tangle init.el and
+# populate .cache/ while keeping the host tree untouched.  The copy goes
+# through sh as well so the script never depends on its executable bit
+# surviving the copy onto a noexec tmpfs.
+itest_container_command() {
+    printf '%s' \
+        "tar -C /mnt/emacs.d --exclude=./elpa --exclude=./.cache " \
+        "--exclude=./.git -cf - . | tar -C /root/.emacs.d -xf - && " \
+        "sh /root/.emacs.d/bin/moyue install && " \
+        "sh /root/.emacs.d/bin/moyue doctor"
+}
+
+itest_run() {  # itest_run DISTRO
+    _ir_image=$(image_name "$1")
+    # shellcheck disable=SC2086
+    docker run --rm \
+        --volume "$EMACSD_DIR:/mnt/emacs.d:ro" \
+        --tmpfs /root/.emacs.d:exec \
+        --env HOME=/root \
+        --env EMACS_DIR=/root/.emacs.d \
+        $EXTRA_RUN_ARGS \
+        "$_ir_image" sh -c "$(itest_container_command)"
+}
+
+# Append DISTRO to ITEST_LIST unless it is already there.
+add_itest_distro() {
+    case " $ITEST_LIST " in
+        *" $1 "*) : ;;
+        *) ITEST_LIST="${ITEST_LIST:+$ITEST_LIST }$1" ;;
+    esac
+}
+
+cmd_itest() {
+    ITEST_LIST=""
+    _it_rebuild=0
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --rebuild|-r)
+                _it_rebuild=1 ;;
+            --all|-a|all)
+                for _it_d in $DISTROS; do add_itest_distro "$_it_d"; done ;;
+            -*)
+                die "unknown option '$1'" ;;
+            *)
+                is_distro "$1" || \
+                    die "unsupported distribution '$1' (supported: $DISTROS, all)"
+                add_itest_distro "$1" ;;
+        esac
+        shift
+    done
+    [ -n "$ITEST_LIST" ] || ITEST_LIST=$DEFAULT_DISTRO
+
+    _it_failed=""
+    for _it_d in $ITEST_LIST; do
+        _it_image=$(image_name "$_it_d")
+        echo ""
+        echo "=== itest: $_it_d ($(base_image "$_it_d")) ==="
+        _it_ok=1
+        if [ "$_it_rebuild" = 1 ] || ! image_exists "$_it_image"; then
+            if [ "$_it_rebuild" = 1 ]; then
+                build_image "$_it_d" --no-cache || _it_ok=0
+            else
+                build_image "$_it_d" || _it_ok=0
+            fi
+            [ "$_it_ok" = 1 ] || echo "itest: docker build failed for $_it_d" >&2
+        fi
+        if [ "$_it_ok" = 1 ]; then
+            itest_run "$_it_d" || {
+                _it_ok=0
+                echo "itest: TESTS FAILED for $_it_d" >&2
+            }
+        fi
+        [ "$_it_ok" = 1 ] || _it_failed="${_it_failed:+$_it_failed }$_it_d"
+    done
+
+    if [ -n "$_it_failed" ]; then
+        echo ""
+        echo "itest: FAILED: $_it_failed" >&2
+        exit 1
+    fi
+    echo ""
+    echo "itest: ALL TESTS PASSED ($ITEST_LIST)"
+}
+
 if [ "$#" -lt 1 ]; then
     usage >&2
     exit 2
@@ -79,6 +207,10 @@ case "$COMMAND" in
         done
         exit 0
         ;;
+    itest)
+        cmd_itest "$@"
+        exit $?
+        ;;
 esac
 
 if [ "$#" -gt 1 ]; then
@@ -91,26 +223,24 @@ if ! is_distro "$DISTRO"; then
     die "unsupported distribution '$DISTRO' (supported: $DISTROS)"
 fi
 BASE_IMAGE=$(base_image "$DISTRO")
-IMAGE="${IMAGE_NAME}:${DISTRO}"
+IMAGE=$(image_name "$DISTRO")
 
 case "$COMMAND" in
     build)
         echo "Emacs working directory: $EMACSD_DIR"
-        echo "Building $IMAGE from $DOCKERFILE (BASE_IMAGE=$BASE_IMAGE)"
-        if docker build -f "$DOCKERFILE" \
-                --build-arg "BASE_IMAGE=$BASE_IMAGE" \
-                $EXTRA_BUILD_ARGS \
-                -t "$IMAGE" "$EMACSD_DIR"; then
+        echo "Dockerfile: $DOCKERFILE"
+        if build_image "$DISTRO"; then
             echo "Build succeeded: $IMAGE"
         else
             die "build failed for $IMAGE"
         fi
         ;;
     run)
-        if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+        if ! image_exists "$IMAGE"; then
             die "image $IMAGE not found; run 'dockemacs build $DISTRO' first"
         fi
         echo "Running terminal Emacs in container $IMAGE"
+        # shellcheck disable=SC2086
         exec docker run -it --rm \
             $EXTRA_RUN_ARGS \
             --volume "$EMACSD_DIR:/root/.emacs.d" \

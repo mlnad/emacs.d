@@ -278,10 +278,10 @@ When :ensure is pkg label, install that label."
             (eval form)
             (setq done t))))))))
 
-(defun moyue--test-configure-packages ()
+(defun moyue--configure-package-checks ()
   "Point package.el at the package directory used by the configuration.
 `init.el' installs into elpa/<major>.<minor>/ (see `package-user-dir'),
-so on a clean checkout `config-test' would otherwise look in elpa/ and
+so on a clean checkout `moyue doctor' would otherwise look in elpa/ and
 report every package as missing."
   (let ((init-el (expand-file-name "init.el" (moyue--config-root))))
     (when (file-exists-p init-el)
@@ -461,237 +461,244 @@ the first run only; use --force-env to regenerate it from the shell."
                                  (plist-get result :upgraded)
                                  (plist-get result :skipped))))))
 
-(moyue-defcommand "test" "[SUITE|PATTERN]"
-                  "Run test suites. SUITE: all (default), lisp, framework, config. Or pass a regexp PATTERN."
+(moyue-defcommand "test" "[PATTERN]"
+                  "Run the lisp/ unit tests (env-ext, core). PATTERN is an ERT selector."
                   (require 'ert)
-                  (let* ((suite      (or (car args) "all"))
+                  (let* ((arg        (car args))
                          (lisp-dir   (expand-file-name "../lisp/" moyue--bin-dir))
-                         (fw-test    (expand-file-name "moyue-test.el"  moyue--bin-dir))
-                         (cfg-test   (expand-file-name "config-test.el" moyue--bin-dir))
                          (load-lisp  (lambda ()
                                        (add-to-list 'load-path lisp-dir)
                                        (require 'ert)
                                        ;; Load each lisp source so with-eval-after-load 'ert fires.
                                        (dolist (src (directory-files lisp-dir t "\\.el$"))
                                          (unless (string-match-p "-test\\.el$" src)
-                                           (load src nil 'nomessage)))))
-                         (load-fw    (lambda () (if (file-exists-p fw-test)
-                                                    (load fw-test nil 'nomessage)
-                                                  (message "moyue test: not found: %s" fw-test)
-                                                  (kill-emacs 1))))
-                         (load-cfg   (lambda ()
-                                       (moyue--test-configure-packages)
-                                       (if (file-exists-p cfg-test)
-                                           (load cfg-test nil 'nomessage)
-                                         (message "moyue test: not found: %s" cfg-test)
-                                         (kill-emacs 1)))))
-                    (pcase suite
-                      ("lisp"
-                       (funcall load-lisp)
-                       (ert-run-tests-batch-and-exit "^env-ext/\\|^core/"))
-                      ("framework"
-                       (funcall load-fw)
-                       (ert-run-tests-batch-and-exit t))
-                      ("config"
-                       (funcall load-cfg)
-                       (ert-run-tests-batch-and-exit t))
-                      ("all"
-                       (funcall load-lisp)
-                       (funcall load-fw)
-                       (funcall load-cfg)
-                       (ert-run-tests-batch-and-exit t))
-                      (_
-                       ;; Treat as an ERT selector: load all test files then filter by pattern.
-                       (funcall load-lisp)
-                       (funcall load-fw)
-                       (moyue--test-configure-packages)
-                       (when (file-exists-p cfg-test) (load cfg-test nil 'nomessage))
-                       (ert-run-tests-batch-and-exit (read suite))))))
+                                           (load src nil 'nomessage))))))
+                    (funcall load-lisp)
+                    (ert-run-tests-batch-and-exit
+                     (if (or (null arg) (equal arg "lisp"))
+                         "^env-ext/\\|^core/"
+                       (read arg)))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
-;;;; itest: Docker-based integration test
+;;;; doctor: configuration integrity checks
 ;;;; ──────────────────────────────────────────────────────────────────────────
+;; Formerly bin/config-test.el.  The checks are registered by a function rather
+;; than at load time, so every other subcommand stays cheap and neither pulls
+;; in package.el nor reads init.el.
 
-(defconst moyue--itest-distros
-  '(("archlinux" . "archlinux:latest")
-    ("ubuntu"    . "ubuntu:latest")
-    ("alpine"    . "alpine:latest"))
-  "Alist of distribution name -> base image used by `moyue itest'.")
+;; Both are defined at run time by the bootstrap inside
+;; `moyue--doctor-define-checks', which evals them out of the tangled init.el.
+;; Declaring them keeps the byte compiler quiet; binding either one here would
+;; make the `boundp'/`fboundp' checks below pass vacuously.
+(defvar moyu/face-fonts)
+(declare-function moyu/apply-face-fonts "init")
 
-(defconst moyue--itest-default-distro "archlinux"
-  "Distribution used by `moyue itest' when none is requested.")
+(defmacro moyue--config-defcheck (name doc &rest body)
+  "Define a configuration check named NAME with DOC and BODY.
+The check is registered under the `config/' namespace for easy filtering:
+  moyue doctor config/NAME"
+  (declare (indent 2) (doc-string 2))
+  `(ert-deftest ,(intern (format "config/%s" name)) ()
+     ,doc
+     ,@body))
 
-(defun moyue--itest-docker-p ()
-  "Return non-nil if the `docker' binary is available."
-  (executable-find "docker"))
+(defmacro moyue--config-check-package (pkg)
+  "Assert that PKG is available: installed in elpa OR provided as a built-in."
+  `(moyue--config-defcheck ,(intern (format "package-%s" pkg))
+     ,(format "Package `%s' should be available (elpa or built-in)." pkg)
+     (should (or (package-installed-p ',pkg)
+                 (locate-library ,(symbol-name pkg))))))
 
-(defun moyue--itest-distro-names ()
-  "Return the list of supported distribution names."
-  (mapcar #'car moyue--itest-distros))
+(defun moyue--doctor-define-checks ()
+  "Register the `config/...' ERT checks used by `moyue doctor'."
+  (require 'ert)
+  ;; package.el is already required by this file; initialize it so that
+  ;; `package-installed-p' works.
+  (package-initialize)
 
-(defun moyue--itest-resolve-distro (name)
-  "Expand NAME into a list of distributions.
-NAME may be a supported distribution or \"all\"."
-  (cond
-   ((equal name "all") (moyue--itest-distro-names))
-   ((assoc name moyue--itest-distros) (list name))
-   (t (error "unsupported distribution '%s' (supported: %s, all)"
-             name (string-join (moyue--itest-distro-names) ", ")))))
+  ;; Environment checks
+  (moyue--config-defcheck emacs-version
+    "Emacs version must be at least 28.1."
+    (should (version<= "28.1" emacs-version)))
 
-(defun moyue--itest-base-image (distro)
-  "Return the Docker Hub base image backing DISTRO."
-  (or (cdr (assoc distro moyue--itest-distros))
-      (error "unsupported distribution '%s' (supported: %s)"
-             distro (string-join (moyue--itest-distro-names) ", "))))
+  (moyue--config-defcheck init-org-exists
+    "init.org must exist in user-emacs-directory."
+    (should (file-exists-p
+             (expand-file-name "init.org" user-emacs-directory))))
 
-(defun moyue--itest-image (distro)
-  "Return the integration-test image tag built for DISTRO."
-  (format "moyue-base:%s" distro))
+  (moyue--config-defcheck init-el-exists
+    "init.el must exist in user-emacs-directory (tangled from init.org)."
+    (should (file-exists-p
+             (expand-file-name "init.el" user-emacs-directory))))
 
-(defun moyue--itest-parse-args (args)
-  "Parse `moyue itest' ARGS into a property list.
-Returns (:distros DISTROS :rebuild BOOL).  A distribution may be given
-positionally or via --distro=NAME / --distro NAME (--image is accepted
-as an alias); \"all\" selects every supported distribution.  With no
-distribution the value of `moyue--itest-default-distro' is used."
-  (let ((distros '())
-        (rebuild nil)
-        (rest args))
-    (while rest
-      (let ((arg (pop rest)))
-        (cond
-         ((member arg '("--rebuild" "-r"))
-          (setq rebuild t))
-         ((member arg '("--all" "-a"))
-          (setq distros (append distros (moyue--itest-distro-names))))
-         ((string-prefix-p "--distro=" arg)
-          (setq distros (append distros
-                                (moyue--itest-resolve-distro
-                                 (substring arg (length "--distro="))))))
-         ((string-prefix-p "--image=" arg)
-          (setq distros (append distros
-                                (moyue--itest-resolve-distro
-                                 (substring arg (length "--image="))))))
-         ((member arg '("--distro" "--image"))
-          (unless rest (error "%s requires a value" arg))
-          (setq distros (append distros (moyue--itest-resolve-distro (pop rest)))))
-         ((string-prefix-p "-" arg)
-          (error "unknown option '%s'" arg))
-         (t
-          (setq distros (append distros (moyue--itest-resolve-distro arg)))))))
-    (list :distros (delete-dups
-                    (or distros (list moyue--itest-default-distro)))
-          :rebuild rebuild)))
+  (moyue--config-defcheck elpa-dir-exists
+    "The elpa/ package directory must exist."
+    (should (file-directory-p
+             (expand-file-name "elpa" user-emacs-directory))))
 
-(defun moyue--itest-env-args (variable)
-  "Return the extra Docker arguments stored in environment VARIABLE.
-The value is split on whitespace, so callers can inject e.g.
---network=host or proxy settings without editing this file."
-  (let ((value (getenv variable)))
-    (when value
-      (split-string value "[ \t\n]+" t))))
+  (moyue--config-defcheck env-file-exists
+    "The environment file .cache/env.el must exist (created by `moyue install')."
+    (should (file-exists-p
+             (expand-file-name ".cache/env.el" user-emacs-directory))))
 
-(defun moyue--itest-image-exists-p (image)
-  "Return non-nil if Docker image IMAGE (name[:tag]) is present locally."
-  (= 0 (call-process "docker" nil nil nil
-                     "image" "inspect" "--format={{.Id}}" image)))
+  (moyue--config-defcheck env-file-is-elisp
+    "The environment file must contain readable Emacs Lisp."
+    (let ((file (expand-file-name ".cache/env.el" user-emacs-directory)))
+      (should (file-readable-p file))
+      (with-temp-buffer
+        (insert-file-contents file)
+        (goto-char (point-min))
+        (let ((done nil))
+          (while (not done)
+            (condition-case nil
+                (read (current-buffer))
+              (end-of-file (setq done t))))))))
 
-(defun moyue--itest-build-args (distro rebuild)
-  "Return the `docker build' argument list for DISTRO.
-When REBUILD is non-nil add --no-cache."
-  (append
-   (list "build")
-   (when rebuild '("--no-cache"))
-   (moyue--itest-env-args "MOYUE_ITEST_BUILD_ARGS")
-   (list "--build-arg" (format "BASE_IMAGE=%s" (moyue--itest-base-image distro))
-         "-t" (moyue--itest-image distro)
-         (moyue--config-root))))
+  ;; Package installation checks
+  ;; Bootstrap / completion framework
+  (moyue--config-check-package use-package)
+  (moyue--config-check-package vertico)
+  (moyue--config-check-package orderless)
+  (moyue--config-check-package consult)
+  (moyue--config-check-package corfu)
+  (moyue--config-check-package cape)
+  (moyue--config-check-package marginalia)
+  (moyue--config-check-package embark)
+  (moyue--config-check-package embark-consult)
+  (moyue--config-check-package tempel)
 
-(defun moyue--itest-build (distro rebuild)
-  "Build the integration-test image for DISTRO.
-When REBUILD is non-nil pass --no-cache to `docker build'."
-  (message "itest: building %s (BASE_IMAGE=%s) ..."
-           (moyue--itest-image distro)
-           (moyue--itest-base-image distro))
-  (apply #'call-process "docker" nil t nil
-         (moyue--itest-build-args distro rebuild)))
+  ;; LSP / development
+  (moyue--config-check-package eglot)
+  (moyue--config-check-package consult-eglot)
+  (moyue--config-check-package apheleia)
+  (moyue--config-check-package dape)
+  (moyue--config-check-package projection)
+  (moyue--config-check-package projection-multi)
+  (moyue--config-check-package projection-multi-embark)
 
-(defun moyue--itest-container-command ()
-  "Return the shell command executed inside the integration-test container.
-The checkout is mounted read-only at /mnt/emacs.d and copied into the
-writable tmpfs at /root/.emacs.d, because `moyue install' has to tangle
-init.el and populate .cache/ while keeping the host tree untouched."
-  (concat
-   ;; Skip the heavy host-only directories while copying.
-   "tar -C /mnt/emacs.d --exclude=./elpa --exclude=./.cache "
-   "--exclude=./.git -cf - . | tar -C /root/.emacs.d -xf - && "
-   ;; The tmpfs is mounted with exec, but go through sh as well so the
-   ;; script never depends on its executable bit surviving the copy.
-   "sh /root/.emacs.d/bin/moyue install && "
-   "sh /root/.emacs.d/bin/moyue test config"))
+  ;; Language support
+  (moyue--config-check-package rust-mode)
+  (moyue--config-check-package rustic)
+  (moyue--config-check-package python)
+  (moyue--config-check-package pyimport)
+  (moyue--config-check-package poetry)
+  (moyue--config-check-package geiser)
+  (moyue--config-check-package lispy)
+  (moyue--config-check-package buttercup)
+  (moyue--config-check-package dockerfile-ts-mode)
 
-(defun moyue--itest-run-args (distro)
-  "Return the `docker run' argument list for DISTRO."
-  (append
-   (list "run" "--rm"
-         "-v" (concat (moyue--config-root) ":/mnt/emacs.d:ro")
-         "--tmpfs" "/root/.emacs.d:exec"
-         "--env" "HOME=/root"
-         "--env" "EMACS_DIR=/root/.emacs.d")
-   (moyue--itest-env-args "MOYUE_ITEST_RUN_ARGS")
-   (list (moyue--itest-image distro)
-         "sh" "-c" (moyue--itest-container-command))))
+  ;; Org-mode ecosystem
+  (moyue--config-check-package org)
+  (moyue--config-check-package org-roam)
+  (moyue--config-check-package org-modern)
+  (moyue--config-check-package valign)
+  (moyue--config-check-package org-fragtog)
+  (moyue--config-check-package gnuplot)
 
-(defun moyue--itest-run (distro)
-  "Run the integration-test container for DISTRO and return its exit code."
-  (apply #'call-process "docker" nil t nil
-         (moyue--itest-run-args distro)))
+  ;; Markdown / TeX
+  (moyue--config-check-package markdown-mode)
+  (moyue--config-check-package auctex-latexmk)
+  (moyue--config-check-package cdlatex)
 
-(defun moyue--itest-usage ()
-  "Print the `moyue itest' help text."
-  (message "Usage: moyue itest [DISTRO|all] [--distro=DISTRO] [--rebuild]\n\n%s\n\n%s"
-           (string-join
-            (mapcar (lambda (d) (format "  %-10s %s" (car d) (cdr d)))
-                    moyue--itest-distros)
-            "\n")
-           (concat
-            "Environment:\n"
-            "  MOYUE_ITEST_BUILD_ARGS  extra `docker build' arguments\n"
-            "  MOYUE_ITEST_RUN_ARGS    extra `docker run' arguments")))
+  ;; Version control
+  (moyue--config-check-package magit)
+  (moyue--config-check-package magit-todos)
+  (moyue--config-check-package diff-hl)
 
-(moyue-defcommand "itest" "[DISTRO|all] [--distro=DISTRO] [--rebuild]"
-                  "Run integration tests inside Docker for one or more distributions."
-                  (when (member "--help" args)
-                    (moyue--itest-usage)
-                    (kill-emacs 0))
-                  (unless (moyue--itest-docker-p)
-                    (message "moyue itest: `docker' not found in PATH")
-                    (kill-emacs 1))
-                  (let* ((opts    (moyue--itest-parse-args args))
-                         (distros (plist-get opts :distros))
-                         (rebuild (plist-get opts :rebuild))
-                         (failed  '()))
-                    (dolist (distro distros)
-                      (let ((image (moyue--itest-image distro))
-                            (ok t))
-                        (message "\n=== itest: %s (%s) ==="
-                                 distro (moyue--itest-base-image distro))
-                        (when (or rebuild (not (moyue--itest-image-exists-p image)))
-                          (unless (= 0 (moyue--itest-build distro rebuild))
-                            (setq ok nil)
-                            (message "itest: docker build failed for %s" distro)))
-                        (when ok
-                          (unless (= 0 (moyue--itest-run distro))
-                            (setq ok nil)
-                            (message "itest: TESTS FAILED for %s" distro)))
-                        (unless ok (push distro failed))))
-                    (if failed
-                        (progn
-                          (message "\nitest: FAILED: %s"
-                                   (string-join (nreverse failed) ", "))
-                          (kill-emacs 1))
-                      (message "\nitest: ALL TESTS PASSED (%s)"
-                               (string-join distros ", ")))))
+  ;; UI / theme
+  (moyue--config-check-package doom-themes)
+  (moyue--config-check-package doom-modeline)
+  (moyue--config-check-package nerd-icons-corfu)
+  (moyue--config-check-package all-the-icons)
+  (moyue--config-check-package writeroom-mode)
+  (moyue--config-check-package popper)
+  (moyue--config-check-package svg-tag-mode)
+
+  ;; Editing
+  (moyue--config-check-package evil)
+  (moyue--config-check-package which-key)
+
+  ;; Misc
+  (moyue--config-check-package rime)
+  (moyue--config-check-package docker)
+  (moyue--config-check-package aidermacs)
+
+  ;; Font configuration tests
+  ;; Bootstrap: load the face-fonts definitions from the tangled init.el so that
+  ;; `moyu/face-fonts' and `moyu/apply-face-fonts' are available without loading
+  ;; all of init.el (which needs a live display).
+  (let ((init-el (expand-file-name "init.el" user-emacs-directory)))
+    (when (file-exists-p init-el)
+      (with-temp-buffer
+        (insert-file-contents init-el)
+        (goto-char (point-min))
+        ;; Org-babel tangles `:var face-fonts=face-fonts' as a let block; find it.
+        (when (search-forward "(let ((face-fonts" nil t)
+          (goto-char (match-beginning 0))
+          (ignore-errors (eval (read (current-buffer))))))))
+
+  (moyue--config-defcheck face-fonts-structure
+    "Every row in `moyu/face-fonts' is a (string string positive-number) triple."
+    (should (boundp 'moyu/face-fonts))
+    (should (listp moyu/face-fonts))
+    (should (> (length moyu/face-fonts) 0))
+    (dolist (row moyu/face-fonts)
+      (should (= (length row) 3))
+      (cl-destructuring-bind (face family size) row
+        (should (stringp face))
+        (should (and (stringp family) (not (string-empty-p family))))
+        (should (and (numberp size) (> size 0))))))
+
+  (moyue--config-defcheck face-fonts-default-row
+    "The face-fonts table must contain a `default' row."
+    (should (boundp 'moyu/face-fonts))
+    (should (cl-find "default" moyu/face-fonts :key #'car :test #'string=)))
+
+  (moyue--config-defcheck face-fonts-cjk-rows
+    "face-fonts must contain a single CJK font row."
+    (should (boundp 'moyu/face-fonts))
+    (should (cl-find "cjk" moyu/face-fonts :key #'car :test #'string=))
+    (should (= (length (cl-remove-if-not
+                        (lambda (row) (string-prefix-p "cjk" (car row)))
+                        moyu/face-fonts))
+               1)))
+
+  (moyue--config-defcheck face-fonts-latin-unified
+    "The Latin face rows (default, fixed-pitch, fixed-pitch-serif) share one font family."
+    (should (boundp 'moyu/face-fonts))
+    (let* ((latin-rows (cl-remove-if (lambda (r) (string-prefix-p "cjk" (car r)))
+                                     moyu/face-fonts))
+           (families (mapcar #'cadr latin-rows)))
+      (should (cl-every (lambda (f) (string= f (car families))) families))))
+
+  (moyue--config-defcheck face-fonts-apply-dispatches-correctly
+    "`moyu/apply-face-fonts' routes each row to the right handler."
+    (should (fboundp 'moyu/apply-face-fonts))
+    (let ((latin-calls 0) (cjk-calls 0))
+      (cl-letf (((symbol-function 'display-graphic-p) (lambda ()       t))
+                ((symbol-function 'set-face-attribute) (lambda (&rest _) (cl-incf latin-calls)))
+                ((symbol-function 'set-fontset-font)   (lambda (&rest _) (cl-incf cjk-calls))))
+        (moyu/apply-face-fonts))
+      ;; default + fixed-pitch + fixed-pitch-serif → set-face-attribute ×3
+      (should (= latin-calls 3))
+      ;; cjk → set-fontset-font ×4 (han cjk-misc bopomofo kana)
+      (should (= cjk-calls 4))))
+
+  (moyue--config-defcheck face-fonts-skipped-without-display
+    "`moyu/apply-face-fonts' does nothing when there is no graphical display."
+    (should (fboundp 'moyu/apply-face-fonts))
+    (let ((called nil))
+      (cl-letf (((symbol-function 'display-graphic-p) (lambda () nil))
+                ((symbol-function 'set-face-attribute) (lambda (&rest _) (setq called t))))
+        (moyu/apply-face-fonts))
+      (should-not called))))
+
+(moyue-defcommand "doctor" "[SELECTOR]"
+                  "Check that the configuration files are correct and complete."
+                  (moyue--configure-package-checks)
+                  (moyue--doctor-define-checks)
+                  (ert-run-tests-batch-and-exit
+                   (if args (read (car args)) t)))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Optional extension: auto-load commands from bin/commands/*.el
