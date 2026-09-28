@@ -319,6 +319,13 @@
   "An option that requires a value rejects a missing one."
   (should-error (moyue--itest-parse-args '("--distro")) :type 'error))
 
+(ert-deftest moyue-test/emacs-src-command-registered ()
+  "The emacs-src command is registered with usage and documentation."
+  (let ((cmd (gethash "emacs-src" moyue--commands)))
+    (should cmd)
+    (should (equal "[VERSION]" (moyue-command-usage cmd)))
+    (should (string-match-p "source-directory" (moyue-command-doc cmd)))))
+
 (ert-deftest moyue-test/itest-image-tags-are-distro-scoped ()
   "Each distribution gets its own image tag."
   (should (equal (moyue--itest-image "archlinux") "moyue-base:archlinux"))

@@ -42,6 +42,10 @@ set -Eeuo pipefail
 EMACS_VERSION="31.1"
 PREFIX="${EMACS_PREFIX:-${HOME}/.local}"
 SRC_DIR="${EMACS_BUILD_DIR:-${HOME}/.cache/emacs-build}"
+# Where the Emacs source tree is unpacked and built.  Building in-tree makes
+# the installed Emacs report this as `source-directory', which is what M-.
+# / find-function use to jump to the C and Lisp sources.
+EMACS_SRC_DIR="${EMACS_SRC_DIR:-${HOME}/.emacs.d/.cache/emacs-src}"
 _ncpu="$( (command -v nproc >/dev/null 2>&1 && nproc) || echo 2)"
 MAKE_JOBS="${EMACS_JOBS:-$(( _ncpu > 16 ? 16 : _ncpu ))}"
 GNU_MIRROR="${EMACS_MIRROR:-https://ftp.gnu.org/gnu}"
@@ -60,6 +64,7 @@ WITH_SOUND=0                 # servers are usually headless; opt in with --with-
 WITH_X="auto"                # auto | yes | no
 WITH_MAILUTILS=0
 WITH_DEBUG=0
+FETCH_SOURCE_ONLY=0          # 1 = only download+unpack the source tree, no build
 NO_SYSTEM_PKGS=0             # 1 = never touch the system package manager, even as root
 EXTRA_CONFIGURE_ARGS=()
 
@@ -132,7 +137,10 @@ ${C_BOLD}USAGE${C_RESET}
 
 ${C_BOLD}LOCATIONS${C_RESET}
   --prefix DIR          install prefix             (default: \$EMACS_PREFIX or \$HOME/.local)
-  --srcdir DIR          download/build directory   (default: \$EMACS_BUILD_DIR or ~/.cache/emacs-build)
+  --srcdir DIR          tarball + dependency cache  (default: \$EMACS_BUILD_DIR or ~/.cache/emacs-build)
+  --source-dir DIR      where the Emacs source tree is unpacked and built
+                        (default: \$EMACS_SRC_DIR or ~/.emacs.d/.cache/emacs-src)
+  --fetch-source-only   only download and unpack the source tree, build nothing
   --mirror URL          GNU mirror base URL        (default: ${GNU_MIRROR})
   --version VER         Emacs version to build     (default: ${EMACS_VERSION})
   --jobs N              parallel make jobs         (default: number of CPUs, capped at 16)
@@ -189,7 +197,7 @@ ${C_BOLD}BEHAVIOUR${C_RESET}
     ${PROG} -- --with-wide-int --enable-check-lisp-object-type
 
 ${C_BOLD}ENVIRONMENT${C_RESET}
-  EMACS_PREFIX EMACS_BUILD_DIR EMACS_MIRROR EMACS_JOBS
+  EMACS_PREFIX EMACS_BUILD_DIR EMACS_SRC_DIR EMACS_MIRROR EMACS_JOBS
   CC CFLAGS LDFLAGS PKG_CONFIG_PATH   honoured for the Emacs build
   http_proxy https_proxy all_proxy    honoured for downloads
   DISTRO_DEPS_MAP                     file overriding package names
@@ -199,6 +207,7 @@ ${C_BOLD}EXAMPLES${C_RESET}
   ${PROG} --no-system-packages              # only \${PREFIX}: not even root installs
   ${PROG} --deps minimal --no-images        # fast, terminal-only build
   ${PROG} --deps all                        # prefer building every dep from source
+  ${PROG} --fetch-source-only                # just get the sources (for M-.)
   ${PROG} -n                                # show the plan, touch nothing
 
 ${C_BOLD}PRIVILEGES${C_RESET}
@@ -1222,6 +1231,55 @@ download_emacs() {  # prints the archive path on stdout; logs go to stderr
   return 1
 }
 
+# Download the Emacs tarball and unpack it into ${EMACS_SRC_DIR}, stripping the
+# leading emacs-<version>/ directory so the tree root is the path we want.
+# Idempotent, and needs no compiler: this is also what
+# `install-emacs --fetch-source-only' (and therefore `moyue emacs-src') calls.
+fetch_emacs_source() {
+  local archive marker="${EMACS_SRC_DIR}/.emacs-version"
+  if [ -f "${EMACS_SRC_DIR}/src/emacs.c" ] &&
+     [ "$(cat "$marker" 2>/dev/null || true)" = "$EMACS_VERSION" ]; then
+    ok "Emacs ${EMACS_VERSION} sources are already in ${EMACS_SRC_DIR}"
+    return 0
+  fi
+  # Dry run must not touch the existing tree (it may be in use).
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s download emacs-%s and unpack into %s\n' \
+      "$C_YELLOW" "$C_RESET" "$EMACS_VERSION" "$EMACS_SRC_DIR"
+    return 0
+  fi
+  if [ -f "${EMACS_SRC_DIR}/src/emacs.c" ] && [ -f "$marker" ]; then
+    log "replacing the source tree in ${EMACS_SRC_DIR} ($(cat "$marker") -> ${EMACS_VERSION})"
+    rm -rf "$EMACS_SRC_DIR"
+  fi
+  mkdir -p "$EMACS_SRC_DIR"
+  archive="$(download_emacs)" || die "could not download Emacs ${EMACS_VERSION} from any mirror"
+  step "Extracting ${archive##*/} into ${EMACS_SRC_DIR}"
+  if ! tar -xf "$archive" -C "$EMACS_SRC_DIR" --strip-components=1 2>/dev/null; then
+    if ! { xz -dc "$archive" 2>/dev/null || gzip -dc "$archive" 2>/dev/null; } |
+         tar -x -C "$EMACS_SRC_DIR" --strip-components=1; then
+      die "could not extract ${archive}"
+    fi
+  fi
+  [ -f "${EMACS_SRC_DIR}/src/emacs.c" ] || die "extraction did not produce ${EMACS_SRC_DIR}/src/emacs.c"
+  printf '%s\n' "$EMACS_VERSION" > "$marker"
+  ok "sources unpacked into ${EMACS_SRC_DIR}"
+  return 0
+}
+
+# Print the snippet that makes an already-installed Emacs use our source tree.
+print_source_dir_hint() {
+  cat <<EOF
+
+${C_BOLD}Emacs sources${C_RESET}
+  tree: ${EMACS_SRC_DIR}
+  A from-source install built here already reports this path as the Emacs
+  variable source-directory.  Otherwise add this to your config so that M-.
+  and find-function can jump into the sources:
+    (setq source-directory "${EMACS_SRC_DIR}/")
+EOF
+}
+
 # ---------------------------------------------------------------------------
 # Emacs configure / build / install
 # ---------------------------------------------------------------------------
@@ -1425,6 +1483,15 @@ post_install() {
       2>/dev/null || true
     # Only meaningful when the system package manager was not used at all.
     if ! can_manage_packages; then audit_external_libs "$emacs"; fi
+    # Where the installed Emacs thinks its sources are (used by M-. and friends).
+    local src_dir
+    src_dir="$("$emacs" --batch --eval '(princ (or source-directory ""))' 2>/dev/null || true)"
+    if [ -n "$src_dir" ]; then
+      case "$src_dir" in
+        "${EMACS_SRC_DIR}/"*) ok "source-directory: ${src_dir}" ;;
+        *) log "source-directory: ${src_dir} (not ${EMACS_SRC_DIR})" ;;
+      esac
+    fi
   fi
 
   cat <<EOF
@@ -1432,7 +1499,7 @@ post_install() {
 ${C_BOLD}Done.${C_RESET}
   binary  : ${PREFIX}/bin/emacs-${EMACS_VERSION}
   launcher: ${PREFIX}/bin/emacs-local
-  sources : ${SRC_DIR}/emacs-${EMACS_VERSION}
+  sources : ${EMACS_SRC_DIR}
 
 If ${PREFIX}/bin is not on your PATH yet:
   echo 'export PATH="${PREFIX}/bin:\$PATH"' >> ~/.profile
@@ -1463,6 +1530,9 @@ parse_args() {
       --prefix)    PREFIX="$2"; shift 2 ;;
       --prefix=*)  PREFIX="${arg#*=}"; shift ;;
       --srcdir)    SRC_DIR="$2"; shift 2 ;;
+      --source-dir) EMACS_SRC_DIR="$2"; shift 2 ;;
+      --source-dir=*) EMACS_SRC_DIR="${arg#*=}"; shift ;;
+      --fetch-source-only) FETCH_SOURCE_ONLY=1; shift ;;
       --srcdir=*)  SRC_DIR="${arg#*=}"; shift ;;
       --mirror)    GNU_MIRROR="$2"; shift 2 ;;
       --mirror=*)  GNU_MIRROR="${arg#*=}"; shift ;;
@@ -1528,6 +1598,7 @@ parse_args() {
 
   PREFIX="${PREFIX%/}"
   SRC_DIR="${SRC_DIR%/}"
+  EMACS_SRC_DIR="${EMACS_SRC_DIR%/}"
   [ -n "$PREFIX" ] || die "--prefix may not be empty"
   EXTRA_CONFIGURE_ARGS=("${extra[@]+"${extra[@]}"}")
 }
@@ -1538,6 +1609,13 @@ parse_args() {
 main() {
   parse_args "$@"
   detect_os
+
+  # Download-only mode: fetch the sources and stop (no toolchain needed).
+  if [ "$FETCH_SOURCE_ONLY" = 1 ]; then
+    fetch_emacs_source
+    [ "$DRY_RUN" = 1 ] || print_source_dir_hint
+    exit 0
+  fi
 
   # Privileges: state plainly what this run is allowed to do.
   if [ "$NO_SYSTEM_PKGS" = 1 ]; then
@@ -1568,20 +1646,9 @@ main() {
 
   resolve_dependencies
 
-  local archive srcdir
-  archive="$(download_emacs)" || die "could not download Emacs ${EMACS_VERSION} from any mirror"
-  srcdir="${SRC_DIR}/emacs-${EMACS_VERSION}"
-  if [ ! -d "$srcdir" ]; then
-    step "Extracting ${archive##*/}"
-    if [ "$DRY_RUN" = 1 ]; then
-      printf '  %s[plan]%s tar -xf %s -C %s\n' "$C_YELLOW" "$C_RESET" "$archive" "$SRC_DIR"
-    else
-      extract "$archive" "$SRC_DIR"
-    fi
-  else
-    log "reusing the existing source tree ${srcdir}"
-  fi
-  [ "$DRY_RUN" = 1 ] || [ -d "$srcdir" ] || die "extraction did not produce ${srcdir}"
+  local srcdir
+  fetch_emacs_source
+  srcdir="$EMACS_SRC_DIR"
 
   configure_emacs "$srcdir" "${EXTRA_CONFIGURE_ARGS[@]+"${EXTRA_CONFIGURE_ARGS[@]}"}"
   build_emacs "$srcdir"

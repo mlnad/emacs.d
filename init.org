@@ -255,6 +255,18 @@ Emacs launched from a desktop launcher inherits the shell environment
 (add-hook 'find-file-not-found-functions #'create-if-not-found)
 #+end_src
 
+** Emacs source directory
+Point ~source-directory~ at the Emacs sources that =moyue emacs-src= unpacks into
+=~/.emacs.d/.cache/emacs-src=, so ~M-.~ and ~find-function~ can open the C and Lisp
+sources.  An Emacs built from source in that directory already reports this path
+itself; the setting matters for a non-source install.
+#+begin_src emacs-lisp :tangle yes
+(let ((src (file-name-as-directory
+            (expand-file-name ".cache/emacs-src/" user-emacs-directory))))
+  (when (file-directory-p src)
+    (setq source-directory src)))
+#+end_src
+
 ** Tramp
 #+begin_src emacs-lisp :tangle yes
 (unless (eq system-type 'windows-nt)

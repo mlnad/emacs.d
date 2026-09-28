@@ -132,6 +132,41 @@ Reads arguments from `argv' (populated by Emacs batch mode)."
                       (push "\nRun 'moyue help COMMAND' for details on a specific command." lines)
                       (message "%s" (string-join (nreverse lines) "\n")))))
 
+(defun moyue--run-streaming (command)
+  "Run COMMAND (a list of strings), forwarding its output; return exit status.
+`call-process' with DESTINATION t does not reach stdout in batch mode, so the
+child is run with a filter that `princ'es every chunk as it arrives."
+  (let ((proc (make-process :name "moyue-child"
+                            :command command
+                            :buffer nil
+                            :noquery t
+                            :filter (lambda (_proc chunk) (princ chunk)))))
+    (while (accept-process-output proc 1))
+    (process-exit-status proc)))
+
+(moyue-defcommand "emacs-src" "[VERSION]"
+                  "Download Emacs VERSION sources into .cache/emacs-src (for source-directory)."
+                  (let* ((config-root (moyue--config-root))
+                         (script      (expand-file-name "bin/install-emacs" config-root))
+                         (version     (or (car args) emacs-version))
+                         (dest        (file-name-as-directory
+                                       (expand-file-name ".cache/emacs-src" config-root))))
+                    (unless (file-executable-p script)
+                      (message "moyue emacs-src: %s not found or not executable" script)
+                      (kill-emacs 1))
+                    (message "moyue emacs-src: fetching Emacs %s sources into %s" version dest)
+                    (let ((status (moyue--run-streaming
+                                   (list script
+                                         "--fetch-source-only"
+                                         "--version" version
+                                         "--source-dir" dest))))
+                      (unless (and (integerp status) (zerop status))
+                        (message "moyue emacs-src: install-emacs failed (exit %S)" status)
+                        (kill-emacs 1)))
+                    (message "moyue emacs-src: sources are in %s" dest)
+                    (message "Add this to your configuration so M-. finds the sources:")
+                    (message "  (setq source-directory %S)" dest)))
+
 (moyue-defcommand "tangle" "[FILE]"
                   "Tangle an Org file (defaults to init.org in user-emacs-directory)."
                   (require 'org)
