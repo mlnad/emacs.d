@@ -63,9 +63,12 @@ WITH_DEBUG=0
 NO_SYSTEM_PKGS=0             # 1 = never touch the system package manager, even as root
 EXTRA_CONFIGURE_ARGS=()
 
-# Feature selection from the command line.  WANT_FEATURES non-empty means
-# "only these"; SKIP_FEATURES always removes.
+# Feature selection from the command line.
+#   WANT_FEATURES  non-empty means "only these" (from --features/--only)
+#   ADD_FEATURES   turned on in addition to the defaults (from --with-* flags)
+#   SKIP_FEATURES  always removed (from --without)
 declare -a WANT_FEATURES=()
+declare -a ADD_FEATURES=()
 declare -a SKIP_FEATURES=()
 
 # ---------------------------------------------------------------------------
@@ -78,6 +81,8 @@ readonly TS_MIN_VERSION="0.20.2"   # what Emacs 31 wants from libtree-sitter
 # so only nettle (and its gmp) has to be built underneath it.
 readonly NETTLE_VERSION="3.10.2"
 readonly GNUTLS_VERSION="3.8.13"
+# librime: only needed by emacs-rime, which compiles its own dynamic module.
+readonly LIBRIME_VERSION="1.17.0"
 
 # Features that are only attempted when the user asks for them explicitly
 # (they pull in big or unusual dependencies, or are irrelevant on a server).
@@ -152,6 +157,7 @@ ${C_BOLD}DEPENDENCIES${C_RESET}
   --with-x              build the X11 GUI (default: only if X11 is already present)
   --without-x           definitely build the terminal-only Emacs
   --with-gtk            prefer the GTK3 toolkit when X11 is built
+  --with-rime           force the librime dependency (attempted by default)
   --tree-sitter[=MODE]  MODE = auto|yes|no          (default: auto)
   --native-comp[=MODE]  MODE = auto|yes|no          (default: auto, needs libgccjit)
 
@@ -161,7 +167,15 @@ ${C_BOLD}FEATURE SELECTION${C_RESET}
       feature names: gnutls ncurses xml2 zlib gmp harfbuzz json lcms2 sqlite3
                      tree-sitter native-comp jpeg png gif tiff webp rsvg
                      m17n x11 xpm xft gtk pango cairo xrender sound alsa pulse
-                     selinux mailutils
+                     selinux mailutils rime
+
+  rime (librime) is needed by the emacs-rime package, which compiles its own
+  dynamic module at run time.  It is detected like any other dependency and,
+  when missing, built from source into the prefix; use --without rime to skip
+  it.  From source it is a CMake project needing cmake, a C++17 compiler and the
+  system Boost(regex), glog, yaml-cpp, leveldb, marisa and opencc -- Boost is
+  never bootstrapped, so a machine without those just ends up with rime disabled
+  (a warning, not a failure).
 
 ${C_BOLD}BEHAVIOUR${C_RESET}
   -y, --yes             never prompt (assume yes)
@@ -330,12 +344,16 @@ FEATURE_ORDER=(
   # X11 first: everything below that Emacs gates on a window system depends on
   # this answer, so it must be resolved before harfbuzz/images are considered.
   x11 xpm xft xrender gtk pango cairo
+  # Foundations before the libraries that may link them (gnutls/libxml2 link
+  # zlib; nettle links gmp), so a from-source build stays inside ${PREFIX}.
+  gmp zlib ncurses
+  gnutls xml2
   harfbuzz jpeg png gif tiff webp rsvg
-  gnutls ncurses xml2 zlib
-  gmp json lcms2 sqlite3
+  json lcms2 sqlite3
   sound alsa pulse
   tree-sitter native-comp
   m17n selinux mailutils
+  rime
 )
 
 # Set from the features that dependency resolution actually provided, so the
@@ -356,6 +374,8 @@ feature_want() {
   fi
   if [ "$DEPS_MODE" = minimal ] && ! is_hard_feature "$f"; then say skip; return; fi
   for x in "${SKIP_FEATURES[@]}"; do [ "$x" = "$f" ] && { say skip; return; }; done
+  # --with-rime and friends add features without restricting the build.
+  for x in "${ADD_FEATURES[@]}"; do [ "$x" = "$f" ] && { say soft; return; }; done
   # --with-x / --with-sound turn their whole feature group on.
   if [ "$WITH_X" = yes ] && is_x_feature "$f"; then say soft; return; fi
   if [ "$WITH_SOUND" = 1 ] && { [ "$f" = sound ] || [ "$f" = alsa ] || [ "$f" = pulse ]; }; then
@@ -423,6 +443,8 @@ check_spec_present() {  # KIND REST
   have pkg-config || return 1
   case "$rest" in
     "libxml-2.0") header_lib_exists "libxml/parser.h" xml2 ;;
+    # librime installs rime_api.h flat and librime.so; rime.pc may be missing.
+    "rime") header_lib_exists "rime_api.h" rime ;;
     *) return 1 ;;
   esac
 }
@@ -462,6 +484,9 @@ feature_check_spec() {
     pulse)       say "headers pulse/pulseaudio.h pulse" ;;
     selinux)     say "headers selinux/selinux.h selinux" ;;
     mailutils)   say "pkgconfig mailutils" ;;
+    # librime is not an Emacs configure feature: emacs-rime compiles its own
+    # dynamic module against it.  Detected so it can be installed/pointed at.
+    rime)        say "pkgconfig rime" ;;
     tree-sitter)
       # The release tarball does NOT bundle libtree-sitter itself (only the
       # grammar sources under admin/), so tree-sitter support needs a real
@@ -502,6 +527,7 @@ feature_found_flag() {
     pulse)       say "-" ;;                  # implied by --with-sound=alsa|yes
     selinux)     say "--with-selinux=ifavailable" ;;   # header may exist but be unusable (musl)
     mailutils)   say "--with-mailutils" ;;
+    rime)        say "-" ;;   # no Emacs configure option
     tree-sitter) say "--with-tree-sitter" ;;
     native-comp) say "--with-native-compilation=aot" ;;
     *) return 1 ;;
@@ -536,6 +562,7 @@ feature_missing_flag() {
     pulse)       say "-" ;;
     selinux)     say "--with-selinux=ifavailable" ;;
     mailutils)   say "--with-mailutils=no" ;;
+    rime)        say "-" ;;   # no Emacs configure option
     tree-sitter) say "--with-tree-sitter=ifavailable" ;;   # ifavailable, never fail
     native-comp) say "--without-native-compilation" ;;
     *) return 1 ;;
@@ -601,13 +628,17 @@ feature_source_recipe() {
     gnutls)
       say "gmp|https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz|CFLAGS=-std=gnu17|--disable-static"
       say "nettle|https://ftp.gnu.org/gnu/nettle/nettle-${NETTLE_VERSION}.tar.gz||--disable-documentation --disable-openssl"
-      say "gnutls|https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-${GNUTLS_VERSION}.tar.xz||--disable-doc --disable-tools --disable-tests --disable-nls --disable-libdane --disable-tls13-interop --without-idn --without-p11-kit --with-included-libtasn1 --with-included-unistring"
+      say "gnutls|https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-${GNUTLS_VERSION}.tar.xz||--disable-doc --disable-tools --disable-tests --disable-nls --disable-libdane --disable-tls13-interop --without-idn --without-p11-kit --without-zlib --without-zstd --without-brotli --without-tpm --without-tpm2 --with-included-libtasn1 --with-included-unistring"
       ;;
     lcms2)       say "lcms2|https://github.com/mm2/Little-CMS/releases/download/lcms2.16/lcms2-2.16.tar.gz||" ;;
     png)         say "libpng|https://download.sourceforge.net/libpng/libpng-1.6.45.tar.xz||" ;;
     gif)         say "giflib|https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.2.2.tar.gz||" ;;
     tiff)        say "libtiff|https://download.osgeo.org/libtiff/tiff-4.7.0.tar.xz||--disable-tools --disable-tests --disable-docs" ;;
     webp)        say "libwebp|https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0.tar.gz||" ;;
+    # librime is C++/CMake and its releases ship no Linux dependency bundle, so
+    # it is built against system Boost(regex)/glog/yaml-cpp/leveldb/marisa/opencc
+    # (cmake + a C++17 compiler are required).  Opt-in: only emacs-rime needs it.
+    rime)        say "librime|https://github.com/rime/librime/archive/refs/tags/${LIBRIME_VERSION}.tar.gz||-DBUILD_TEST=OFF -DBUILD_SAMPLE=OFF" ;;
     *) return 1 ;;
   esac
 }
@@ -650,6 +681,7 @@ apk_pkg_names() {
     pulse)       say "pulseaudio-dev" ;;
     selinux)     say "libselinux-dev" ;;
     mailutils)   say "mailutils-dev" ;;
+    rime)        say "librime-dev" ;;
     tree-sitter) say "tree-sitter-dev" ;;
     native-comp) say "libgccjit-dev" ;;
     *) return 1 ;;
@@ -700,6 +732,7 @@ arch_pkg_names() {
     sound|alsa)  say "alsa-lib" ;;
     pulse)       say "libpulse" ;;
     selinux)     say "libselinux" ;;
+    rime)        say "librime" ;;
     tree-sitter) say "tree-sitter" ;;
     native-comp) say "libgccjit" ;;
     *) return 1 ;;
@@ -742,6 +775,7 @@ pkg_names_for() {  # FEATURE -> "deb rpm" generic names
     pulse)       say "libpulse-dev|pulseaudio-libs-devel" ;;
     selinux)     say "libselinux1-dev|libselinux-devel" ;;
     mailutils)   say "libmailutils-dev|mailutils-devel" ;;
+    rime)        say "librime-dev|librime-devel" ;;
     tree-sitter) say "libtree-sitter-dev|tree-sitter-devel" ;;
     native-comp) say "libgccjit-14-dev|libgccjit-devel" ;;
     *) return 1 ;;
@@ -929,22 +963,32 @@ build_dep() {  # build_dep NAME URL ENV [CONFIGURE_ARGS...]
       # shellcheck disable=SC2086
       export $dep_env
     fi
-    makefile_only=0
     if [ -x ./configure ]; then
       # Note: no --disable-static here -- zlib's hand-written configure aborts
       # on unknown options.  Recipes that want it pass it explicitly.
       ./configure --prefix="$PREFIX" "${cfg[@]+"${cfg[@]}"}" || exit 1
+      make -j"$MAKE_JOBS" || exit 1
+      make install || exit 1
+    elif [ -f CMakeLists.txt ]; then
+      # CMake project (librime).  Deps are expected from the system or ${PREFIX}.
+      if ! have cmake; then
+        echo "'${name}' is a CMake project but cmake is not installed" >&2
+        exit 1
+      fi
+      cmake -S . -B build \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$PREFIX" \
+            ${cfg[@]+"${cfg[@]}"} || exit 1
+      cmake --build build --parallel "$MAKE_JOBS" || exit 1
+      cmake --build build --target install || exit 1
     elif [ -f Makefile ] || [ -f makefile ]; then
-      makefile_only=1      # some libraries ship only a Makefile
-    else
-      echo "'${name}' has neither ./configure nor a Makefile" >&2
-      exit 1
-    fi
-    make -j"$MAKE_JOBS" || exit 1
-    if [ "$makefile_only" = 1 ]; then
+      # Some libraries ship only a Makefile (and take PREFIX=).
+      make -j"$MAKE_JOBS" || exit 1
       make install PREFIX="$PREFIX" || exit 1
     else
-      make install || exit 1
+      echo "'${name}' has no ./configure, CMakeLists.txt or Makefile" >&2
+      exit 1
     fi
   ) || { warn "building dependency '${name}' failed; its feature will be disabled"; return 1; }
 
@@ -1343,6 +1387,30 @@ EOF
   chmod 755 "$launcher" 2>/dev/null || true
 }
 
+# When nothing came from the system package manager, the installed Emacs should
+# only need ${PREFIX} plus the C runtime.  A from-source dependency picking up
+# an unlisted system library (gnutls linking libzstd, libxml2 linking liblzma,
+# ...) would silently make the install non-self-contained, so report it.
+audit_external_libs() {  # audit_external_libs BINARY
+  local bin="$1" lib path
+  have ldd || return 0
+  local -a external=()
+  while read -r lib path; do
+    [ -n "${path:-}" ] || continue
+    case "$path" in
+      "${PREFIX}/"*) continue ;;
+      # the C runtime is expected everywhere
+      /lib/ld-*|*/libc.so*|*/libc.musl-*|*/libm.so*|*/libpthread*|*/libdl*|*/librt*|*/libgcc_s*) continue ;;
+    esac
+    external+=("${lib} => ${path}")
+  done < <(ldd "$bin" 2>/dev/null | awk '/=>/ {print $1, $3}')
+  if [ "${#external[@]}" -gt 0 ]; then
+    warn "this install also needs libraries outside ${PREFIX}:"
+    printf '    %s\n' "${external[@]}" >&2
+    warn "they must exist wherever you run it (build them, or install the packages there)"
+  fi
+}
+
 post_install() {
   local emacs="${PREFIX}/bin/emacs-${EMACS_VERSION}" out
   step "Post-install check"
@@ -1355,6 +1423,8 @@ post_install() {
                       (if (fboundp (quote treesit-available-p)) (treesit-available-p) "n/a")
                       (if (fboundp (quote native-comp-available-p)) (native-comp-available-p) "n/a")))' \
       2>/dev/null || true
+    # Only meaningful when the system package manager was not used at all.
+    if ! can_manage_packages; then audit_external_libs "$emacs"; fi
   fi
 
   cat <<EOF
@@ -1367,6 +1437,18 @@ ${C_BOLD}Done.${C_RESET}
 If ${PREFIX}/bin is not on your PATH yet:
   echo 'export PATH="${PREFIX}/bin:\$PATH"' >> ~/.profile
 EOF
+
+  # emacs-rime compiles its dynamic module itself; tell it where librime and
+  # emacs-module.h live.  (Its Makefile concatenates LIBRIME_ROOT with
+  # "include/", so the trailing slash matters.)
+  if is_available rime && [ "$DRY_RUN" != 1 ]; then
+    cat <<EOF
+
+${C_BOLD}For the emacs-rime package${C_RESET} (librime was installed in ${PREFIX}):
+  (setq rime-librime-root "${PREFIX}/")
+  (setq rime-emacs-module-header-root "${PREFIX}/include")
+EOF
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1400,12 +1482,13 @@ parse_args() {
       --no-sound)  WITH_SOUND=0; shift ;;
       --with-x)    WITH_X=yes; shift ;;
       --without-x) WITH_X=no; shift ;;
-      --with-gtk)  WANT_FEATURES+=(gtk pango cairo xft xrender xpm); shift ;;
+      --with-gtk)  ADD_FEATURES+=(gtk pango cairo xft xrender xpm); shift ;;
       --tree-sitter)   TREE_SITTER=yes; shift ;;
       --tree-sitter=*) TREE_SITTER="${arg#*=}"; shift ;;
       --native-comp)   NATIVE_COMP=yes; shift ;;
       --native-comp=*) NATIVE_COMP="${arg#*=}"; shift ;;
       --with-mailutils) WITH_MAILUTILS=1; shift ;;
+      --with-rime) ADD_FEATURES+=(rime); shift ;;
       --with-debug) WITH_DEBUG=1; shift ;;
       --features)  # shellcheck disable=SC2206
                    WANT_FEATURES+=($2); shift 2 ;;
