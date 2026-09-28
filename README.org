@@ -71,8 +71,63 @@ bin/moyue doctor                       # every check
 bin/moyue doctor config/emacs-version  # a single check
 #+end_src
 
-The unit tests for the =lisp/= helpers are a separate concern and run with
-=moyue test=.
+The unit tests for the =lisp/= helpers and the =bin/commands/= extensions are a
+separate concern and run with =moyue test=. With no argument it runs every test
+outside the =config/= namespace; a pattern is an ERT selector read as Lisp, so a
+regexp needs quotes of its own:
+#+begin_src shell
+bin/moyue test                        # everything except config/
+bin/moyue test '"^treesit-"'          # tests whose name matches a regexp
+bin/moyue test config/emacs-version   # one test, by name
+#+end_src
+
+* Tree-sitter grammars
+Grammar libraries are pinned to exact upstream revisions, compiled into
+=~/.emacs.d/.cache/tree-sitter/=, and built from sources kept in
+=~/.emacs.d/.cache/tree-sitter/src/<lang>/=.
+
+The cache is searched before =~/.emacs.d/tree-sitter/= and before the system
+library directories, so a grammar built there is always the one Emacs uses,
+while a grammar that has not been built yet falls back to whatever else
+provides it. Nothing ever compiles an upstream default branch on its own:
+built-in grammar downloading is switched off, and the revision to build comes
+from the pinned manifest in [[file:bin/commands/treesit.el][bin/commands/treesit.el]] -- a command-line
+concern, so =init.el= only declares where to look and loads no library.
+
+Because the sources are kept, a grammar can be edited by hand and recompiled.
+=moyue treesit build= compiles whatever revision is on disk; it never resets
+the checkout. =moyue treesit reset= is what restores the pinned revision.
+
+#+begin_src shell
+bin/moyue install --grammars          # check out and build every pinned grammar
+bin/moyue treesit status              # pin, source and library state
+bin/moyue treesit sync                # fetch the pins, then build (network)
+bin/moyue treesit build bash python   # rebuild selected grammars (offline)
+bin/moyue treesit update --write      # move the pins to newer releases
+bin/moyue treesit verify              # prove the whole chain, exits non-zero
+#+end_src
+
+=verify= checks, for every pinned grammar, that the checkout sits on its pin,
+that the library exists, that Emacs can load it, that the ABI it reports is the
+one the pinned source declares (which is what catches a silent fallback to a
+distribution package), and that the font-lock rules bundled with Emacs still
+compile against it. The last check matters because a grammar whose node types
+have moved on keeps loading, it only loses highlighting behind a warning.
+
+=install= only touches grammars when asked, so the default path stays offline
+and takes seconds; without =--grammars= it just says how many are pinned. A
+checkout that already carries local edits is never reset by either command.
+
+Which modes use tree-sitter is left to Emacs: =init.el= sets
+=treesit-enabled-modes= to =t=, so the whole of Emacs 31's
+=treesit-major-mode-remap-alist= (C, C++, CMake, CSS, Dockerfile, JSON, Python,
+Bash, YAML, Java, Ruby, TOML, Lua, HTML, JavaScript, TypeScript, C#, PHP, Go
+and more) routes to tree-sitter. Note that this has to be =setopt= and not
+=setq=, and it has to run after =treesit= is loaded: the variable installs its
+value through a =:set= function that fills =major-mode-remap-alist=, and =setq=
+skips that function -- the setting would read back as =t= while no ts-mode was
+ever enabled. HTML files land in =mhtml-ts-mode=, which is the pair Emacs ships
+and which also drives the embedded CSS and JavaScript grammars.
 
 * Docker
 The [[file:Dockerfile][Dockerfile]] builds a lean base image (Emacs + git + a C toolchain)

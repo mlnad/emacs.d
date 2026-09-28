@@ -371,15 +371,38 @@ regenerated unconditionally.  Return a cons (FILE . CREATED)."
           :skipped skipped
           :failed (nreverse failed))))
 
-(moyue-defcommand "install" "[--force-env]"
+(defun moyue--install-grammars-step (grammars)
+  "Report or perform the tree-sitter grammar step of `moyue install'.
+With GRAMMARS non-nil every pinned grammar is materialised and compiled; a
+checkout that already carries local edits is left untouched.  Without it the
+step is only announced, so the default install stays offline and quick."
+  (let ((pinned (length (moyue-treesit-languages))))
+    (if grammars
+        (progn
+          (message "Building %d tree-sitter grammars ..." pinned)
+          (let ((failed (moyue-treesit-install-grammars)))
+            (if failed
+                (progn
+                  (message "moyue install: %d grammar(s) failed:" (length failed))
+                  (dolist (f failed) (message "  %s: %s" (car f) (cdr f)))
+                  (kill-emacs 1))
+              (message "Tree-sitter grammars built: %d" pinned))))
+      (message "Tree-sitter grammars skipped (%d pinned); add --grammars to build them"
+               pinned))))
+
+(moyue-defcommand "install" "[--force-env] [--grammars]"
                   "Tangle init.org, prepare the environment file, then install from manifest.
 The environment file `.cache/env.el' is created from the login shell on
-the first run only; use --force-env to regenerate it from the shell."
+the first run only; use --force-env to regenerate it from the shell.
+With --grammars, also check out and compile the pinned tree-sitter grammars
+into `.cache/tree-sitter/'; a checkout that carries local edits is left
+alone rather than reset."
                   (require 'org)
                   (let* ((config-root (moyue--config-root))
                          (user-emacs-directory config-root)
                          (default-directory config-root)
                          (force-env (and (member "--force-env" args) t))
+                         (grammars (and (member "--grammars" args) t))
                          (init-tangle-src (expand-file-name "init.org" config-root))
                          (init-tangle-dst (expand-file-name "init.el" config-root))
                          (early-init-tangle-dst (expand-file-name "early-init.el" config-root))
@@ -423,7 +446,8 @@ the first run only; use --force-env to regenerate it from the shell."
                                   (kill-emacs 1))
                               (message "Packages installed successfully. installed=%d skipped=%d"
                                        (plist-get result :installed)
-                                       (plist-get result :skipped)))))
+                                       (plist-get result :skipped))
+                              (moyue--install-grammars-step grammars))))
                       (message "moyue install: init.el not found after tangle: %s" init-tangle-dst)
                       (kill-emacs 1))))
 
@@ -462,21 +486,32 @@ the first run only; use --force-env to regenerate it from the shell."
                                  (plist-get result :skipped))))))
 
 (moyue-defcommand "test" "[PATTERN]"
-                  "Run the lisp/ unit tests (env-ext, core). PATTERN is an ERT selector."
+                  "Run the lisp/ unit tests (everything but the config/ doctor checks).
+PATTERN is an ERT selector and is read as Lisp, so a regexp needs quotes of
+its own: moyue test '\"^treesit-\"'.  Without PATTERN, every test outside the
+`config/' namespace runs; one test is selected by its name as a symbol."
                   (require 'ert)
                   (let* ((arg        (car args))
                          (lisp-dir   (expand-file-name "../lisp/" moyue--bin-dir))
                          (load-lisp  (lambda ()
                                        (add-to-list 'load-path lisp-dir)
                                        (require 'ert)
-                                       ;; Load each lisp source so with-eval-after-load 'ert fires.
+                                       ;; Load each lisp source so that its
+                                       ;; `with-eval-after-load' test section
+                                       ;; fires.  A file that is already in
+                                       ;; `load-history' is skipped: its hook
+                                       ;; has fired already, and ERT treats a
+                                       ;; second definition in batch mode as an
+                                       ;; error rather than as a redefinition.
                                        (dolist (src (directory-files lisp-dir t "\\.el$"))
-                                         (unless (string-match-p "-test\\.el$" src)
+                                         (unless (or (string-match-p "-test\\.el$" src)
+                                                     (assoc (expand-file-name src)
+                                                            load-history))
                                            (load src nil 'nomessage))))))
                     (funcall load-lisp)
                     (ert-run-tests-batch-and-exit
                      (if (or (null arg) (equal arg "lisp"))
-                         "^env-ext/\\|^core/"
+                         '(not "^config/")
                        (read arg)))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
@@ -553,6 +588,43 @@ The check is registered under the `config/' namespace for easy filtering:
             (condition-case nil
                 (read (current-buffer))
               (end-of-file (setq done t))))))))
+
+  ;; Tree-sitter grammars
+  ;; The pinned manifest is the single source of truth for which upstream
+  ;; revision every grammar is built from, so a malformed pin would silently
+  ;; turn the next build into an unreproducible one.  It lives in
+  ;; bin/commands/treesit.el, which this file loads along with the other
+  ;; commands, so nothing has to be re-read here.
+  (moyue--config-defcheck treesit-manifest
+    "The pinned tree-sitter manifest must be readable and well formed."
+    (should (bound-and-true-p moyue-treesit-manifest))
+    (should (consp moyue-treesit-manifest))
+    (dolist (entry moyue-treesit-manifest)
+      (should (symbolp (car entry)))
+      (should (string-match-p "\\`https://" (or (nth 1 entry) "")))
+      (should (string-match-p "\\`[0-9a-f]\\{40\\}\\'"
+                              (or (plist-get (cddr entry) :commit) "")))
+      (should (stringp (plist-get (cddr entry) :source-dir))))
+    ;; Every pinned language must be usable by the build path.
+    (dolist (lang (moyue-treesit-languages))
+      (should (equal (car (moyue-treesit-entry lang)) lang))
+      (should (file-name-absolute-p (nth 1 (moyue-treesit-recipe lang))))))
+
+  (moyue--config-defcheck treesit-modes-wired
+    "`treesit-enabled-modes' must be set with `setopt', in the tangled init.el.
+The variable installs its value through a :set function that fills
+`major-mode-remap-alist'.  `setq' never calls a :set function, so a `setq'
+leaves that alist untouched while the variable still reads back as t -- the
+setting looks applied and no tree-sitter mode is ever enabled.  Nothing
+signals this at run time, which is why it is asserted on the source."
+    (let ((init-el (expand-file-name "init.el" user-emacs-directory)))
+      (should (file-readable-p init-el))
+      (with-temp-buffer
+        (insert-file-contents init-el)
+        (goto-char (point-min))
+        (should-not (search-forward "(setq treesit-enabled-modes" nil t))
+        (goto-char (point-min))
+        (should (search-forward "(setopt treesit-enabled-modes" nil t)))))
 
   ;; Package installation checks
   ;; Bootstrap / completion framework
