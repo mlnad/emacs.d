@@ -655,7 +655,6 @@ signals this at run time, which is why it is asserted on the source."
   (moyue--config-check-package pyimport)
   (moyue--config-check-package poetry)
   (moyue--config-check-package geiser)
-  (moyue--config-check-package lispy)
   (moyue--config-check-package buttercup)
   (moyue--config-check-package dockerfile-ts-mode)
 

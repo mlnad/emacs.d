@@ -835,30 +835,6 @@ API as-is, so they need to be updated when a provider retires one.
   :commands run-geiser)
 #+end_src
 
-*** lispy
-#+begin_src emacs-lisp :tangle yes
-(use-package lispy
-  :ensure t
-  :hook ((lisp-mode . lispy-mode)
-         (emacs-lisp-mode . lispy-mode)
-         (scheme-mode . lispy-mode)
-         (ielm-mode . lispy-mode))
-  :config
-  (setq lispy-close-quotes-at-end-p t))
-
-;; `lispy' ships with an empty `Package-Requires', so `:ensure t' above pulls
-;; in no dependency at all.  Declare them explicitly, otherwise a fresh
-;; `moyue install' produces a lispy that cannot be loaded
-;; ("Cannot open load file: iedit" / "swiper").  `ivy' and `lv' arrive as
-;; dependencies of `swiper' and `hydra'.  `ace-window' is required lazily.
-(use-package zoutline :ensure t :defer t)
-(use-package avy :ensure t :defer t)
-(use-package hydra :ensure t :defer t)
-(use-package iedit :ensure t :defer t)
-(use-package swiper :ensure t :defer t)
-(use-package ace-window :ensure t :defer t)
-#+end_src
-
 ** Rust
 *** rust-mode
 #+begin_src emacs-lisp :tangle yes
