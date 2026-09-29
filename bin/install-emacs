@@ -65,6 +65,9 @@ WITH_X="auto"                # auto | yes | no
 WITH_MAILUTILS=0
 WITH_DEBUG=0
 FETCH_SOURCE_ONLY=0          # 1 = only download+unpack the source tree, no build
+UNINSTALL=0                  # 1 = remove an installation instead of creating one
+PURGE_DEPS=0                 # with --uninstall: also remove libraries we built
+PURGE_CACHE=0                # with --uninstall: also remove caches and sources
 NO_SYSTEM_PKGS=0             # 1 = never touch the system package manager, even as root
 EXTRA_CONFIGURE_ARGS=()
 
@@ -141,6 +144,16 @@ ${C_BOLD}LOCATIONS${C_RESET}
   --source-dir DIR      where the Emacs source tree is unpacked and built
                         (default: \$EMACS_SRC_DIR or ~/.emacs.d/.cache/emacs-src)
   --fetch-source-only   only download and unpack the source tree, build nothing
+
+${C_BOLD}UNINSTALL${C_RESET}
+  --uninstall, uninstall
+                        remove the Emacs installed in \${PREFIX}; uses the build
+                        tree's 'make uninstall' and then sweeps known leftovers
+  --purge-deps          also remove libraries this script built into \${PREFIX}
+  --purge-cache         also delete the build cache (\${SRC_DIR}) and the source
+                        tree (\${EMACS_SRC_DIR})
+      Distro packages installed by an earlier run are only reported, never
+      removed (the script never uses sudo).  Combine with -n to preview.
   --mirror URL          GNU mirror base URL        (default: ${GNU_MIRROR})
   --version VER         Emacs version to build     (default: ${EMACS_VERSION})
   --jobs N              parallel make jobs         (default: number of CPUs, capped at 16)
@@ -208,6 +221,8 @@ ${C_BOLD}EXAMPLES${C_RESET}
   ${PROG} --deps minimal --no-images        # fast, terminal-only build
   ${PROG} --deps all                        # prefer building every dep from source
   ${PROG} --fetch-source-only                # just get the sources (for M-.)
+  ${PROG} uninstall                         # remove ~/.local's Emacs (asks first)
+  ${PROG} uninstall --purge-cache --yes     # also drop caches and sources
   ${PROG} -n                                # show the plan, touch nothing
 
 ${C_BOLD}PRIVILEGES${C_RESET}
@@ -869,20 +884,30 @@ install_pkgs() {  # install_pkgs FEATURE...
       warn "no package-name mapping for '${feature}'; skipping"
       continue
     fi
+    local installed=0
     # shellcheck disable=SC2086
     case "$PKG_FAMILY" in
-      deb)     run env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $names && used=1 || warn "could not install: ${names}" ;;
-      rpm)     if have dnf; then run dnf install -y $names && used=1 || warn "could not install: ${names}"
-               elif have yum; then run yum install -y $names && used=1 || warn "could not install: ${names}"
+      deb)     run env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $names && installed=1 || warn "could not install: ${names}" ;;
+      rpm)     if have dnf; then run dnf install -y $names && installed=1 || warn "could not install: ${names}"
+               elif have yum; then run yum install -y $names && installed=1 || warn "could not install: ${names}"
                else warn "neither dnf nor yum available"; fi ;;
-      pacman)  run pacman -S --needed --noconfirm $names && used=1 || warn "could not install: ${names}" ;;
-      zypper)  run zypper --non-interactive install $names && used=1 || warn "could not install: ${names}" ;;
-      apk)     run apk add --no-cache $names && used=1 || warn "could not install: ${names}" ;;
-      xbps)    run xbps-install -Sy $names && used=1 || warn "could not install: ${names}" ;;
-      nix)     run nix-env -iA "nixpkgs.${feature}" && used=1 || warn "could not install: ${feature}" ;;
+      pacman)  run pacman -S --needed --noconfirm $names && installed=1 || warn "could not install: ${names}" ;;
+      zypper)  run zypper --non-interactive install $names && installed=1 || warn "could not install: ${names}" ;;
+      apk)     run apk add --no-cache $names && installed=1 || warn "could not install: ${names}" ;;
+      xbps)    run xbps-install -Sy $names && installed=1 || warn "could not install: ${names}" ;;
+      nix)     run nix-env -iA "nixpkgs.${feature}" && installed=1 || warn "could not install: ${feature}" ;;
       portage) warn "Gentoo: install by hand -> ${names}" ;;
       *)       warn "unknown package manager: install by hand -> ${names}" ;;
     esac
+    if [ "$installed" = 1 ]; then
+      used=1
+      # Remember it: --uninstall reports these (it never removes them itself).
+      if [ "$DRY_RUN" != 1 ]; then
+        mkdir -p "$PREFIX"
+        grep -qxF "$feature" "${PREFIX}/.emacs-bootstrap-packages" 2>/dev/null ||
+          printf '%s\n' "$feature" >> "${PREFIX}/.emacs-bootstrap-packages"
+      fi
+    fi
   done
   [ "$used" = 1 ]
 }
@@ -1519,6 +1544,195 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Uninstall
+# ---------------------------------------------------------------------------
+remove_path() {  # remove_path PATH -- honour --dry-run
+  local p="$1"
+  [ -e "$p" ] || [ -L "$p" ] || return 0
+  if [ "$DRY_RUN" = 1 ]; then
+    printf '  %s[plan]%s rm -rf %s\n' "$C_YELLOW" "$C_RESET" "$p"
+    return 0
+  fi
+  rm -rf "$p"
+  log "removed ${p}"
+}
+
+# Package names for FEATURE on this distro, for the uninstall hint.
+pkg_hint_for() {
+  local f="$1" names spec
+  if names="$(family_pkg_names "$f" 2>/dev/null)"; then say "$names"; return 0; fi
+  if spec="$(pkg_names_for "$f" 2>/dev/null)"; then
+    case "$PKG_FAMILY" in rpm) say "${spec#*|}" ;; *) say "${spec%%|*}" ;; esac
+    return 0
+  fi
+  say "$f"
+}
+
+do_uninstall() {
+  local ver="$EMACS_VERSION" p d f
+  local -a paths=()
+
+  if [ ! -d "$PREFIX" ]; then
+    warn "${PREFIX} does not exist; nothing to uninstall"
+    return 0
+  fi
+
+  step "Uninstalling GNU Emacs ${ver}"
+  log "prefix : ${PREFIX}"
+  log "build  : ${EMACS_SRC_DIR}"
+  [ "$PURGE_DEPS" = 1 ]  && log "deps   : libraries this script built into ${PREFIX} will go too"
+  [ "$PURGE_CACHE" = 1 ] && log "cache  : ${SRC_DIR} and ${EMACS_SRC_DIR} will go too"
+
+  if [ "$DRY_RUN" != 1 ] && [ "$ASSUME_YES" != 1 ]; then
+    confirm "Remove Emacs ${ver} from ${PREFIX}?" || { log "cancelled"; return 1; }
+  fi
+
+  # 1) precise removal: a configured build tree knows exactly what install added
+  if [ -f "${EMACS_SRC_DIR}/Makefile" ] && [ -f "${EMACS_SRC_DIR}/config.status" ]; then
+    step "make uninstall (in ${EMACS_SRC_DIR})"
+    if [ "$DRY_RUN" = 1 ]; then
+      printf '  %s[plan]%s make -C %s uninstall\n' "$C_YELLOW" "$C_RESET" "$EMACS_SRC_DIR"
+    else
+      ( cd "$EMACS_SRC_DIR" && make uninstall ) || \
+        warn "'make uninstall' reported errors; removing the known files below as well"
+    fi
+  else
+    log "no configured build tree in ${EMACS_SRC_DIR}; removing the known files instead"
+  fi
+
+  # 2) sweep whatever is left (or was installed by an older run)
+  paths=(
+    "${PREFIX}/bin/emacs-${ver}"
+    "${PREFIX}/bin/emacs-local"
+    "${PREFIX}/bin/emacsclient"
+    "${PREFIX}/bin/ebrowse"
+    "${PREFIX}/bin/etags"
+    "${PREFIX}/bin/ctags"
+    "${PREFIX}/libexec/emacs/${ver}"
+    "${PREFIX}/share/emacs/${ver}"
+    "${PREFIX}/include/emacs-module.h"
+    "${PREFIX}/lib/systemd/user/emacs.service"
+    "${PREFIX}/lib/systemd/user/emacsclient.service"
+    "${PREFIX}/var/games/emacs"
+  )
+  for p in "${paths[@]}"; do remove_path "$p"; done
+  for p in "${PREFIX}"/share/info/emacs* "${PREFIX}"/share/man/man1/emacs* \
+           "${PREFIX}"/share/man/man1/emacsclient* "${PREFIX}"/share/man/man1/ebrowse* \
+           "${PREFIX}"/share/man/man1/etags* "${PREFIX}"/share/man/man1/ctags* \
+           "${PREFIX}"/share/applications/emacs*.desktop \
+           "${PREFIX}"/share/icons/hicolor/*/apps/emacs*.png; do
+    [ -e "$p" ] && remove_path "$p"
+  done
+
+  # Images installed alongside the Info manuals; their names come from the
+  # sources (doc/**/*.png), with the known set as a fallback.
+  local -a pngs=()
+  if [ -d "${EMACS_SRC_DIR}/doc" ]; then
+    while IFS= read -r p; do
+      [ -n "$p" ] && pngs+=("$p")
+    done < <(find "${EMACS_SRC_DIR}/doc" -name '*.png' -exec basename {} \; 2>/dev/null | sort -u)
+  fi
+  if [ "${#pngs[@]}" -eq 0 ]; then
+    pngs=(cons-1.png cons-2.png cons-2a.png cons-3.png cons-4.png cons-5.png \
+          drawers.png lambda-1.png lambda-2.png lambda-3.png)
+  fi
+  for p in "${pngs[@]}"; do remove_path "${PREFIX}/share/info/${p}"; done
+
+  # share/emacs/site-lisp is where users keep site packages: only remove it when
+  # Emacs's own subdirs.el is the sole content.
+  if [ -d "${PREFIX}/share/emacs/site-lisp" ]; then
+    if [ "$(ls -A "${PREFIX}/share/emacs/site-lisp" 2>/dev/null | grep -cv '^subdirs\.el$')" -eq 0 ]; then
+      remove_path "${PREFIX}/share/emacs/site-lisp"
+    else
+      warn "keeping ${PREFIX}/share/emacs/site-lisp (it holds files that are not Emacs's)"
+    fi
+  fi
+
+  # share/info/dir is the shared index for every installed manual: only remove it
+  # when Emacs's manuals were the only ones there.
+  if [ -f "${PREFIX}/share/info/dir" ] &&
+     [ "$(find "${PREFIX}/share/info" -type f ! -name dir 2>/dev/null | wc -l)" -eq 0 ]; then
+    remove_path "${PREFIX}/share/info/dir"
+    rmdir "${PREFIX}/share/info" 2>/dev/null || true
+  fi
+
+  # Prune directories that are empty now.  `-exec rmdir {} \;' (not `+') is
+  # required: a batched removal happens after the traversal, so parents would
+  # still look non-empty while find walks them.
+  for d in "${PREFIX}/bin" "${PREFIX}/include" "${PREFIX}/share/icons" "${PREFIX}/share/applications" \
+           "${PREFIX}/share/metainfo" "${PREFIX}/share/info" "${PREFIX}/share/man" \
+           "${PREFIX}/share/emacs" "${PREFIX}/share/doc/emacs" "${PREFIX}/share" \
+           "${PREFIX}/lib/systemd/user" "${PREFIX}/lib/systemd" "${PREFIX}/lib" \
+           "${PREFIX}/libexec/emacs" "${PREFIX}/libexec" \
+           "${PREFIX}/var/games" "${PREFIX}/var"; do
+    [ -d "$d" ] || continue
+    find "$d" -depth -type d -empty -exec rmdir {} \; 2>/dev/null || true
+  done
+
+  # the plain `emacs' name only if it is the symlink this script created
+  if [ -L "${PREFIX}/bin/emacs" ]; then
+    case "$(readlink "${PREFIX}/bin/emacs" 2>/dev/null || true)" in
+      *"emacs-${ver}") remove_path "${PREFIX}/bin/emacs" ;;
+      *) warn "keeping ${PREFIX}/bin/emacs: it points at $(readlink "${PREFIX}/bin/emacs" 2>/dev/null || true)" ;;
+    esac
+  elif [ -e "${PREFIX}/bin/emacs" ]; then
+    warn "keeping ${PREFIX}/bin/emacs: it is not a symlink created by this script"
+  fi
+  for d in "${PREFIX}/libexec/emacs" "${PREFIX}/libexec" "${PREFIX}/share/emacs" "${PREFIX}/var/games"; do
+    [ -d "$d" ] && rmdir "$d" 2>/dev/null || true
+  done
+
+  # 3) libraries this script compiled into ${PREFIX}
+  if [ "$PURGE_DEPS" = 1 ]; then
+    step "Removing dependencies built by this script"
+    for p in "${PREFIX}"/.emacs-built-*; do
+      [ -e "$p" ] || continue
+      f="$(basename "$p")"; f="${f#.emacs-built-}"
+      if [ -f "${SRC_DIR}/deps/${f}/Makefile" ] && [ -f "${SRC_DIR}/deps/${f}/config.status" ]; then
+        if [ "$DRY_RUN" = 1 ]; then
+          printf '  %s[plan]%s make -C %s uninstall\n' "$C_YELLOW" "$C_RESET" "${SRC_DIR}/deps/${f}"
+        else
+          ( cd "${SRC_DIR}/deps/${f}" && make uninstall ) >/dev/null 2>&1 || \
+            warn "'make uninstall' failed for ${f}; its files stay in ${PREFIX}"
+        fi
+      elif [ "$DRY_RUN" != 1 ]; then
+        warn "no build tree for '${f}': its files stay in ${PREFIX}"
+      fi
+      remove_path "$p"
+    done
+  elif ls "${PREFIX}"/.emacs-built-* >/dev/null 2>&1; then
+    log "libraries built by this script stay in ${PREFIX} (add --purge-deps to remove them)"
+  fi
+
+  # 4) caches and sources
+  if [ "$PURGE_CACHE" = 1 ]; then
+    if [ -f "${EMACS_SRC_DIR}/.emacs-version" ] || [ -f "${EMACS_SRC_DIR}/src/emacs.c" ]; then
+      remove_path "$EMACS_SRC_DIR"
+    elif [ -e "$EMACS_SRC_DIR" ]; then
+      warn "keeping ${EMACS_SRC_DIR}: it does not look like a tree this script unpacked"
+    fi
+    remove_path "$SRC_DIR"
+  elif [ -d "$EMACS_SRC_DIR" ]; then
+    log "source tree kept for browsing: ${EMACS_SRC_DIR} (--purge-cache removes it)"
+  fi
+
+  # 5) distro packages: reported, never removed here (this script never uses sudo)
+  if [ -f "${PREFIX}/.emacs-bootstrap-packages" ]; then
+    step "Dependencies that an earlier run installed with ${PKG_FAMILY}"
+    while read -r f; do
+      [ -n "$f" ] || continue
+      printf '    %-10s -> %s\n' "$f" "$(pkg_hint_for "$f")" >&2
+    done < <(sort -u "${PREFIX}/.emacs-bootstrap-packages")
+    warn "remove them with your package manager if nothing else needs them"
+    remove_path "${PREFIX}/.emacs-bootstrap-packages"
+  fi
+
+  step "Uninstall finished"
+  log "nothing outside ${PREFIX}, ${SRC_DIR} and ${EMACS_SRC_DIR} was touched"
+  return 0
+}
+
+# ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
 parse_args() {
@@ -1533,6 +1747,9 @@ parse_args() {
       --source-dir) EMACS_SRC_DIR="$2"; shift 2 ;;
       --source-dir=*) EMACS_SRC_DIR="${arg#*=}"; shift ;;
       --fetch-source-only) FETCH_SOURCE_ONLY=1; shift ;;
+      --uninstall|uninstall) UNINSTALL=1; shift ;;
+      --purge-deps)  UNINSTALL=1; PURGE_DEPS=1; shift ;;
+      --purge-cache) UNINSTALL=1; PURGE_CACHE=1; shift ;;
       --srcdir=*)  SRC_DIR="${arg#*=}"; shift ;;
       --mirror)    GNU_MIRROR="$2"; shift 2 ;;
       --mirror=*)  GNU_MIRROR="${arg#*=}"; shift ;;
@@ -1609,6 +1826,12 @@ parse_args() {
 main() {
   parse_args "$@"
   detect_os
+
+  # Uninstall mode: remove an installation (needs no toolchain either).
+  if [ "$UNINSTALL" = 1 ]; then
+    do_uninstall
+    exit $?
+  fi
 
   # Download-only mode: fetch the sources and stop (no toolchain needed).
   if [ "$FETCH_SOURCE_ONLY" = 1 ]; then
