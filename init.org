@@ -69,7 +69,7 @@ The file is divided into several major sections:
     (setq-local coding-system-for-write 'utf-8)
     (goto-char (point-min))
     (insert
-     ";; -*- mode: emacs-lisp -*- lexical-binding: t; -*-
+     ";;; -*- lexical-binding: t; -*-
 
 (setq moyu/package-mirror 'default
       moyu/default-font (font-spec :family \"Consolas\"
@@ -77,7 +77,7 @@ The file is divided into several major sections:
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-;;; init.el --- -*- mode: emacs-lisp -*- lexical-binding: t; -*-
+;;; init.el --- -*- mode: emacs-lisp; lexical-binding: t; -*-
 #+end_src
 
 * Custom variables
@@ -95,7 +95,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | theme            | 'doom-one                 |
 | profiler-enabled | 'nil                      |
 | package-mirror   | 'default                  |
-| ai-provider      | deepseek-r1               |
+| ai-provider      | deepseek-flash         |
 | ai-api-key       | 'nil                      |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
@@ -682,7 +682,7 @@ dedicated chat buffer.
 The active provider is selected by =moyu/ai-provider=, and its API key is read
 from the provider's environment variable, falling back to =moyu/ai-api-key= in
 =~/.emacs.d/.cache/userconfig=.  The provider name also picks the backend:
-=deepseek= and =deepseek-r1= use the DeepSeek backend, =claude= the Anthropic
+=deepseek-flash= and =deepseek-pro= use the DeepSeek backend, =claude= the Anthropic
 backend and =gpt4= the OpenAI backend.  Model names are handed to the provider's
 API as-is, so they need to be updated when a provider retires one.
 
@@ -722,8 +722,7 @@ API as-is, so they need to be updated when a provider retires one.
          ;; Only the backend of the selected provider is registered; the
          ;; remaining rows of `ai-providers' are inert until selected.
          (backend (pcase moyu/ai-provider
-                    ((or "deepseek" "deepseek-v3" "deepseek-r1"
-                         "deepseek-reasoner")
+                    ((or "deepseek" "deepseek-flash" "deepseek-pro")
                      (gptel-make-deepseek "DeepSeek" :stream t :key key))
                     ((or "claude" "anthropic")
                      (gptel-make-anthropic "Claude" :stream t :key key))
@@ -1564,9 +1563,9 @@ should manage.
          ("M-'"    . popper-cycle))
   :init
   (setq popper-reference-buffers moyu/popper-buffers)
+  :config
   (popper-mode +1)
   (popper-echo-mode +1)
-  :config
   (setq popper-group-function #'popper-group-by-project
         popper-mode-line nil))
 #+end_src
