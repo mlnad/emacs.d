@@ -69,11 +69,15 @@ The file is divided into several major sections:
     (setq-local coding-system-for-write 'utf-8)
     (goto-char (point-min))
     (insert
-     ";; -*- mode: emacs-lisp -*-
+     ";; -*- mode: emacs-lisp -*- lexical-binding: t; -*-
 
 (setq moyu/package-mirror 'default
       moyu/default-font (font-spec :family \"Consolas\"
                                      :size 14))")))
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+;;; init.el --- -*- mode: emacs-lisp -*- lexical-binding: t; -*-
 #+end_src
 
 * Custom variables
@@ -402,24 +406,21 @@ itself; the setting matters for a non-source install.
   :custom
   (treesit-font-lock-level 4)
   :init
-  ;; Compiled grammars live in `.cache/tree-sitter/', which Emacs searches
-  ;; before `~/.emacs.d/tree-sitter/' and before the system library paths, so
-  ;; a grammar built there always wins while a missing one still falls back to
-  ;; whatever else provides it.  `moyue install --grammars' (or
-  ;; `moyue treesit sync') is what checks out the pinned revisions and builds
-  ;; them, so nothing has to be loaded here: a session only needs to be told
-  ;; where to look.
-  (setq treesit-extra-load-path (moyu/cache-it "tree-sitter/")
-        treesit-auto-install-grammar nil)
+  (add-to-list 'treesit-extra-load-path (moyu/cache-it "tree-sitter/"))
+  (setq treesit-auto-install-grammar nil)
   :config
-  ;; Let Emacs decide which classic modes become tree-sitter modes, from its
-  ;; own `treesit-major-mode-remap-alist', instead of hand-maintaining a
-  ;; subset of it.  This has to be `setopt' rather than `setq', and it has to
-  ;; happen after `treesit' is loaded: the variable installs its value through
-  ;; a :set function that fills `major-mode-remap-alist', and `setq' would
-  ;; leave that alist untouched -- the setting would look applied while no
-  ;; ts-mode was ever enabled.
-  (setopt treesit-enabled-modes t))
+  (if (>= emacs-major-version 31)
+      (setopt treesit-enabled-modes t)
+    (setq major-mode-remap-alist
+          '((c-mode           . c-ts-mode)
+            (c++-mode         . c++-ts-mode)
+            (cmake-mode       . cmake-ts-mode)
+            (css-mode         . css-ts-mode)
+            (dockerfile-mode  . dockerfile-ts-mode)
+            (json-mode        . json-ts-mode)
+            (python-mode      . python-ts-mode)
+            (sh-mode          . bash-ts-mode)
+            (yaml-mode        . yaml-ts-mode)))))
 #+end_src
 
 *** which-key
@@ -1410,14 +1411,15 @@ Each row is (FACE FAMILY SIZE).  Special FACE values:
   fontset-fonts)
 
 (defun moyu/apply-fontset-fonts ()
-  (mapc #'(lambda (row)
-            (cl-destructuring-bind (char-set family weight slant) row
-              (set-fontset-font t (read char-set)
-                                (font-spec :family family
-                                           :weight (read weight)
-                                           :slant (read slant))
-                                nil 'append)))
-          moyu/fontset-fonts)
+  (when (display-graphic-p)
+    (mapc #'(lambda (row)
+              (cl-destructuring-bind (char-set family weight slant) row
+                (set-fontset-font t (read char-set)
+                                  (font-spec :family family
+                                             :weight (read weight)
+                                             :slant (read slant))
+                                  nil 'append)))
+          moyu/fontset-fonts))
   (run-hooks 'after-setting-font-hook))
 
 (add-hook 'after-init-hook #'moyu/apply-fontset-fonts)
