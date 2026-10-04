@@ -91,10 +91,11 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | lsp-client       | 'eglot                    |
 | notes-dir        | ~/org/                    |
 | org-roam-dir     | ~/org/                    |
-| theme            | 'doom-one                 |
+| gui-theme        | 'doom-one                 |
+| tui-theme        | 'modus-vivendi            |
 | profiler-enabled | 'nil                      |
 | package-mirror   | 'default                  |
-| ai-provider      | deepseek-flash         |
+| ai-provider      | deepseek-flash            |
 | ai-api-key       | 'nil                      |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
@@ -1493,9 +1494,12 @@ Each row is (FACE FAMILY SIZE).  Special FACE values:
   :ensure t)
 
 (defun moyu/apply-theme ()
-  (when (and moyu/theme (display-graphic-p) (not (custom-theme-enabled-p moyu/theme)))
-    (mapc #'disable-theme custom-enabled-themes)
-    (load-theme moyu/theme t)))
+  (let ((_theme (if (display-graphic-p)
+                    moyu/gui-theme
+                  moyu/tui-theme)))
+    (unless (custom-theme-enabled-p _theme)
+      (mapc #'disable-theme custom-enabled-themes)
+      (load-theme _theme t))))
 
 (add-hook 'after-init-hook #'moyu/apply-theme)
 (add-hook 'server-after-make-frame-hook #'moyu/apply-theme)
