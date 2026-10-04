@@ -89,7 +89,6 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | full-name        | Liu Miao                  |
 | email-address    | liumiaogemini@foxmail.com |
 | lsp-client       | 'eglot                    |
-| org-journal-type | 'daily                    |
 | notes-dir        | ~/org/                    |
 | org-roam-dir     | ~/org/                    |
 | theme            | 'doom-one                 |
@@ -122,7 +121,8 @@ be overwrited by user configuration in `.cache/userconfig` file.
 * Start Up
 ** Packages
 Initialize package manager. Elpa packages will be installed into named folders,
-packages will be reinstalled after Emacs is updated.
+packages will be reinstalled after Emacs is updated.  Emacs 29 or newer is
+assumed, so =use-package= ships with Emacs and needs no installation.
 #+begin_src emacs-lisp :tangle yes
 (defvar moyu/available-package-mirrors
   '((default . (("melpa" . "https://melpa.org/packages/")
@@ -154,12 +154,6 @@ packages will be reinstalled after Emacs is updated.
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)
   (package-initialize))
-
-;; Install use-package from melpa
-(when (< emacs-major-version 29)
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package)))
 #+end_src
 
 ** Libs
@@ -206,18 +200,13 @@ Emacs launched from a desktop launcher inherits the shell environment
   (setq resize-mini-windows 'grow-only
         find-file-visit-truename t
         create-lockfiles nil
+        ;; No backups are made, so `version-control', `backup-by-copying'
+        ;; and the other `backup-*' options would have no effect.
         make-backup-files nil
         ring-bell-function 'ignore
-        version-control t
-        backup-by-copying t
-        delete-old-versions t
-        kept-old-versions 5
-        kept-new-versions 5
-        backup-directory-alist (moyu/cache-it "backup/")
         auto-save-list-file-prefix (moyu/cache-it "auto-save-list/.saves-"))
 
-  (setq-default auto-image-file-mode t
-                initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
+  (setq-default initial-scratch-message "#+TITLE: SCRATCH\n#+AUTHOR: Liu\n\n"
                 inhibit-splash-screen t
                 initial-major-mode 'org-mode
                 frame-title-format "󰛓 Mo Yu :: %b"
@@ -232,6 +221,9 @@ Emacs launched from a desktop launcher inherits the shell environment
 
   (fset #'yes-or-no-p #'y-or-n-p)
   :config
+  ;; Setting the variable is not enough: the mode installs the image file
+  ;; handler that makes Emacs visit images as images.
+  (auto-image-file-mode 1)
   (electric-pair-mode 1)
   (electric-indent-mode 1))
 
@@ -247,8 +239,7 @@ Emacs launched from a desktop launcher inherits the shell environment
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-(when (>= emacs-major-version 28)
-  (setq-default word-wrap-by-category t))
+(setq-default word-wrap-by-category t)
 
 ;; Default to soft line-wrapping in text modes.
 (add-hook 'text-mode-hook #'visual-line-mode)
@@ -276,17 +267,14 @@ TRAMP is cautious by default: every remote =file-attributes=, every
 directory access and every process start is a network round trip.  The
 settings below cache remote state, keep local state local, and never block
 Emacs on a host that went away.  Remote backups need no configuration,
-since =make-backup-files= is nil above; note that
-~tramp-backup-directory-alist~ has to be an alist of =(REGEXP . DIRECTORY)=
-pairs, a plain directory name breaks ~find-backup-file-name~.
+since =make-backup-files= is nil above.
 #+begin_src emacs-lisp :tangle yes
 (unless (eq system-type 'windows-nt)
   (setq tramp-default-method "ssh"
         ;; Connection history and auto-save files stay local, so a flaky
         ;; link never slows down startup nor blocks saving.
         tramp-persistency-file-name (moyu/cache-it "tramp")
-        tramp-auto-save-directory (moyu/cache-it "tramp-autosave/")
-        tramp-backup-directory-alist nil))
+        tramp-auto-save-directory (moyu/cache-it "tramp-autosave/")))
 
 (with-eval-after-load 'tramp
   ;; Level 6 logs every remote command into a *tramp/...* buffer and slows
@@ -302,9 +290,8 @@ pairs, a plain directory name breaks ~find-backup-file-name~.
   ;; servers outside /usr/bin (pyenv, ~/.local/bin, ~/.cargo/bin) are found.
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
-  (when (>= emacs-major-version 29)
-    ;; Copy between two remote hosts directly, not via a local temp file.
-    (setq tramp-use-scp-direct-remote-copying t))
+  ;; Copy between two remote hosts directly, not via a local temp file.
+  (setq tramp-use-scp-direct-remote-copying t)
 
   (when (>= emacs-major-version 30)
     ;; Give up on an unresponsive host instead of hanging Dired forever.
@@ -411,12 +398,6 @@ an interactive prompt.  Requires Emacs 30 or newer.")
   :hook (after-init . global-auto-revert-mode))
 #+end_src
 
-*** display-fill-column-indicator
-#+begin_src emacs-lisp :tangle yes
-(when (>= emacs-major-version 27)
-  (use-package display-fill-column-indicator))
-#+end_src
-
 *** compile
 #+begin_src emacs-lisp :tangle yes
 (use-package compile
@@ -430,7 +411,9 @@ an interactive prompt.  Requires Emacs 30 or newer.")
 #+begin_src emacs-lisp :tangle yes
 (use-package vc
   :custom
-  (vc-follow-link t))
+  ;; `vc-follow-symlinks' controls the "follow link?" prompt shown for
+  ;; symbolic links to version-controlled files.
+  (vc-follow-symlinks 'always))
 #+end_src
 
 *** repeat
@@ -438,6 +421,14 @@ an interactive prompt.  Requires Emacs 30 or newer.")
 (use-package repeat
   :config
   (repeat-mode))
+#+end_src
+
+*** winner
+~winner-undo~ is not autoloaded, so declare it here; its window layout is
+otherwise lost.
+#+begin_src emacs-lisp :tangle yes
+(use-package winner
+  :commands (winner-undo winner-redo))
 #+end_src
 
 *** bookmark
@@ -456,7 +447,10 @@ an interactive prompt.  Requires Emacs 30 or newer.")
   (treesit-font-lock-level 4)
   :init
   (add-to-list 'treesit-extra-load-path (moyu/cache-it "tree-sitter/"))
-  (setq treesit-auto-install-grammar nil)
+  ;; Emacs 31 renamed the option to `treesit-auto-install-grammar'.
+  (if (>= emacs-major-version 31)
+      (setq treesit-auto-install-grammar nil)
+    (with-no-warnings (setq treesit-auto-install nil)))
   :config
   (if (>= emacs-major-version 31)
       (setopt treesit-enabled-modes t)
@@ -540,8 +534,8 @@ an interactive prompt.  Requires Emacs 30 or newer.")
          ([remap switch-to-buffer-other-window] . consult-buffer-other-window)
          ([remap switch-to-buffer-other-frame]  . consult-buffer-other-frame)
          ([remap yank-pop]                      . consult-yank-pop))
-  :preface
-  (advice-add #'multi-occur :override #'consult-multi-occur)
+  ;; `consult-multi-occur' no longer exists in consult, so built-in
+  ;; `multi-occur' is left alone.
   :config
   (setq consult-line-numbers-widen t
         consult-async-min-input 2
@@ -659,14 +653,6 @@ an interactive prompt.  Requires Emacs 30 or newer.")
 #+end_src
 
 * Programming
-** Configs
-#+begin_src emacs-lisp :tangle yes
-
-(defvar moyu/build-actions-map (make-sparse-keymap))
-
-(defvar moyu/debug-actions-map (make-sparse-keymap))
-#+end_src
-
 ** LSP
 #+begin_src emacs-lisp :tangle yes
 (use-package eglot
@@ -851,7 +837,7 @@ API as-is, so they need to be updated when a provider retires one.
                                     (setq imenu-generic-expression emacs-lisp-extend-imenu-list)))
 
   (define-advice elisp-get-var-docstring (:around (fn sym))
-    (when-let (ret (funcall fn sym))
+    (when-let* ((ret (funcall fn sym)))
       (if (boundp sym)
           (concat ret " "
                   (let* ((truncated "[...]")
@@ -873,7 +859,16 @@ API as-is, so they need to be updated when a provider retires one.
 #+begin_src emacs-lisp :tangle yes
 (use-package buttercup
   :ensure t
-  :mode ("/test[/-].+\.el$" . buttercup-minor-mode))
+  ;; Do not use the minor mode as the `auto-mode-alist' entry: that would
+  ;; leave test files in `fundamental-mode', without font-lock or
+  ;; indentation.  Visit them as Emacs Lisp and enable the minor mode from
+  ;; the mode hook instead.
+  :mode (("/test[/-].+\\.el\\'" . emacs-lisp-mode))
+  :hook (emacs-lisp-mode
+         . (lambda ()
+             (when (and buffer-file-name
+                        (string-match-p "/test[/-].+\\.el\\'" buffer-file-name))
+               (buttercup-minor-mode 1)))))
 #+end_src
 
 *** geiser
@@ -933,7 +928,7 @@ API as-is, so they need to be updated when a provider retires one.
 (use-package c-ts-mode
   :mode ("\\.c\\'" . c-ts-mode)
   :mode ("\\.\\(cpp\\|cc\\|C\\|c\\+\\+\\|hpp\\)\\'" . c++-ts-mode)
-  :mode ("\\.h\\'" . c-or-c++-ts-mode))
+  :mode ("\\.h\\'" . c-or-c++-mode))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -969,8 +964,6 @@ API as-is, so they need to be updated when a provider retires one.
     :unnarrowed t))
 
 (defvar org/roam-templates nil)
-
-(defvar org/roam-dailies-map (make-sparse-keymap))
 
 (defvar org/todo-keywords
   '((sequence "TODO(t)" "LOOP(r)" "START(s)" "WAIT(w)" "HOLD(h)" "IDEA(i)" "|" "DONE(d)" "KILL(k)")))
@@ -1031,10 +1024,10 @@ API as-is, so they need to be updated when a provider retires one.
 #+begin_src emacs-lisp :tangle yes
 (use-package org-roam
   :ensure org-roam
-  :hook (after-init . org-roam-db-autosync-enable)
+  :hook (after-init . org-roam-db-autosync-mode)
   :custom
   (org-roam-directory moyu/org-roam-dir)
-  :commands (org-roam-buffer-toggle-display
+  :commands (org-roam-buffer-toggle
              org-roam-tag-add
              org-roam-tag-delete)
   :init
@@ -1179,7 +1172,8 @@ If some elements are missing, the will be stripped out."
   :hook (diff-hl-mode . diff-hl-flydiff-mode)
   :config
   (setq diff-hl-update-async t)
-  (add-hook 'magit-pre-refresh-hook #'diff-hl-magit-pre-refresh)
+  ;; `diff-hl-magit-pre-refresh' is obsolete since diff-hl 1.11 and the
+  ;; pre-refresh hook is no longer needed.
   (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh))
 #+end_src
 
@@ -1243,25 +1237,31 @@ If some elements are missing, the will be stripped out."
      map))
 
 (defmacro moyu/create-keymap (name doc &rest binds)
+  "Define NAME as a keymap built from BINDS, documented by DOC.
+BINDS is a flat list of KEY DEF pairs.  DEF is a command, a labeled
+binding (LABEL . DEF) or (LABEL DEF), or a nested prefix keymap
+\(LABEL SUBKEY SUBDEF ...)."
   `(defvar ,name
      (moyu/build-map-list
       ,@(cl-loop for bind in binds
-                 collect (if (listp bind)
-                             (if (eq (car bind) 'function)
-                                 `(function ,@(cdr bind))
-                               (if (keymapp (cdr bind))
-                                   (cons ,(car bind) (cdr bind))
-                                 `(cons ,(car bind) (moyu/build-map-list ,@(cdr bind)))))
-                           bind)))
+                 collect (cond
+                          ((not (consp bind)) bind)
+                          ((eq (car bind) 'function) bind)
+                          ((symbolp (cdr bind))
+                           (list 'cons (car bind) (cdr bind)))
+                          ((null (cddr bind))
+                           (list 'cons (car bind) (car (cdr bind))))
+                          (t (list 'cons (car bind)
+                                   (cons 'moyu/build-map-list (cdr bind)))))))
      ,doc))
 
 (defmacro moyu/set-leader (states keymap &rest binds)
+  "Bind the KEY DEF pairs in BINDS below the leader prefix in KEYMAP.
+STATES is passed on to `evil-define-key'."
   `(evil-define-key ,states ,keymap
-     ,@(let ((binds-list))
-         (while (length> binds 1)
-           (add-to-list 'binds-list `(kbd ,(concat "<leader>" (pop binds))) t)
-           (add-to-list 'binds-list (pop binds) t))
-         binds-list)))
+     ,@(cl-loop for rest on binds by #'cddr
+                append (list (list 'kbd (concat "<leader>" (car rest)))
+                             (cadr rest)))))
 #+end_src
 
 ** Evil
@@ -1284,7 +1284,6 @@ If some elements are missing, the will be stripped out."
 (moyu/create-keymap moyu/code-actions-map
                     "Code actions."
                     "a" #'eglot-code-actions
-                    "b" ("build" moyu/build-actions-map)
                     "c" #'compile
                     "C" #'recompile
                     "f" #'apheleia-format-buffer
@@ -1305,9 +1304,8 @@ If some elements are missing, the will be stripped out."
                     "F" #'magit-fetch
                     "I" #'magit-init
                     "L" #'magit-log-buffer-file
-                    "S" #'magit-stage-file
-                    "t" #'git-timemachine-toggle
-                    "U" #'magit-unstage-file
+                    "S" #'magit-file-stage
+                    "U" #'magit-file-unstage
                     "R" #'vc-revert
                     "f" ("find"
                          "f" #'magit-find-file
@@ -1323,11 +1321,11 @@ If some elements are missing, the will be stripped out."
                     "n" #'org-roam-capture
                     "v" #'org-search-view
                     "f" #'org/find-in-notes
-                    "d" ("daily" org/roam-dailies-map))
+                    "d" ("daily" . org-roam-dailies-map))
 
 (moyu/create-keymap moyu/open-map
                     "Open someting."
-                    "a" ("Agenda" #'org-agenda)
+                    "a" #'org-agenda
                     "f" #'make-frame
                     "F" #'select-frame-by-name
                     "s" #'eshell
