@@ -851,7 +851,7 @@ API as-is, so they need to be updated when a provider retires one.
                                     (setq imenu-generic-expression emacs-lisp-extend-imenu-list)))
 
   (define-advice elisp-get-var-docstring (:around (fn sym))
-    (when-let* ((ret (funcall fn sym)))
+    (when-let (ret (funcall fn sym))
       (if (boundp sym)
           (concat ret " "
                   (let* ((truncated "[...]")
@@ -1608,6 +1608,7 @@ should manage.
 #+begin_src emacs-lisp :tangle yes
 (use-package popper
   :ensure t
+  :demand t
   :bind (("C-`"    . popper-toggle)
          ("M-'"    . popper-cycle))
   :init
