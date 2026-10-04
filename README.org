@@ -64,22 +64,38 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 * Health check
 =moyue doctor= verifies that the configuration files are complete and correct:
 =init.org= / =init.el= are present, =elpa/= is populated, =.cache/env.el= is
-readable Lisp, and the declared fonts are well formed. It runs the checks built
-into [[file:bin/moyue.el][bin/moyue.el]] and exits non-zero if any of them fail:
+readable Lisp, and the declared fonts are well formed. It also probes the
+external programs the configuration delegates work to, one check per program:
+=config/tool-*= for the command-line tools (git, grep, find, ripgrep, fd, the C
+toolchain, latexmk, ...) and =config/lsp-*= for the language servers eglot would
+start (rust-analyzer, clangd, pylsp, gopls, ...). A missing required tool fails
+the run; a missing optional one -- a language server for a language you do not
+edit, say -- is reported as =SKIPPED= instead. Add =EMACS_TEST_VERBOSE=1= to see
+the install hint of every program a check could not find.
+
+It runs the checks built into [[file:bin/moyue.el][bin/moyue.el]] and exits non-zero if any of
+them fail. Without a selector every =config/= check runs; a bare word selects the
+checks whose name contains it, so the two families can be run on their own:
 #+begin_src shell
-bin/moyue doctor                       # every check
-bin/moyue doctor config/emacs-version  # a single check
+bin/moyue doctor                            # every config/ check
+bin/moyue doctor tool                       # the command-line programs
+bin/moyue doctor lsp                        # the language servers
+bin/moyue doctor config/emacs-version       # a single check
+EMACS_TEST_VERBOSE=1 bin/moyue doctor lsp   # with the install hints
 #+end_src
 
-The unit tests for the =lisp/= helpers and the =bin/commands/= extensions are a
-separate concern and run with =moyue test=. With no argument it runs every test
-outside the =config/= namespace; a pattern is an ERT selector read as Lisp, so a
-regexp needs quotes of its own:
+The unit tests for the =lisp/= helpers, [[file:bin/moyue.el][bin/moyue.el]] and the =bin/commands/=
+extensions are a separate concern and run with =moyue test=. With no argument it
+runs every test outside the =config/= namespace; a pattern is an ERT selector
+read as Lisp, so a regexp needs quotes of its own:
 #+begin_src shell
-bin/moyue test                        # everything except config/
-bin/moyue test '"^treesit-"'          # tests whose name matches a regexp
-bin/moyue test config/emacs-version   # one test, by name
+bin/moyue test                                    # everything except config/
+bin/moyue test '"^treesit-"'                      # tests whose name matches a regexp
+bin/moyue test core/insert-file-path-inserts-filename   # one test, by name
 #+end_src
+
+(The =config/= checks are defined only by =moyue doctor=, so =moyue test= cannot
+select one of them: run =bin/moyue doctor config/emacs-version= instead.)
 
 * Tree-sitter grammars
 Grammar libraries are pinned to exact upstream revisions, compiled into

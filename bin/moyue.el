@@ -26,6 +26,14 @@
 (require 'cl-lib)
 (require 'package)
 
+;; ERT is loaded lazily, by `moyue test' and by the `doctor' checks, so the
+;; compiler cannot see these definitions.  Declaring them keeps the runtime
+;; calls in the tool checks from looking like undefined functions.
+(declare-function ert-fail "ert" (data))
+(declare-function ert-set-test "ert" (symbol definition))
+(declare-function ert-skip "ert" (data))
+(declare-function make-ert-test "ert" (&rest args))
+
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Core framework
 ;;;; ──────────────────────────────────────────────────────────────────────────
@@ -486,10 +494,11 @@ alone rather than reset."
                                  (plist-get result :skipped))))))
 
 (moyue-defcommand "test" "[PATTERN]"
-                  "Run the lisp/ unit tests (everything but the config/ doctor checks).
+                  "Run the unit tests (everything but the config/ doctor checks).
 PATTERN is an ERT selector and is read as Lisp, so a regexp needs quotes of
 its own: moyue test '\"^treesit-\"'.  Without PATTERN, every test outside the
-`config/' namespace runs; one test is selected by its name as a symbol."
+`config/' namespace runs -- the lisp/ helpers, bin/moyue.el and the
+bin/commands/ extensions; one test is selected by its name as a symbol."
                   (require 'ert)
                   (let* ((arg        (car args))
                          (lisp-dir   (expand-file-name "../lisp/" moyue--bin-dir))
@@ -544,6 +553,180 @@ The check is registered under the `config/' namespace for easy filtering:
      (should (or (package-installed-p ',pkg)
                  (locate-library ,(symbol-name pkg))))))
 
+;;; ── External tool checks ─────────────────────────────────────────────────
+;; Emacs runs without any of these, but the configuration delegates real work
+;; to outside programs: Magit and `moyue treesit' shell out to git, search
+;; falls back to grep, the tree-sitter grammars are compiled with a C
+;; toolchain, and eglot starts one language server per major mode.  `moyue
+;; doctor' cannot install them, but it can name the one that is missing, say
+;; what it is for, and fail when a required one is absent.
+;;
+;; A requirement is a plist:
+;;   :id       symbol, unique, and the tail of the check name
+;;   :kind     `tool' for a command-line program, `lsp' for a language server
+;;   :commands executable names; the first one found satisfies the check
+;;   :required non-nil fails the check when missing, nil skips it instead, so
+;;             a minimal machine can still report a clean doctor
+;;   :hint     one line, shown when the program is missing
+;;   :modes    (lsp only) the major modes that would start this server
+;;
+;; The names are looked up with `executable-find', i.e. on the `exec-path' of
+;; the shell that runs `moyue doctor'; see the `config/env-file-*' checks for
+;; the file that gives a desktop-launched Emacs the same PATH.
+
+(defconst moyue-tool-requirements
+  '(;; ── Command-line programs ─────────────────────────────────────────────
+    (:id git :kind tool :required t
+     :commands ("git")
+     :hint "Magit, the package archives and `moyue treesit' all shell out to git.")
+    (:id grep :kind tool :required t
+     :commands ("grep")
+     :hint "Search falls back to grep when ripgrep is absent.")
+    (:id find :kind tool :required t
+     :commands ("find")
+     :hint "`consult-find' and `find-dired' run find.")
+    (:id ripgrep :kind tool
+     :commands ("rg")
+     :hint "Preferred search backend; Debian/Ubuntu package: ripgrep.")
+    (:id fd :kind tool
+     :commands ("fd" "fdfind")
+     :hint "Fast file finder; Debian/Ubuntu package: fd-find (binary fdfind).")
+    (:id make :kind tool
+     :commands ("make" "gmake")
+     :hint "Builds the pinned tree-sitter grammars (`moyue install --grammars').")
+    (:id cc :kind tool
+     :commands ("cc" "gcc" "clang")
+     :hint "C compiler for tree-sitter grammars and native compilation.")
+    (:id python3 :kind tool
+     :commands ("python3" "python")
+     :hint "Python shell and babel blocks.")
+    (:id poetry :kind tool
+     :commands ("poetry")
+     :hint "Python virtualenv management for the `poetry' package.")
+    (:id latexmk :kind tool
+     :commands ("latexmk")
+     :hint "AUCTeX latexmk integration.")
+    (:id gnuplot :kind tool
+     :commands ("gnuplot")
+     :hint "Org gnuplot source blocks.")
+    (:id docker :kind tool
+     :commands ("docker")
+     :hint "The `docker' package and `bin/dockemacs'.")
+    (:id scheme :kind tool
+     :commands ("guile" "racket" "chez" "mit-scheme")
+     :hint "A Scheme implementation for geiser.")
+
+    ;; ── Language servers (eglot) ──────────────────────────────────────────
+    ;; Only the languages actually edited need a server, so these are all
+    ;; optional: a missing one is reported as skipped, never as a failure.
+    (:id rust :kind lsp :commands ("rust-analyzer")
+     :modes (rust-ts-mode rust-mode rustic-mode)
+     :hint "rust-analyzer for Rust (`rustup component add rust-analyzer').")
+    (:id cpp :kind lsp :commands ("clangd" "ccls")
+     :modes (c-ts-mode c++-ts-mode c-mode c++-mode)
+     :hint "clangd (or ccls) for C and C++.")
+    (:id python :kind lsp
+     :commands ("pylsp" "pyls" "pyright-langserver" "basedpyright-langserver"
+                "jedi-language-server")
+     :modes (python-ts-mode python-mode)
+     :hint "A Python server, e.g. `pip install python-lsp-server' or pyright.")
+    (:id go :kind lsp :commands ("gopls")
+     :modes (go-ts-mode go-mode)
+     :hint "gopls for Go (`go install golang.org/x/tools/gopls@latest').")
+    (:id bash :kind lsp :commands ("bash-language-server")
+     :modes (bash-ts-mode sh-mode)
+     :hint "bash-language-server for shell scripts (`npm i -g bash-language-server').")
+    (:id typescript :kind lsp :commands ("typescript-language-server")
+     :modes (typescript-ts-mode tsx-ts-mode js-ts-mode typescript-mode)
+     :hint "typescript-language-server (`npm i -g typescript-language-server').")
+    (:id cmake :kind lsp :commands ("cmake-language-server" "neocmakelsp")
+     :modes (cmake-ts-mode)
+     :hint "cmake-language-server or neocmakelsp for CMake files.")
+    (:id dockerfile :kind lsp
+     :commands ("docker-langserver" "docker-language-server")
+     :modes (dockerfile-ts-mode dockerfile-mode)
+     :hint "docker-langserver for Dockerfiles (`npm i -g dockerfile-language-server-nodejs').")
+    (:id java :kind lsp :commands ("jdtls")
+     :modes (java-ts-mode java-mode)
+     :hint "Eclipse JDT language server (jdtls) for Java.")
+    (:id lua :kind lsp :commands ("lua-language-server")
+     :modes (lua-ts-mode lua-mode)
+     :hint "lua-language-server for Lua.")
+    (:id ruby :kind lsp :commands ("ruby-lsp" "solargraph")
+     :modes (ruby-ts-mode ruby-mode)
+     :hint "ruby-lsp or solargraph for Ruby.")
+    (:id php :kind lsp :commands ("intelephense" "phpactor")
+     :modes (php-ts-mode php-mode)
+     :hint "intelephense or phpactor for PHP.")
+    (:id yaml :kind lsp :commands ("yaml-language-server")
+     :modes (yaml-ts-mode yaml-mode)
+     :hint "yaml-language-server for YAML.")
+    (:id toml :kind lsp :commands ("tombi" "taplo")
+     :modes (toml-ts-mode conf-toml-mode)
+     :hint "tombi or taplo for TOML.")
+    (:id json :kind lsp
+     :commands ("vscode-json-language-server" "json-languageserver")
+     :modes (json-ts-mode json-mode jsonc-mode)
+     :hint "vscode-json-language-server for JSON.")
+    (:id css :kind lsp :commands ("vscode-css-language-server")
+     :modes (css-ts-mode css-mode)
+     :hint "vscode-css-language-server for CSS.")
+    (:id html :kind lsp :commands ("vscode-html-language-server")
+     :modes (html-mode mhtml-mode)
+     :hint "vscode-html-language-server for HTML.")
+    (:id latex :kind lsp :commands ("texlab" "digestif")
+     :modes (latex-mode LaTeX-mode tex-mode)
+     :hint "texlab or digestif for LaTeX.")
+    (:id markdown :kind lsp :commands ("marksman" "markdown-oe")
+     :modes (markdown-mode)
+     :hint "marksman for Markdown."))
+  "External programs this configuration expects to find on PATH.
+Required entries are the few the rest of the configuration assumes; optional
+ones skip instead of failing when absent, so a machine that edits only some
+languages still gets a clean doctor.  Every entry is checked by
+`moyue--tool-check' and named `config/tool-<id>' or `config/lsp-<id>'.")
+
+(defun moyue--tool-executable (requirement)
+  "Return the executable name that satisfies REQUIREMENT, or nil.
+REQUIREMENT is one entry of `moyue-tool-requirements'; its :commands are
+tried in order and the first one on `exec-path' wins."
+  (cl-find-if #'executable-find (plist-get requirement :commands)))
+
+(defun moyue--tool-check (requirement)
+  "Assert that REQUIREMENT is satisfied, as the body of an ERT check.
+A missing program fails the check when :required is non-nil and skips it
+otherwise, so an optional tool that is not installed does not turn a minimal
+machine's doctor run red.  Either way the :hint says what to install."
+  (let* ((id       (plist-get requirement :id))
+         (commands (plist-get requirement :commands))
+         (hint     (or (plist-get requirement :hint) ""))
+         (found    (moyue--tool-executable requirement)))
+    (if found
+        found
+      (let ((detail (format "%s (tried %s).  %s"
+                            id (string-join commands ", ") hint)))
+        (if (plist-get requirement :required)
+            (ert-fail (concat "required program not found: " detail))
+          (ert-skip (concat "optional program not installed: " detail)))))))
+
+(defun moyue--doctor-define-tool-checks ()
+  "Register one `config/tool-*' or `config/lsp-*' check per requirement.
+The checks are built from `moyue-tool-requirements' at run time, so adding a
+program to that table is all it takes to add its check."
+  (dolist (requirement moyue-tool-requirements)
+    (let* ((kind (plist-get requirement :kind))
+           (id   (plist-get requirement :id))
+           (name (intern (format "config/%s-%s" kind id))))
+      (ert-set-test
+       name
+       (make-ert-test
+        :name name
+        :documentation
+        (format "%s `%s' should be available on PATH."
+                (if (eq kind 'lsp) "The language server for" "The program")
+                id)
+        :body (lambda () (moyue--tool-check requirement)))))))
+
 (defun moyue--doctor-define-checks ()
   "Register the `config/...' ERT checks used by `moyue doctor'."
   (require 'ert)
@@ -588,6 +771,11 @@ The check is registered under the `config/' namespace for easy filtering:
             (condition-case nil
                 (read (current-buffer))
               (end-of-file (setq done t))))))))
+
+  ;; External tools: the command-line programs and language servers this
+  ;; configuration delegates work to.  They come right after the environment
+  ;; checks because a fresh machine is most likely to be missing one of them.
+  (moyue--doctor-define-tool-checks)
 
   ;; Tree-sitter grammars
   ;; The pinned manifest is the single source of truth for which upstream
@@ -764,12 +952,36 @@ signals this at run time, which is why it is asserted on the source."
         (moyu/apply-face-fonts))
       (should-not called))))
 
+(defun moyue--doctor-selector (raw)
+  "Turn the RAW argument of `moyue doctor' into an ERT selector.
+A word that names a defined test selects that test; any other word is used
+as a regexp over the `config/' checks, so `moyue doctor tool' runs the
+`config/tool-*' checks and `moyue doctor lsp' the `config/lsp-*' ones.  A
+full Lisp selector such as \"(tag slow)\" is read as Lisp.  RAWest nil means
+every `config/' check.
+
+Words are anchored at the `config/' namespace on purpose: the unit tests in
+`moyue test' are free to use the same words, and a bare word must not drag
+them into a configuration check run."
+  (if (null raw)
+      "^config/"
+    (let ((form (condition-case nil (read raw) (error raw))))
+      (cond
+       ((eq form t) t)
+       ((and (symbolp form) (ert-test-boundp form)) form)
+       ((symbolp form) (format "^config/.*%s" (symbol-name form)))
+       (t form)))))
+
 (moyue-defcommand "doctor" "[SELECTOR]"
-                  "Check that the configuration files are correct and complete."
+                  "Check that the configuration files and the tools they use are complete.
+Without SELECTOR every `config/' check runs: files, packages, fonts, the
+command-line programs and the eglot language servers.  SELECTOR is an ERT
+selector; a word that is not a test name is a regexp, so `moyue doctor tool'
+or `moyue doctor lsp' runs one family.  Any check that fails exits non-zero."
                   (moyue--configure-package-checks)
                   (moyue--doctor-define-checks)
                   (ert-run-tests-batch-and-exit
-                   (if args (read (car args)) t)))
+                   (moyue--doctor-selector (car args))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Optional extension: auto-load commands from bin/commands/*.el
@@ -779,6 +991,84 @@ signals this at run time, which is why it is asserted on the source."
   (when (file-directory-p commands-dir)
     (dolist (f (directory-files commands-dir t "\\.el\\'"))
       (load f nil 'nomessage))))
+
+;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Tests
+;;;; ──────────────────────────────────────────────────────────────────────────
+;; Run with `moyue test'; the `config/...' checks themselves are `moyue
+;; doctor's and are not exercised here beyond their construction.
+
+(with-eval-after-load 'ert
+
+  (ert-deftest moyue/tool-requirements-are-well-formed ()
+    "Every requirement carries the keys and types the checks read."
+    (should (consp moyue-tool-requirements))
+    (let ((ids '()))
+      (dolist (requirement moyue-tool-requirements)
+        (let ((id (plist-get requirement :id)))
+          (should (symbolp id))
+          (should-not (member id ids))
+          (push id ids))
+        (should (memq (plist-get requirement :kind) '(tool lsp)))
+        (should (memq (plist-get requirement :required) '(t nil)))
+        (should (consp (plist-get requirement :commands)))
+        (should (cl-every #'stringp (plist-get requirement :commands)))
+        (should (stringp (plist-get requirement :hint)))
+        (when (eq (plist-get requirement :kind) 'lsp)
+          (should (consp (plist-get requirement :modes)))))))
+
+  (ert-deftest moyue/doctor-selector-keeps-bare-words-in-config ()
+    "A bare word selects `config/' checks; a test name stays a name."
+    (should (equal (moyue--doctor-selector nil) "^config/"))
+    (should (eq (moyue--doctor-selector "t") t))
+    (should (equal (moyue--doctor-selector "tool") "^config/.*tool"))
+    (should (equal (moyue--doctor-selector "\"^config/tool\"")
+                   "^config/tool"))
+    (should (eq (moyue--doctor-selector
+                 "moyue/tool-requirements-are-well-formed")
+                'moyue/tool-requirements-are-well-formed)))
+
+  (ert-deftest moyue/tool-executable-takes-the-first-candidate ()
+    "The first :commands entry that resolves wins over later ones."
+    (cl-letf (((symbol-function 'executable-find)
+               (lambda (name) (and (equal name "second") "/bin/second"))))
+      (should (equal (moyue--tool-executable
+                      '(:id x :commands ("first" "second" "third")))
+                     "second"))))
+
+  (ert-deftest moyue/tool-executable-is-nil-when-nothing-resolves ()
+    (cl-letf (((symbol-function 'executable-find) (lambda (_name) nil)))
+      (should-not (moyue--tool-executable '(:id x :commands ("nope"))))))
+
+  (ert-deftest moyue/tool-check-passes-when-the-program-is-found ()
+    (cl-letf (((symbol-function 'executable-find)
+               (lambda (name) (and (equal name "git") "/bin/git"))))
+      (should (moyue--tool-check
+               '(:id git :kind tool :required t
+                 :commands ("git") :hint "needed")))))
+
+  (ert-deftest moyue/tool-check-fails-a-missing-required-program ()
+    (cl-letf (((symbol-function 'executable-find) (lambda (_name) nil)))
+      (should-error (moyue--tool-check
+                     '(:id git :kind tool :required t
+                       :commands ("git") :hint "needed"))
+                    :type 'ert-test-failed)))
+
+  (ert-deftest moyue/tool-check-skips-a-missing-optional-program ()
+    (cl-letf (((symbol-function 'executable-find) (lambda (_name) nil)))
+      (should-error (moyue--tool-check
+                     '(:id rg :kind tool :required nil
+                       :commands ("rg") :hint "nice to have"))
+                    :type 'ert-test-skipped)))
+
+  (ert-deftest moyue/doctor-defines-a-check-per-requirement ()
+    "The table and the registered `config/...' tests stay in step."
+    (moyue--doctor-define-tool-checks)
+    (dolist (requirement moyue-tool-requirements)
+      (let ((name (intern (format "config/%s-%s"
+                                  (plist-get requirement :kind)
+                                  (plist-get requirement :id)))))
+        (should (ert-get-test name))))))
 
 (provide 'moyue)
 ;;; moyue.el ends here
