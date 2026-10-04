@@ -38,9 +38,9 @@ The file is divided into several major sections:
   (setq init-file-debug t
         debug-on-error t))
 
-(when-let (realhome
-           (and (eq system-type 'windows-nt)
-                (getenv "USERPROFILE")))
+(when-let* ((realhome
+             (and (eq system-type 'windows-nt)
+                  (getenv "USERPROFILE"))))
   (setenv "HOME" realhome)
   (setq abbreviated-home-dir nil))
 
@@ -272,19 +272,68 @@ itself; the setting matters for a non-source install.
 #+end_src
 
 ** Tramp
+TRAMP is cautious by default: every remote =file-attributes=, every
+directory access and every process start is a network round trip.  The
+settings below cache remote state, keep local state local, and never block
+Emacs on a host that went away.  Remote backups need no configuration,
+since =make-backup-files= is nil above; note that
+~tramp-backup-directory-alist~ has to be an alist of =(REGEXP . DIRECTORY)=
+pairs, a plain directory name breaks ~find-backup-file-name~.
 #+begin_src emacs-lisp :tangle yes
 (unless (eq system-type 'windows-nt)
   (setq tramp-default-method "ssh"
-        tramp-backup-directory-alist backup-directory-alist
-        tramp-auto-save-directory (moyu/cache-it "tramp-autosave/")
+        ;; Connection history and auto-save files stay local, so a flaky
+        ;; link never slows down startup nor blocks saving.
         tramp-persistency-file-name (moyu/cache-it "tramp")
-        tramp-backup-directory-alist (moyu/cache-it "backup/")))
+        tramp-auto-save-directory (moyu/cache-it "tramp-autosave/")
+        tramp-backup-directory-alist nil))
 
 (with-eval-after-load 'tramp
-  (setq remote-file-name-inihibit-cache 60
-        tramp-completion-reread-directory-timeout 60
-        tramp-verbose 6)
-  (add-to-list 'tramp-remote-process-environment '("LSP_USE_PLISTS=true")))
+  ;; Level 6 logs every remote command into a *tramp/...* buffer and slows
+  ;; every operation down, so only be verbose when debugging.
+  (setq tramp-verbose (if (getenv "DEBUG") 10 0)
+        ;; Trust cached remote file attributes for a minute, instead of
+        ;; re-reading them remotely (Emacs 31 defaults to 10 seconds).
+        remote-file-name-inhibit-cache 60
+        ;; ssh passwords stay usable for half an hour, not 16 seconds.
+        password-cache-expiry (* 30 60))
+
+  ;; Keep the $PATH of the remote login shell, so toolchains and language
+  ;; servers outside /usr/bin (pyenv, ~/.local/bin, ~/.cargo/bin) are found.
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+  (when (>= emacs-major-version 29)
+    ;; Copy between two remote hosts directly, not via a local temp file.
+    (setq tramp-use-scp-direct-remote-copying t))
+
+  (when (>= emacs-major-version 30)
+    ;; Give up on an unresponsive host instead of hanging Dired forever.
+    (setq remote-file-name-access-timeout 15))
+
+  ;; Language servers started on the remote host talk plists.  Elements of
+  ;; `tramp-remote-process-environment' are plain "NAME=VALUE" strings, a
+  ;; quoted list would make TRAMP's remote environment setup signal an error.
+  (add-to-list 'tramp-remote-process-environment "LSP_USE_PLISTS=true"))
+#+end_src
+
+Starting a remote process normally goes through a remote shell first.
+When the host never prompts for a password (ssh keys, =ssh-agent=, shared
+connections), ~tramp-direct-async-process~ skips that shell, which removes
+a visible delay from remote shells, compilation and language servers.  It
+is opt-in because it cannot ask for a password interactively; set
+~moyu/tramp-direct-async~ in =~/.emacs.d/.cache/userconfig= to try it.
+#+begin_src emacs-lisp :tangle yes
+(defvar moyu/tramp-direct-async nil
+  "Whether TRAMP starts remote processes without a remote shell.
+This is faster, but only works when the remote host authenticates without
+an interactive prompt.  Requires Emacs 30 or newer.")
+
+(when (and moyu/tramp-direct-async (>= emacs-major-version 30))
+  (connection-local-set-profile-variables
+   'moyu/tramp-direct-async-profile
+   '((tramp-direct-async-process . t)))
+  (connection-local-set-profiles
+   '(:application tramp :protocol "ssh") 'moyu/tramp-direct-async-profile))
 #+end_src
 
 ** Build-in Pacakges
@@ -802,7 +851,7 @@ API as-is, so they need to be updated when a provider retires one.
                                     (setq imenu-generic-expression emacs-lisp-extend-imenu-list)))
 
   (define-advice elisp-get-var-docstring (:around (fn sym))
-    (when-let (ret (funcall fn sym))
+    (when-let* ((ret (funcall fn sym)))
       (if (boundp sym)
           (concat ret " "
                   (let* ((truncated "[...]")
