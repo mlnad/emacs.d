@@ -1,37 +1,522 @@
-;;; templates --- Basic template file for Emacs edit -*- lexical-binding: t -*-
+;;; templates --- Consolidated Tempel templates -*- lexical-binding: t -*-
 ;;; Commentary:
+;; Consolidated template file: the local templates plus every template data
+;; file of https://github.com/Crandel/tempel-collection (templates/*.eld,
+;; commit a63ac2d0c50bcc879fb4bd8e72eb0234987f1af8), merged into one file.  Where a template name existed both
+;; locally and in tempel-collection, the tempel-collection definition was
+;; kept and the local one superseded.
+;;
+;; Sections follow the order of the collection's template files.  The
+;; collection's own validation script is preserved verbatim at the end of the
+;; file as commented-out text, so that this file still parses as lisp-data.
 ;;; Code:
 
-fundamental-mode ;; Available everywhere
 
-(today (format-time-string "%Y-%m-%d"))
+bibtex-mode
 
-prog-mode
+(st "@set{" (p "title") "," n> "entryset = {" (p "entryset") "}" n "}")
+(xd "@xdata{ " (p "title") "," n> q n "}")
 
-(fixme (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "FIXME ")
-(todo (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO ")
-(bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG ")
-(hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK ")
+(bibart "@article{" (p "key") "," n>
+         "author = {" (p "author") "}," n>
+         "title = {" (p "title") "}," n>
+         "journal = {" (p "journal") "}," n>
+         "year = {" (p "year") "}," n> q n "}")
+(bk "@book{" (p "key") "," n>
+      "author = {" (p "author") "}," n>
+      "title = {" (p "title") "}," n>
+      "publisher = {" (p "publisher") "}," n>
+      "year = {" (p "year") "}," n> q n "}")
+(bkinbk "@bookinbook{" (p "key") "," n>
+            "author = {" (p "author") "}," n>
+            "title = {" (p "title") "}," n>
+            "chapter = {" (p "chapter") "}," n>
+            "publisher = {" (p "publisher") "}," n>
+            "year = {" (p "year") "}," n> q n "}")
+(bkl "@booklet{" (p "key") "," n>
+         "title = {" (p "title") "}," n> q n "}")
+(clctn "@collection{" (p "key") "," n>
+            "editor = {" (p "editor") "}," n>
+            "title = {" (p "title") "}," n>
+            "year = {" (p "year") "}," n> q n "}")
+(cnf "@conference{" (p "key") "," n>
+            "author = {" (p "author") "}," n>
+            "title = {" (p "title") "}," n>
+            "booktitle = {" (p "booktitle") "}," n>
+            "year = {" (p "year") "}," n> q n "}")
+(dset "@dataset{" (p "key") "," n>
+         "title = {" (p "title") "}," n>
+         "year = {" (p "year") "}," n> q n "}")
+(elc "@electronic{" (p "key") "," n>
+            "author = {" (p "author") "}," n>
+            "title = {" (p "title") "}," n>
+            "year = {" (p "year") "}," n>
+            "url = {" (p "url") "}," n> q n "}")
+(inbk "@inbook{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "chapter = {" (p "chapter") "}," n>
+        "publisher = {" (p "publisher") "}," n>
+        "year = {" (p "year") "}," n> q n "}")
+(inclctn "@incollection{" (p "key") "," n>
+              "author = {" (p "author") "}," n>
+              "title = {" (p "title") "}," n>
+              "booktitle = {" (p "booktitle") "}," n>
+              "publisher = {" (p "publisher") "}," n>
+              "year = {" (p "year") "}," n> q n "}")
+(inprc "@inproceedings{" (p "key") "," n>
+               "author = {" (p "author") "}," n>
+               "title = {" (p "title") "}," n>
+               "booktitle = {" (p "booktitle") "}," n>
+               "year = {" (p "year") "}," n> q n "}")
+(inref "@inreference{" (p "key") "," n>
+             "author = {" (p "author") "}," n>
+             "title = {" (p "title") "}," n>
+             "booktitle = {" (p "booktitle") "}," n>
+             "publisher = {" (p "publisher") "}," n>
+             "year = {" (p "year") "}," n> q n "}")
+(mnl "@manual{" (p "key") "," n>
+        "title = {" (p "title") "}," n> q n "}")
+(masterths "@masterthesis{" (p "key") "," n>
+              "author = {" (p "author") "}," n>
+              "title = {" (p "title") "}," n>
+              "school = {" (p "school") "}," n>
+              "year = {" (p "year") "}," n> q n "}")
+(msc "@misc{" (p "key") "," n> q n "}")
+(mvbk "@mvbook{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "year = {" (p "year") "}," n> q n "}")
+(mvclctn "@mvcollection{" (p "key") "," n>
+              "editor = {" (p "editor") "}," n>
+              "title = {" (p "title") "}," n>
+              "year = {" (p "year") "}," n> q n "}")
+(mvref "@mvreference{" (p "key") "," n>
+             "editor = {" (p "editor") "}," n>
+             "title = {" (p "title") "}," n>
+             "year = {" (p "year") "}," n> q n "}")
+(onl "@online{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "year = {" (p "year") "}," n>
+        "url = {" (p "url") "}," n> q n "}")
+(ptn "@patent{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "number = {" (p "number") "}," n>
+        "year = {" (p "year") "}," n> q n "}")
+(prd "@periodical{" (p "key") "," n>
+            "editor = {" (p "editor") "}," n>
+            "title = {" (p "title") "}," n>
+            "year = {" (p "year") "}," n> q n "}")
+(phdths "@phdthesis{" (p "key") "," n>
+           "author = {" (p "author") "}," n>
+           "title = {" (p "title") "}," n>
+           "school = {" (p "school") "}," n>
+           "year = {" (p "year") "}," n> q n "}")
+(prc "@proceedings{" (p "key") "," n>
+             "title = {" (p "title") "}," n>
+             "year = {" (p "year") "}," n> q n "}")
+(bibref "@reference{" (p "key") "," n>
+           "editor = {" (p "editor") "}," n>
+           "title = {" (p "title") "}," n>
+           "year = {" (p "year") "}," n> q n "}")
+(rpt "@report{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "institution = {" (p "institution") "}," n>
+        "year = {" (p "year") "}," n> q n "}")
+(sft "@software{" (p "key") "," n> q n "}")
+(suppbk "@suppbook{" (p "key") "," n>
+          "author = {" (p "author") "}," n>
+          "title = {" (p "title") "}," n>
+          "chapter = {" (p "chapter") "}," n>
+          "publisher = {" (p "publisher") "}," n>
+          "year = {" (p "year") "}," n> q n "}")
+(suppclctn "@suppcollection{" (p "key") "," n>
+                "author = {" (p "author") "}," n>
+                "title = {" (p "title") "}," n>
+                "booktitle = {" (p "booktitle") "}," n>
+                "publisher = {" (p "publisher") "}," n>
+                "year = {" (p "year") "}," n> q n "}")
+(suppprd "@suppperiodical{" (p "key") "," n>
+                "author = {" (p "author") "}," n>
+                "title = {" (p "title") "}," n>
+                "journal = {" (p "journal") "}," n>
+                "year = {" (p "year") "}," n> q n "}")
+(techrpt "@techreport{" (p "key") "," n>
+            "author = {" (p "author") "}," n>
+            "title = {" (p "title") "}," n>
+            "institution = {" (p "institution") "}," n>
+            "year = {" (p "year") "}," n> q n "}")
+(ths "@thesis{" (p "key") "," n>
+        "author = {" (p "author") "}," n>
+        "title = {" (p "title") "}," n>
+        "school = {" (p "school") "}," n>
+        "year = {" (p "year") "}," n> q n "}")
+(unpub "@unpublished{" (p "key") "," n>
+             "author = {" (p "author") "}," n>
+             "title = {" (p "title") "}," n>
+             "note = {" (p "note") "}," n> q n "}")
 
-texinfo-mode
+c++-mode c++-ts-mode
 
-(defmac "@defmac " p n> r> "@end defmac")
-(defun "@defun " p n> r> "@end defun")
-(defvar "@defvar " p n> r> "@end defvar")
-(example "@example " p n> r> "@end example")
-(lisp "@lisp " p n> r> "@end lisp")
-(bullet "@itemize @bullet{}" n> r> "@end itemize")
-(code "@code{" p "}")
-(var "@var{" p "}")
+(vec "std::vector<" (p "Type" type) "> " (p "name") "(" (p "10") ", "
+     (s type) "(" p "));")
+(opadd (p "Name" name) "& " (s name) "::operator+=(const " (s name)
+       " &rhs) {" n> q n> "return *this;" n "}" >)
+(opadddecl (p "Name" name) "& operator+=(const " (s name) " &rhs);")
+(ctor (p "Name" name) "::" (s name) "(" (p "args") ")" n
+      ": " (p "member(init)") n "{" n> q n "}" >)
+(cls "class " (p "Name" name) " {" n "public:" n>
+     (s name) "();" n> "virtual ~" (s name) "();" n q n "};" >)
+(clsstd11 "class " (p "Name" name) " {" n "public:" n>
+       (s name) "() = default;" n>
+       (s name) "(const " (s name) "&) = default;" n>
+       (s name) "(" (s name) "&&) noexcept = default;" n>
+       "~" (s name) "() = default;" n>
+       (s name) "& operator=(const " (s name) "&) = default;" n>
+       (s name) "& operator=(" (s name) "&&) noexcept = default;" n q n "};" >)
+(osop "std::ostream& operator<<(std::ostream& os, const "
+            (p "Name" name) "& " (p "value") ") {" n> q n>
+            "return os;" n "}" >)
+(osopfrnd "friend std::ostream& operator<<(std::ostream&, const "
+                (p "Name") "&);")
+(isop "std::istream& operator>>(std::istream& is, "
+            (p "Name" name) "& " (p "value") ") {" n> q n>
+            "return is;" n "}" >)
+(isopfrnd "friend std::istream& operator>>(std::istream&, "
+                (p "Name") "&);")
+(ns "namespace " (p "Namespace" ns) " {" n> r> n "}  // " (s ns))
+(idxcnst "const " (p "Name") "& operator[](" (p "int index")
+             ") const {" n> q n "}" >)
+(idxcnstdecl "const " (p "Name") "& operator[](" (p "int index")
+                  ") const;")
 
-lisp-mode emacs-lisp-mode ;; Specify multiple modes
+(doxfile "/**" n> "* \\file "
+          (file-name-nondirectory (or (buffer-file-name) "file")) n>
+          "* \\brief " (p "Summary") n> q n> "*/")
+(doxfn "/**" n> "* \\brief " (p "Summary") n> q n>
+              "* \\param " (p "parameter") n>
+              "* \\return " (p "return value") n> "*/")
 
-(lambda "(lambda (" p ")" n> r> ")")
+c-mode c-ts-mode
+
+(mlc "malloc(sizeof(" (p "type") ") * " (p "count") ");" q)
+(ccmd "// -*- compile-command: \"" (p "gcc -Wall -o app main.c")
+         "\" -*-")
+
+(doxfile "/**" n> "* \\file "
+          (file-name-nondirectory (or (buffer-file-name) "file")) n>
+          "* \\brief " (p "Summary") n> q n> "*/")
+(doxfn "/**" n> "* \\brief " (p "Summary") n> q n>
+              "* \\param " (p "parameter") n>
+              "* \\return " (p "return value") n> "*/")
+
+chef-mode
+
+(fileres "file \"" (p "name") "\" do" n>
+      "path \"" (p "path") "\"" n>
+      "backup " (p "5") n>
+      "owner \"" (p "root") "\"" n>
+      "group \"" (p "root") "\"" n>
+      "mode \"" (p "0644") "\"" n>
+      "content \"" (p "content") "\"" n>
+      "action :" (p "create") n "end" >)
+
+clojure-mode
+
+(mp "(map " p " " q ")")
+(mpfn "(map #( " p ") " q ")")
+
+cmake-mode cmake-ts-mode
+
+(addexe "add_executable(" (p nil target) " " (p "main.cpp") ")" n
+     "target_link_libraries(" (s target) " " p ")")
+(addlib "add_library(" (p nil target) " " (p "class.cpp") ")" n
+     "target_link_libraries(" (s target) " " p ")")
+(minver "cmake_minimum_required(VERSION " (p "2.6") ")")
+(fr "foreach(" (p "var" var) " ${" (p "array") "})" n> p n
+     "endforeach(" (s var) ")" q)
+(fn "function(" (p "name" name) ")" n> p n
+     "endfunction(" (s name) ")" q)
+(inc "include(" q ")")
+(mcr "macro(" (p "name" name) (p " args") ")" n> p n
+       "endmacro(" (s name) ")" q)
+(msg "message(" (p "STATUS ") "\"" q "\")")
+(opt "option(" (p "OPT") " \"" (p "docstring") "\" " (p "value") ")")
+(proj "project(" q ")")
+(st "set(" (p "var") " " (p "value") ")")
+
+(ifc "if(" (p "condition" cond) ")" n> q n "endif(" (s cond) ")" >)
+(ife "if(" (p "condition" cond) ")" n> p n "else()" > n> q n
+        "endif(" (s cond) ")" >)
+
+conf-desktop-mode
+
+(dsk "[Desktop Entry]" n
+      "Encoding=" (p "UTF-8") n
+      "Version=" (p "1.0") n
+      "Type=" (p "Application") n
+      "NoDisplay=" (p "false") n
+      "Terminal=" (p "false") n
+      "Exec=" p n
+      "Name=" p n
+      "Icon=" p n
+      "Comment=" p n
+      "Categories=" p n)
+
+conf-unix-mode
+
+(sec "Section \"" (p "Device") "\"" n> q n "EndSection" >)
+
+coq-mode
+
+(fixpwith "Fixpoint " (p "first") " (" (p "x") " : " (p "type") ") : "
+       (p "result") " :=" n> p n "with " (p "second") " (" (p "y")
+       " : " (p "type") ") : " (p "result") " :=" n> q ".")
+(reqimp "Require Import " q ".")
+
+cpp-omnet-mode
+
+(ev "EV << \"" (p "string") "\"" q ";")
+(emt "emit(" (p "signal_id") ", " (p "long") ");")
+(intuni "intuniform(" (p "0") ", " (p "1") ")")
+(inccmath "#include <cmath>")
+(nanchk "isnan(" (p "x") ")")
+(incomnet "#include <omnetpp.h>")
+(prm (p "var") " = par(\"" (p "par") "\");")
+(sched "scheduleAt(simTime()+" (p "1.0") ", " (p "event") ");")
+(uni "uniform(" (p "0") ", " (p "1") ")")
+
+crystal-mode
+
+(fn "def " (p "method") "(" (p "args") ")" n> q n "end" >)
+
+csharp-mode csharp-ts-mode
+
+(usg "using " q ";")
+(usgsys "using System;")
+(usgsysns "using System." q ";")
+
+(smry "/// <summary>" n> "/// " q n> "/// </summary>")
+(prmdoc "/// <param name=\"" (p "name") "\">" q "</param>")
+(retdoc "/// <returns>" q "</returns>")
+(excdoc "/// <exception cref=\"" (p "Exception") "\">" q
+               "</exception>")
+
+(flddoc "/// <summary>" n> "/// " (p "Description") n> "/// </summary>" n
+       "private " (p "Type") " " (p "name") ";")
+
+(prpback
+ (p "Property name: " name noinsert)
+ "private " (p "Type" type) " "
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1))) ";" n n
+ "public " (s type) " " name " {" n>
+ "get { return this."
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1)))
+ "; }" n>
+ "set { this."
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1)))
+ " = value; }" n "}" >)
+
+(prpbackdoc
+ (p "Property name: " name noinsert)
+ "/// <summary>" n> "/// " (p "Description") n> "/// </summary>" n
+ "private " (p "Type" type) " "
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1))) ";" n n
+ "/// <summary>" n> "/// " (p "Description") n> "/// </summary>" n
+ "/// <value><c>" (s type) "</c></value>" n
+ "public " (s type) " " name " {" n>
+ "get { return this."
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1)))
+ "; }" n>
+ "set { this."
+ (if (string= name "")
+     ""
+   (concat "_" (downcase (substring name 0 1)) (substring name 1)))
+ " = value; }" n "}" >)
+
+(prpdoc "/// <summary>" n> "/// " (p "Description") n> "/// </summary>" n
+      (p "public") " " (p "Type") " " (p "Name") n "{" > n>
+      "get { return this." (p "field" field) "; }" n>
+      "set { this." (s field) " = value; }" n "}" >)
+
+(mthddoc "/// <summary>" n> "/// " (p "Description") n> "/// </summary>" n
+        (p "public") " " (p "void") " " (p "MethodName")
+        "(" (p "args") ")" n "{" > n> q n "}" >)
+
+(cls "public class " (p "Name" name) n "{" > n>
+       "public " (s name) "(" (p "args") ")" n "{" > n> p n "}" > n n>
+       "~" (s name) "()" n "{" > n> q n "}" > n "}" >)
+
+css-base-mode
+
+(bgclr "background-color: #" (p "DDD") ";")
+(bgimg "background-image: url(" p ");")
+(bor "border: " (p "1px") " " (p "solid") " #" (p "999") ";")
+(clr "clear: " p ";")
+(dispblk "display: block;")
+(dispinl "display: inline;")
+(dispnone "display: none;")
+(fontfam "font-family: " p ";")
+(fontsz "font-size: " (p "12px") ";")
+(marb "margin-bottom: " p ";")
+(marl "margin-left: " p ";")
+(mar1 "margin: " p ";")
+(mar4 "margin: " (p "top") " " (p "right") " "
+            (p "bottom") " " (p "left") ";")
+(marr "margin-right: " p ";")
+(mart "margin-top: " p ";")
+(padb "padding-bottom: " p ";")
+(padl "padding-left: " p ";")
+(pad1 "padding: " p ";")
+(pad4 "padding: " (p "top") " " (p "right") " "
+             (p "bottom") " " (p "left") ";")
+(padr "padding-right: " p ";")
+(padt "padding-top: " p ";")
+(vnd (p nil property) ": " (p nil value) ";" n>
+    "-webkit-" (s property) ": " (s value) ";" n>
+    "-moz-" (s property) ": " (s value) ";" n>
+    "-ms-" (s property) ": " (s value) ";" n>
+    "-o-" (s property) ": " (s value) ";")
+
+dix-mode
+
+(sec "<section id=\"" (p "main") "\" type=\""
+         (p (completing-read "Type: " '("standard" "inconditional"
+                                      "postblank" "preblank")))
+         "\">" n> q n "</section>" >)
+(tgprm "<par n=\"" q "\"/>")
+(ent "<e lm=\"" (p "lemma" lemma) "\"> <i>" (s lemma)
+       "</i> <par n=\"" (p "paradigm") "\"/></e>")
+(withprm "<with-param pos=\"" q "\"/>")
+(whn "<when>" q "</when>")
+(tglit "<lit v=\"" q "\"/>")
+(lt "<let>" q "</let>")
+(clp "<clip pos=\"" (p "position") "\" side=\"" (p "tl")
+      "\" part=\"" q "\"/>")
+(chs "<choose><when>" n> "<test><equal>" q "</equal></test>" n
+        "</when></choose>" >)
+
+easycrypt-mode
+
+(wh2 "while{2} (" q ")")
+(fl (p "tactic") "; first " (p "count") " last")
+
+elixir-mode elixir-ts-mode
+
+(fn "def " (p "name") "(" (p "args") ") do" n> q n "end" >)
+(fnguard "def " (p "name") "(" (p "args") ") when " (p "guard")
+          " do" n> q n "end" >)
+(fnone "def " (p "name") "(" (p "args") "), do: " q)
+(fnoneguard "def " (p "name") "(" (p "args") ") when " (p "guard")
+             ", do: " q)
+(fr "for " (p "x") " <- " (p "enum") " do" n> q n "end" >)
 
 emacs-lisp-mode
 
-(autoload ";;;###autoload")
+(atload & ";;;###autoload")
 (pt "(point)")
+(vr "(defvar " p "\n  \"" p "\")")
+(lcl "(defvar-local " p "\n  \"" p "\")")
+(cnst "(defconst " p "\n  \"" p "\")")
+(cstom "(defcustom " p "\n  \"" p "\"" n> ":type '" p ")")
+(fce "(defface " p " '((t :inherit " p "))\n  \"" p "\")")
+(grp "(defgroup " p " nil\n  \"" p "\"" n> ":group '" p n> ":prefix \"" p "-\")")
+(mcr "(defmacro " p " (" p ")\n  \"" p "\"" n> r> ")")
+(als "(defalias '" p " '" p ")")
+(fn "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
+(iflet "(if-let (" p ")" n> r> ")")
+(whnlt "(when-let (" p ")" n> r> ")")
+(iflt* "(if-let* (" p ")" n> r> ")")
+(whnlt* "(when-let* (" p ")" n> r> ")")
+(andlt* "(and-let* (" p ")" n> r> ")")
+(cnd "(cond" n "(" q "))" >)
+(pcase "(pcase " (p "scrutinee") n "(" q "))" >)
+(lmd "(lambda (" p ")" n> r> ")")
+(lt "(let (" p ")" n> r> ")")
+(lt* "(let* (" p ")" n> r> ")")
+(rc "(letrec (" p ")" n> r> ")")
+(dtimes "(dotimes (" p ")" n> r> ")")
+(dlist "(dolist (" p ")" n> r> ")")
+(lp "(cl-loop for " p " in " p " do" n> r> ")")
+(cmmnd "(defun " p " (" p ")\n  \"" p "\"" n> "(interactive" p ")" n> r> ")")
+(advce "(defun " (p "adv" name) " (&rest app)" n> p n> "(apply app))" n>
+        "(advice-add #'" (p "fun") " " (p ":around") " #'" (s name) ")")
+(prvide "(provide '" (file-name-base (or (buffer-file-name) (buffer-name))) ")" n
+         ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name))) " ends here" n)
+(lg "(message \"LOG %s " (s sexp) ": %S"
+     "\" (format-time-string \"%X\") " sexp ")")
+(package-header ";;; " (p (file-name-base (or (buffer-file-name) (buffer-name))) file) ".el --- " (p "summary" summary) " -*- lexical-binding: t -*-" n n
+
+                ";; Author: " (p (user-full-name)) n
+                ";; Version: " (p "version") n
+                ";; Package-Requires: " (p "dependencies") n
+                ";; Homepage: " (p "homepage") n
+                ";; Keywords: " (p "keywords") n n
+
+                ";; This file is not part of GNU Emacs" n n
+
+                (p (concat
+                    ";; This program is free software: you can redistribute it and/or modify\n"
+                    ";; it under the terms of the GNU General Public License as published by\n"
+                    ";; the Free Software Foundation, either version 3 of the License, or\n"
+                    ";; (at your option) any later version.\n\n"
+
+                    ";; This program is distributed in the hope that it will be useful,\n"
+                    ";; but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+                    ";; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+                    ";; GNU General Public License for more details.\n\n"
+
+                    ";; You should have received a copy of the GNU General Public License\n"
+                    ";; along with this program.  If not, see <https://www.gnu.org/licenses/>."))
+
+                n n
+
+                ";;; Commentary:" n n
+
+                ";; " (p "commentary") n n
+
+                ";;; Code:" n n
+
+                (p "(message \"Hello, World\")") n n
+
+                "(provide '" (s file) ")" n
+                ";;; " (s file) ".el ends here")
+
+(srchfwd "(search-forward \"" (p "string") "\" " (p "nil") " "
+                (p "nil") " " (p "1") ")" q)
+(srchfwdre "(search-forward-regexp \"" (p "regexp") "\" "
+                       (p "nil") " " (p "nil") " " (p "1") ")" q)
+(srchbwd "(search-backward \"" (p "string") "\" " (p "nil") " "
+                 (p "nil") " " (p "1") ")" q)
+(srchbwdre "(search-backward-regexp \"" (p "regexp") "\" "
+                        (p "nil") " " (p "nil") " " (p "1") ")" q)
+(intr "(interactive \"" (p "P") "\")")
+
+
+(hookadd "(add-hook '" (p "mode") "-hook #'" q ")")
+(strmtch "(string-match \"" (p "regexp") "\" \"" (p "string")
+              "\" " (p "0") ")")
+(stmark "(set-mark " q ")")
+(stbuf "(set-buffer " q ")")
+(svbuf "(save-buffer)")
+(dirfile "(directory-files " (p "directory") " " (p "nil") " "
+                 (p "nil") " " (p "nil") ")")
+(delfile "(delete-file " q ")")
+
+(autoload ";;;###autoload")
 (var "(defvar " p "\n  \"" p "\")")
 (local "(defvar-local " p "\n  \"" p "\")")
 (const "(defconst " p "\n  \"" p "\")")
@@ -41,12 +526,10 @@ emacs-lisp-mode
 (macro "(defmacro " p " (" p ")\n  \"" p "\"" n> r> ")")
 (alias "(defalias '" p " '" p ")")
 (fun "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
-(iflet "(if-let (" p ")" n> r> ")")
 (whenlet "(when-let (" p ")" n> r> ")")
 (whilelet "(while-let (" p ")" n> r> ")")
 (andlet "(and-let* (" p ")" n> r> ")")
 (cond "(cond" n "(" q "))" >)
-(pcase "(pcase " (p "scrutinee") n "(" q "))" >)
 (let "(let (" p ")" n> r> ")")
 (lett "(let* (" p ")" n> r> ")")
 (pcaselet "(pcase-let (" p ")" n> r> ")")
@@ -66,8 +549,14 @@ emacs-lisp-mode
          " ends here" n)
 (package (i header) r n n (i provide))
 
-eshell-mode shell-mode
+erc-mode
 
+(blst "blist" n)
+(hlp "help " q)
+
+eshell-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format
 (for "for " (p "i") " in " p " { " q " }")
 (while "while { " p " } { " q " }")
 (until "until { " p " } { " q " }")
@@ -76,38 +565,552 @@ eshell-mode shell-mode
 (unl "unless { " p " } { " q " }")
 (unle "unless { " p " } { " p " } { " q " }")
 
-text-mode
+f90-mode
 
-(box "┌─" (make-string (length str) ?─) "─┐" n
-     "│ " (s str)                       " │" n
-     "└─" (make-string (length str) ?─) "─┘" n)
-(abox "+-" (make-string (length str) ?-) "-+" n
-      "| " (s str)                       " |" n
-      "+-" (make-string (length str) ?-) "-+" n)
-(cut "--8<---------------cut here---------------start------------->8---" n r n
-     "--8<---------------cut here---------------end--------------->8---" n)
-(rot13 (p "plain text" text) n "----" n (rot13 text))
-(calc (p "taylor(sin(x),x=0,3)" formula) n "----" n (format "%s" (calc-eval formula)))
-(table (p (read-number "Rows: ") rows noinsert)
-       (p (read-number "Cols: ") cols noinsert)
-       "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n
-       "|" (* cols "----|") n
-       (* rows "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n))
+(subr "subroutine " (p "name" name) " (" (p "arg" arg) ")" n>
+            "real, intent(in) :: " (s arg) n> q n "end subroutine " (s name) >)
+(puresubr "pure subroutine " (p "name" name) " (" (p "arg" arg)
+                 ")" n> "real, intent(in) :: " (s arg) n> q n
+                 "end subroutine " (s name) >)
 
-rst-mode
+faust-mode
 
-(title (make-string (length title) ?=) n (p "Title: " title) n (make-string (length title) ?=) n)
+(hdr "declare name \"" (p "name") "\";" n
+        "declare version \"" (p "0.1") "\";" n
+        "declare author \"" (p (user-full-name)) "\";" n
+        "declare license \""
+        (p (completing-read "License: " '("AGPL-3.0-only" "Apache-2.0"
+                                         "BSD-3-Clause" "GPL-3.0-or-later"
+                                         "LGPL-3.0-or-later" "MIT" "MPL-2.0")))
+        "\";" n "declare copyright \"" (p (format-time-string "%Y"))
+        " - " (format-time-string "%Y") ", " (p (user-full-name)) "\";" n q)
+
+fundamental-mode ;; Available everywhere
+
+(tdy (format-time-string "%Y-%m-%d"))
+(nw (format-time-string "<%Y-%0m-%0d %a %H:%0M>"))
+(ystrd (format-time-string "<%Y-%0m-%0d %a>" (time-subtract nil (* 24 60 60))))
+(tmrrow (format-time-string "<%Y-%0m-%0d %a>" (time-add nil (* 24 60 60))))
+
+(today (format-time-string "%Y-%m-%d"))
+
+gdscript-mode
+
+(cls "class " (p "class") ":" n> q)
+(clsname "class_name " (p "Item") " = " (p "\"res://icons/item.png\""))
+(cnst "const " (p "name") " = " q)
+(enm "enum " p " {" p "}")
+(fr "for " (p "var") " in " (p "collection") ":" n> (p "pass") q)
+(fn "func " (p "func_name") " (" (p "param") "):" n> (p "pass") q)
+(ifc "if " (p "condition") ":" n> (p "pass") q)
+(ife "if " (p "condition") ":" n> (p "pass") n "else:" n> (p "pass"))
+(mtch "match " (p "expression") ":" n>
+       (p "pattern") ":" n> (p "pass"))
+(vrready "onready var " (p "name") " = " q)
+(prn "print(" q ")")
+(ret "return " q)
+(vrstget "var " (p "variable") " = " (p "value") " setget "
+     (p "setterfunc") ", " (p "getterfunc"))
+(fnstat "static func " (p "func_name") " (" (p "param") "):" n>
+    (p "pass") q)
+(vr "var " (p "name") " = " q)
+(wh "while " (p "True") ":" n> (p "pass") q)
+
+git-commit-mode
+
+(fxiss "fixes #" (p "100"))
+(refiss "references #" (p "100"))
+(ctype (p (completing-read
+          "Type: "
+          '("fix" "hotfix" "add" "update" "change" "clean"
+            "disable" "remove" "upgrade" "revert")))
+      " " q)
+
+go-mode go-ts-mode
+
+(imp "import " q)
+(impn "import (" n> q n ")")
+
+(pr "fmt.Printf(\"\\n" p "\\n%#v\\n\", " q ")")
+(pl "fmt.Println(" q ")")
+
+(db "Debug.Printf(\"\\n" p "\\n\\n%#v\\n\", " q ")")
+(dl "Debug.Println(" q ")")
+
+(lf "log.Printf(\"\\n%#v\\n\", " q ")")
+(ln "log.Println(" q ")")
+
+(stt "type " p " struct {" n> q n "}")
+
+(inf "type " p " interface {" n> q n "}")
+
+(cnt "const " p " = " q )
+
+(cnst "const (" n> p " = " q n ")")
+
+(vr "var " p " " q)
+
+(mp "map[" p "]" q)
+
+(if "if " p " {" n> p n "}" > q)
+
+(el "if " p " {" n> p n "} else {" > n> p n "}" > q)
+
+(elif "if " p " {" n> p n "} else if " > p " {" n> p n "}" > q)
+
+(ifen "if err != nil {" n> q n "}" >)
+
+(ifer "if err != " p " {" n> q n "}" >)
+
+(sel "select {" n> "case " p ":" n> q n "}" >)
+
+(swch "switch " p " {" n> "case " p ":" q n "}" >)
+
+(fr "for " p "{" n> q n "}" >)
+
+(rng "for " p ", " p " := range " p " {" n> q n "}" >)
+
+(fnc "func " p "(" p ") {" n> q n "}" >)
+
+(mn "func main() {" n> q n "}")
+
+(in "func init() {" n> q n "}")
+
+(tst "func Test" p " (t *testing.T) { " n> q n "}")
+
+(vrblk "var (" n> (p "name") " " q n ")" >)
+
+(mthddoc "// " (p "name" name) " " (p "description") n
+        "func (" (p "recv") ") " (s name) "(" (p "args") ") "
+        (p "result") " {" n> q n "}" >)
+
+haskell-mode
+
+(typdata "data " (p "Type") " = " p)
+(cmt "{-" n> q n "-}" >)
+(errfixme "(error \"FIXME: " q "\")")
+(fn (p "function-name" name) " :: " (p "type") n
+     (s name) " " (p "arguments") " " q)
+(fnstub (p "function-name" name) " :: " (p "type") n
+      (s name) " = " q "error \"Not implemented: " (s name) "\"")
+(mn "main :: IO ()" n "main = do " q)
+(mod "module " (p "Module") " where" n q)
+(cls "class " (p "Name") " where" n> q)
+(prag "{-# " (p "PRAGMA") " #-}")
+(prn "print " q)
+
+(instdecl "instance " (p "Show a => ") (p "Ord") " " (p "DataType")
+          " where" n> q)
+(imp "import " q)
+(impqual "import qualified " (p "Module") " as " q)
+(implst "import " (p "Module") " (" q ")")
+
+(cs "case " (p "value") " of" n>
+      (p "pattern") " -> " (p "result") n>
+      "otherwise -> " q)
+
+html-mode
+
+(scr "<script type=\"text/javascript\">" n> q n "</script>" >)
+(scrsrc "<script type=\"text/javascript\" src=\"" q "\"></script>")
+
+hy-mode
+
+(fn "(defn " (p "function-name") " [" (p "arg") "]" n> q ")" >)
+(mcr "(defmacro " (p "macro-name") " [" (p "arg") "]" n>
+      (p "`(") q "))" >)
+(doblk "(do " q ")")
+(fr "(for [" (p "item items") "] " q ")")
+(ifc "(if " (p "condition") n> (p "result-true") n>
+    (p "result-false") ")" >)
+(ifcnot "(if-not " (p "condition") n> (p "result-false") n>
+     (p "result-true") ")" >)
+(imp "(import [" (p "module-name") " [" (p "exposing") "]])")
+(lt "(let [" (p "arg") "]" n> q ")" >)
+(mn "(defmain [&rest " (p "args") "]" n> q ")" >)
+(reqmod "(req [" (p "module-name") " [" (p "exposing") "]])")
+(stvr "(setv " q ")")
+(unl "(unless " (p "condition") n> q ")" >)
+(whn "(when " (p "condition") n> q ")" >)
+
+(cnd "(cond" n> "[" (p "condition") " " (p "result") "]" n>
+      "[" (p "condition") " " (p "result") "]" n> "[True " q "])" >)
+(cls "(defclass " (p "ClassName") " [" (p "BaseClass") "]" n>
+      "(defn --init-- [" (p "arg") "]" n> q "))" >)
+
+java-mode
+
+(pkg "package " q ";")
+(imp "import " q ";")
+
+(pl "System.out.println(\"" q "\");")
+
+(class "public class " p " {" n> q n "}")
+(main "public static void main(String[] args) {" n> q n> "}")
+
+(if "if (" p ") {" n> q n> "}")
+(elif "else if (" p ") {" n> q n> "}")
+(else "else {" n> q n> "}")
+
+(for "for (" p ") {" n> q n> "}")
+
+js-base-mode typescript-ts-base-mode
+
+(if "if (" p ") {" n> q n "}" >)
+(el "if (" p ") {" n> p n "} else { " > n> q n "}" >)
+(elif "else if (" p ") {" n> q n "}" >)
+(else "else {" n> q n "}" >)
+(cop "( " p ") ? " p " : " q";")
+
+(switch "switch (" p ") {" n> "case " p ":" n> p n> "default:" n> q n "}" >)
+(case "case " p ":" n> q)
+
+(while "while (" p ") {" n> q n "}" >)
+(dowhile "do {" n> p n> "} while (" q ");")
+
+(for "for (" p "; " p "; " p ") {" n> q n "}" >)
+(fin "for (" p " in " p ") {" n> q n "}" >)
+(fof "for (" p " of " p ") {" n> q n "}" >)
+
+(func "function " p "(" p ") {" n> q n "}" >)
+(fexp "let " p " = function(" p ") {" n> q n "};" >)
+
+(imp "import {" p "} from \"" q "\";")
+(impas "import {" p " as " p "} from \"" q "\";")
+
+(tr "try {" n> p n "} catch (err) {" > n> q n "}" >)
+(trfin "try {" n> p n "} catch (err) {" > n> p n
+             "} finally {" > n> q n "}" >)
+(ctor "constructor(" (p "args") ") {" n> q n "}" >)
+(cls "class " (p "Class") " {" n>
+       "constructor(" (p "args") ") {" n> q n "}" > n "}" >)
+(clsext "class " (p "Class") " extends " (p "Parent") " {" n>
+               "constructor(" (p "args") ") {" n> "super(" p ");" n>
+               q n "}" > n "}" >)
+(tmout "setTimeout(() => {" n> q n "}, " (p "delayInMs") ")" >)
+(impdflt "import " (p "name") " from '" q "'")
+(impallas "import * as " (p "alias") " from '" q "'")
+
+
+(exp "export { " (p "name") " } from '" q "'")
+(expas "export { " (p "name") " as " (p "alias") " } from '" q "'")
+(bndmthd "this." (p "method" method) " = this." (s method) ".bind(this)")
+
+julia-mode julia-ts-mode
+
+(usg "using " (p "Package") q)
+(typprim "primitive type " (p "Type") " <: " (p "Supertype") " "
+       (p "bits") " end" q)
+(typabst "abstract type " (p "Type") " <: " (p "Supertype") " end" q)
+(fr "for " (p "i") " "
+     (p (completing-read "Iteration: " '("in" "="))) " " (p "1:n") n>
+     q n "end" >)
+(tr "try" n> p n "catch " (p "error") > n> q n "end" >)
+(trfin "try" n> p n "catch " (p "error") > n> p n "finally" > n>
+             q n "end" >)
+
+latex-mode LaTeX-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format
+(abstract "\\begin{abstract}\n" r> n> "\\end{abstract}")
+(align "\\begin{align}\n" r> n> "\\end{align}")
+(alignn "\\begin{align*}\n" r> n> "\\end{align*}")
+(gather "\\begin{gather}\n" r> n> "\\end{gather}")
+(gatherr "\\begin{gather*}\n" r> n> "\\end{gather*}")
+(appendix "\\begin{appendix}\n" r> n> "\\end{appendix}")
+(begin "\\begin{" (s env) "}" r> n> "\\end{" (s env) "}")
+(center "\\begin{center}\n" r> n> "\\end{center}")
+(displaymath "\\begin{displaymath}\n" r> n> "\\end{displaymath}")
+(document "\\begin{document}\n" r> n> "\\end{document}")
+(enumerate "\\begin{enumerate}\n\\item " r> n> "\\end{enumerate}")
+(equation "\\begin{equation}" r> n> "\\end{equation}")
+(flushleft "\\begin{flushleft}" r> n> "\\end{flushleft}")
+(flushright "\\begin{flushright}" r> n> "\\end{flushright}")
+(frac "\\frac{" p "}{" q "}")
+(fussypar "\\begin{fussypar}" r> n> "\\end{fussypar}")
+(itemize "\\begin{itemize}\n\\item " r> n> "\\end{itemize}")
+(letter "\\begin{letter}\n" r> n> "\\end{letter}")
+(math "\\begin{math}\n" r> n> "\\end{math}")
+(minipage "\\begin{minipage}[t]{0.5\linewidth}\n" r> n> "\\end{minipage}")
+(quotation "\\begin{quotation}\n" r> n> "\\end{quotation}")
+(quote "\\begin{quote}\n" r> n> "\\end{quote}")
+(sloppypar "\\begin{sloppypar}\n" r> n> "\\end{sloppypar}")
+(theindex "\\begin{theindex}\n" r> n> "\\end{theindex}")
+(trivlist "\\begin{trivlist}\n" r> n> "\\end{trivlist}")
+(verbatim "\\begin{verbatim}\n" r> n> "\\end{verbatim}")
+(verbatimm "\\begin{verbatim*}\n" r> n> "\\end{verbatim*}")
+
+(thm "\\begin{thm}[" (p "title") "]" n>
+         "\\label{thm:" (p "label") "}" n> q n "\\end{thm}" >)
+(lem "\\begin{lem}[" (p "title") "]" n>
+       "\\label{lem:" (p "label") "}" n> q n "\\end{lem}" >)
+(cor "\\begin{cor}[" (p "title") "]" n>
+           "\\label{cor:" (p "label") "}" n> q n "\\end{cor}" >)
+(cvcomp "\\cvcomputer{" (p "category") "}{" (p "programs") "}{"
+            (p "category") "}{" (p "programs") "}")
+
+(gls "\\newglossaryentry{" (p "AC") "}{name=" (p "Name")
+          ", description=" q "}")
+(newcmdargs "\\newcommand{\\" (p "name") "}[" (p "0") "]{" q "}")
+(gfxopt "\\includegraphics[" (p "options") "]{" q "}")
+(frmopt "\\begin{frame}[" (p "options") "]" n>
+       "\\frametitle{" (p "title") "}" n> q n "\\end{frame}" >)
+
+(newcmd "\\newcommand{\\" (p "name") "}{" q "}")
+(gfx "\\includegraphics{" q "}")
+(frm "\\begin{frame}" n> q n "\\end{frame}" >)
+
+ledger-mode
+
+(px "P " (format-time-string "%Y-%m-%d") " " (p "BTC") " "
+    (p "35000") " " (p "EUR") n)
+(txn (format-time-string "%Y-%m-%d") " " (p "Description") n
+    "    " p "  " (p "Amount") " " (p "EUR") n
+    "    " p n)
+
+lisp-mode
+
+(slt "(" (p "name" name) " :initarg :" (s name) n>
+      ":initform (error \":" (s name) " must be specified\")" n>
+      ":reader " (s name) "-changed" n>
+      ":writer set-" (s name) n>
+      ":type " (p "type") n>
+      ":allocation "
+      (p (completing-read "Allocation: " '(":instance" ":class"))) n>
+      ":documentation \"" (p "about slot") "\")" >)
+(dfnpkg "(defpackage #:" (p "name") n>
+            "(:nicknames #:" (p "nick") ")" n>
+            "(:use #:cl #:closer-mop #:" (p "package") ")" n>
+            "(:shadow :" (p "symbol") ")" n>
+            "(:shadowing-import-from #:" (p "package") " #:" (p "symbol") ")" n>
+            "(:export :" q "))" >)
+(cls "(defclass " (p "name") " (" (p "inherits") ")" n>
+       "((" (p "slot") "))" n>
+       "(:documentation \"" (p "doc") "\"))" > q)
+
+m4-mode
+
+(dfn "define(`" (p "macro") "',`" (p "subst") "')." n q)
+
+makefile-automake-mode
+
+(hdrnoinst "noinst_HEADERS = " q)
+
+makefile-bsdmake-mode
+
+(phny ".PHONY: " q)
+(ech "@echo " (p "\"message to output\""))
+(tgtall "all: " (p "targets") n n q n n "clean:" n> (p "clean actions"))
+(ifc "@if [ " (p "cond") " ]" n> "then " q n "fi")
+(vexp "$(" (p "VAR") ")" q)
+
+makefile-gmake-mode
+
+(mk "$(MAKE) --directory=" (p "$@") n q)
+(patsub "$(patsubst " (p "from") "," (p "to") "," (p "src") ")")
+(phny ".PHONY: " q)
+(sh "$(shell " (p "command") ")" q)
+(fnwild "$(wildcard " q ")")
+
+(abs "$(abspath $(" q "))")
+(addpfx "$(addprefix $(" (p "dir") ")/,$(" q "))")
+(addsfx "$(addsuffix " (p ".suffix") ",$(" q "))")
+(fndir "$(dir $(" q "))")
+(fnnotdir "$(notdir $(" q "))")
+(spc "." (p (completing-read "Special target: "
+                                  '("PHONY" "DEFAULT" "PRECIOUS" "SECONDARY"
+                                    "SECONDEXPANSION" "DELETE_ON_ERROR")))
+         ": " q)
+(tmpl "define " (p "PROGRAM" program) "_template" n> q n "endef" n n
+          "$(foreach " (p (downcase program) item) ",$(" (s program) "S),"
+          "$(eval $(call " (s program) "_template,$(" (s item) "))))")
+
+makefile-mode
+
+(tgtall "all:" n> q)
+
+(tgtcln "clean:" n> "rm -r $(" (p "OUTDIR") ")" n q)
+
+markdown-mode
+
+(gitcollapse & "## " (p "Heading") n n "<details>" n n
+             "<summary>" (p "Sub Heading")  "</summary>" n n
+             (r "Insert Link or comments") n n "</details>")
+(bolditalics "***" p "***")
+(srcblock (call-interactively #'markdown-insert-gfm-code-block))
+(src "'" p "'")
+(unorderlist & "- " (p "First") n> "- " (p "Second") n> "- " (p "Third"))
+(orderlist & "1. " (p "First") n> "2. " (p "Second") n> "3. " (p "Third"))
+(insertimage (call-interactively #'markdown-insert-image))
+(insertlink (call-interactively #'markdown-insert-link))
+(hugotitle & "+++" n "title = " (p "title") n "date = " (format-time-string "%Y-%m-%d") n "tags = [ " (p "tag1, tag2 ") "]" n "draft = false" n "+++")
+(h1 & "# " p " #")
+(h2 & "## " p " ##")
+(h3 & "### " p " ###")
+(h4 & "#### " p " ####")
+(inserttable (call-interactively #'markdown-insert-table))
+
+(hrdash "----------" n q)
+(hrstar "*******" n q)
+(h1setext (p "Header 1" title) n (make-string (string-width title) ?=) n q)
+
+(h2setext (p "Header 2" title) n (make-string (string-width title) ?-) n q)
+
+nasm-mode
+
+(doxfn ";;" n
+      ";; @brief      " (p "function description") n
+      ";;" n
+      ";; @details    " (p "detailed description") n
+      ";;" n
+      ";; @param      " (p "param") n
+      ";;" n
+      ";; @return     " (p "return") n
+      ";;")
+
+ned-mode
+
+(smpl "simple " (p "Component") n "{" > n> q n "}" >)
+(smplext "simple " (p "Component") " extends " (p "BaseComponent") n
+                "{" > n> q n "}" >)
+
+nesc-mode
+
+(usgiface "uses interface " (p "Interface") " as " (p "alias") ";" q)
+(mod "module " (p "Module") " {" n> "uses interface "
+        (p "Packet") ";" n> q n "}" >)
+(dbg "dbg(\"" (p "Module") "\", \"" q "\");")
+(dbgargs "dbg(\"" (p "Module") "\", \"" (p "message") "\", " q ");")
+
+nim-mode
+
+(arr "array[" (p "length") ", " (p "type") "]" q)
+(blk "block " (p "name") ":" n> q)
+(cs "case " (p "value") n q)
+(fr "for " (p "index") " in " (p "sequence") ":" n> q)
+(fn "func " (p "name") "(" (p "arguments") "): "
+      (p "return type") " =" n> q)
+(ifc "if " (p "expression") ":" n> q)
+(imp "import " (p "module"))
+(impsrc "from " (p "module") " import " (p "field"))
+(dfniter "iterator " (p "name") "(" (p "arguments") "): "
+          (p "return type") q)
+(mcr "macro " (p "name") "(" (p "arguments") "): "
+       (p "return type") " =" n> q)
+(mthd "method " (p "name") "(" (p "arguments") "): "
+        (p "return type") " =" n> q)
+(arm "of " (p "value") ":" n> q)
+(prag "{." (p "name") ".}")
+(dfnproc "proc " (p "name") "(" (p "arguments") "): "
+      (p "return type") " =" n> q)
+(typseq "seq[" (p "type") "]" q)
+(tmpl "template " (p "name") "(" (p "arguments") "): "
+          (p "return type") " =" n> q)
+(wh "while " (p "expression") ":" n> q)
+
+(tr "try:" n> p n "except " (p "Exception") ":" n> q)
+
+nix-mode
+
+(buildphase > "buildPhase= ''" n (p "Build Instructions") n " '';")
+(checkPhase > "checkPhase= ''" n (p "") n " '';")
+(configurephase > "configurePhase= ''" n (p "") n " '';")
+(fixupphase > "fixupPhase= ''" n (p "") n " '';")
+(distphase > "distPhase= ''" n (p "") n " '';")
+(patchphase > "patchPhase= ''" n (p "") n " '';")
+(unpackphase > "unpackPhase= ''" n (p "") n " '';")
+(installCheckPhasephase > "installCheckPhasePhase= ''" n (p "") n " '';")
+(installphase > "installphase= ''" n p " mkdir -p $out/bin" n> "for f in $(find . -executable -type f);" n> "do" n> "cp $f $out/bin" n> "done}" n> " '';")
+
+(gitpackage "{ lib" n ", stdenv" n ", fetchFromGitHub" n ", " (p "inputs") n ", " (p "inputs") n "}:" n n>
+            "stdenv.mkDerivation rec {" n> "pname = \"" (p "" pkgn nil) "\";" n> "version = \"" p "\";" n n>
+            "src = fetchFromGitHub {" n> "owner = \"" (p "" own) "\";" n> "repo = \"" (s pkgn) "\";" n>
+            "rev = \"" "v${version}" "\";" n> "sha256 = \"" "${lib.fakeSha256}" "\";" n> "};" n n>
+            "nativeBuildInputs = [ " (p "makeWrapper") " ];" n n> "BuildInputs = [ " (p) " ];" n n>
+            "meta = with lib; {" n>
+            "homepage = \"" "https://github.com/" (s own) "/" (s pkgn) "\";" n>
+            "description = \"" (p) "\";" n>
+            "license = licenses." (p (completing-read "License: " '("agpl3" "asl20" "bsd1" "bsd2" "bsd3" "free" "gpl2" "gpl2Only" "gpl2Plus" "gpl3" "gpl3Only" "gpl3Plus" "isc" "lgpl21Only" "lgpl21Plus" "lgpl2Only" "lgpl2Plus" "lgpl3" "lgpl3Only" "mit" "mpl20" "ofl" "unfree"))) ";" n>
+            "maintainers = with maintainers; [ " (s own) " ];" n>
+            "platforms = platforms."
+            (p (completing-read "Platform: " '("all" "allBut" "arm" "cygwin" "darwin" "freebsd" "gnu" "i686" "illumos" "linux" "mesaPlatforms" "mips" "netbsd" "none" "openbsd" "unix" "x86"))) ";" n> q "};" n> "}"
+)
+
+(mksh "pkgs."
+         (p (completing-read "Shell: " '("mkShell" "mkShellNoCC"))) " {" n>
+         "inputsFrom = [ " (p "inputs") " ];" n>
+         "packages = [ " (p "packages") " ];" n>
+         "shellHook = ''" n> q n "'';" n "}" >)
+(passupd "passthru.updateScript = nix-update-script { };")
+(pkgurl "{ lib, stdenv, fetchurl" (p ", inputs") " }:" n n
+             "stdenv.mkDerivation rec {" n>
+             "pname = \"" (p "name") "\";" n>
+             "version = \"" (p "version") "\";" n n>
+             "src = fetchurl {" n> "url = \"" (p "url") "\";" n>
+             "sha256 = \"${lib.fakeSha256}\";" n "};" > n n>
+             "nativeBuildInputs = [ " (p "native inputs") " ];" n>
+             "buildInputs = [ " (p "inputs") " ];" n n>
+             "meta = with lib; {" n> "homepage = \"" (p "homepage") "\";" n>
+             "description = \"" (p "description") "\";" n>
+             "license = licenses." (p "mit") ";" n>
+             "maintainers = with maintainers; [ " (p "maintainer") " ];" n>
+             "platforms = platforms." (p "all") ";" n "};" > n "};" >)
+
+nsis-mode
+
+(odir "$OUTDIR")
+(idir "$INSTDIR")
+(ifc "${If} " (p "condition") n> q n "${ElseIf} " (p "condition") n n
+    "${EndIf}" >)
+
+nxml-mode
+
+(bdy "<body" p ">" n> q n "</body>" >)
+(tgbr "<br />")
+(dt "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" "
+         "\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">")
+(dtstrict
+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
+ "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">")
+(dttrans
+ "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" "
+ "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">")
+(htmform "<form method=\"" p "\" action=\"" p "\">" n> q n "</form>" >)
+(anc "<a href=\"" p "\">" p "</a>")
+(htm "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\""
+      (p "en") "\" lang=\"" (p "en") "\">" n> q n "</html>" >)
+(tgimg "<img src=\"" p "\" alt=\"" p "\" />")
+(inp "<input type=\"" p "\" name=\"" p "\" value=\"" p "\" />")
+(lnk "<link rel=\"" (p "stylesheet") "\" href=\"" (p "url")
+      "\" type=\"" (p "text/css") "\" media=\"" (p "screen") "\" />")
+(mta "<meta name=\"" (p "generator") "\" content=\"" (p "content") "\" />")
+(ancname "<a name=\"" p "\"></a>")
+(qt "<blockquote>" n> p n "</blockquote>" >)
+(sty "<style type=\"text/css\" media=\"" (p "screen") "\">" n>
+       q n "</style>" >)
+(tgblk "<" (p "tag" tag) ">" n> p n "</" (s tag) ">" q >)
+
+(tg "<" (p "tag" tag) ">" q "</" (s tag) ">")
+(tgself "<" (p "tag") " " q " />")
+
+octave-mode
+
+(fr "for " (p "var") " = " (p "expr") n> q n "endfor" >)
+(fn "function " (p "return_val") " = " (p "fname") "(" (p "args") ")"
+     n> q n "endfunction" >)
+
+(ife "if " (p "condition") n> p n "else" > n> q n "endif" >)
+
+odin-mode
+
+(whnels "when " (p "condition") " {" n> p n "} else {" > n> q n "}" >)
+(ife "if " (p "init; ") (p "condition") " {" n> p n "} else {" > n> q n "}" >)
+(frdirv (p "#directive ") "for " (p "condition") " {" n> q n "}" >)
 
 org-mode
 
-(begin "#+begin_" (s name) n> r> n "#+end_" name)
-(ascii "#+begin_export ascii" n> r> n "#+end_export")
-(html "#+begin_export html" n> r> n "#+end_export")
-(latex "#+begin_export latex" n> r> n "#+end_export")
-(inlsrc "src_" p "{" q "}")
-(cptn & "#+caption: ")
-(drwr & ":" p ":" n r ":end:")
-(ttl      & "#+title: " p n "#+author: " p n "#+language: " p n n)
+
+(ttl      & "#+title: " p n "#+author: " p n "#+language: " p n "#+OPTIONS: toc:nil" p n n)
 (nm       & "#+name: " p n)
 (lnk      & "[[" p "][" p "]]")
 (bgn      & "#+begin_" (s name) n r n "#+end_" name)
@@ -138,43 +1141,80 @@ org-mode
 (rdmecollapse  "*** " (p "Heading") n "#+HTML: <details> <summary> " (p "sub-heading")  " </summary>" n
  (r> "link or any comments") n n "#+HTML: </details>" n)
 
-rust-mode rust-ts-mode
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format
+(cptn & "#+caption: ")
+(drwr & ":" p ":" n r ":end:")
+(inlsrc "src_" p "{" q "}")
 
-(if "if " p " {" n> q n "}" > q)
-(el "if " p " {" n> p n "} else {" >n> p n "}" > q)
-(elif "if " p " {" n> p n "} else if " p " {" >n> p n "}" > q)
-(fn "fn " p "(" p ") {" n> p n "}" q)
-(fnr "fn " p "(" p ") -> " p " {" n> p n "}" q)
-(crt "extern crate " q ";")
-(drv & "#[derive(" p ")]" q)
-(d "dbg!(" p ")" q)
-(lp "loop {" n> q n "}" > q)
+(ipy "#+begin_src ipython :session " (p "session01") " :file "
+         (p (concat (make-temp-name "./ipython-") ".png"))
+         " :exports " (p "both") n q n "#+end_src")
+
+(inlsrchdr "src_" (p "lang") "[" (p "where") "]{" q "}")
+
+(begin "#+begin_" (s name) n> r> n "#+end_" name)
+(ascii "#+begin_export ascii" n> r> n "#+end_export")
+(html "#+begin_export html" n> r> n "#+end_export")
+(latex "#+begin_export latex" n> r> n "#+end_export")
+
+php-mode php-ts-mode
+
+(fn (p "public ") "function " (p "name") "(" (p "$arg, ...") ")" n
+          "{" > n> q n "}" >)
+(fntyp (p "public ") "function " (p "name") "(" (p "$arg, ...")
+               "): " (p "type") n "{" > n> q n "}" >)
+
+powershell-mode
+
+(cmdprm "[cmdletbinding()]" n "Param (" n> q n ")" >)
+(cmthlp "<#" n
+     ".SYNOPSIS" n (p "Brief description") n n
+     ".DESCRIPTION" n (p "Longer description") n n
+     ".PARAMETER Foobar" n (p "Descriptions of parameter Foobar") n n
+     ".EXAMPLE" n (p "Actual example") n n
+     ".NOTES" n (p "Additional notes") n "#>")
+(fn "Function " (p "Verb-Noun") " {" n> q n "}" >)
+(prm "[Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true)]"
+     "[string]$" (p "Foobar"))
+
+prog-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format (GPL-3.0 license)
+(fixme (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "FIXME ")
+(todo (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO ")
+(bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG ")
+(hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK ")
+
+protobuf-mode
+
+(msg "message " (p "Name") " {" n> q n "}" >)
+(syn "syntax = \"" (p "proto3") "\";")
 
 python-base-mode
 
-(__contains "def __contains__(self, el):" n> p n> "pass")
-(__enter "def __enter__(self):" n> p n> "return self")
-(__eq "def __eq__(self, other):" n> "return self." p " == other." q)
-(__exit "def __exit__(self, type, value, traceback):" n> p n> "pass")
-(__getitem "def __len__(self):" n> p n> "pass")
-(__iter "def __iter__(self):" n> "return " q)
-(__new "def __new__(mcs, name, bases, dict):" n> p n> "return type.__new__(mcs, name, bases, dict)")
-(__setitem "__all__ = [" n> p n> "]")
+(__contains__ "def __contains__(self, el):" n> p n> "pass")
+(__enter__ "def __enter__(self):" n> p n> "return self")
+(__eq__ "def __eq__(self, other):" n> "return self." p " == other." q)
+(__exit__ "def __exit__(self, type, value, traceback):" n> p n> "pass")
+(__getitem__ "def __len__(self):" n> p n> "pass")
+(__iter__ "def __iter__(self):" n> "return " q)
+(__new__ "def __new__(mcs, name, bases, dict):" n> p n> "return type.__new__(mcs, name, bases, dict)")
+(__setitem__ "__all__ = [" n> p n> "]")
 (arg "parser.add_argument('-" p "', '--" p "'," n> p ")")
 (arg_positional "parser.add_argument('" p "', " p ")")
-(asrt "assert " q)
-(asrtEqual "self.assertEqual(" p ", " p ")")
-(asrtFalse "self.assertFalse(" p ")")
-(asrtIn "self.assertIn(" p ", " p ")")
-(asrtNotEqual "self.assertNotEqual(" p ", " p ")")
-(asrtRaises "assertRaises(" p ", " p ")")
-(asrtRaises-with "with self.assertRaises(" p "):" n> q)
-(asrtTrue "self.assertTrue(" p ")")
+(assert "assert " q)
+(assertEqual "self.assertEqual(" p ", " p ")")
+(assertFalse "self.assertFalse(" p ")")
+(assertIn "self.assertIn(" p ", " p ")")
+(assertNotEqual "self.assertNotEqual(" p ", " p ")")
+(assertRaises "assertRaises(" p ", " p ")")
+(assertRaises-with "with self.assertRaises(" p "):" n> q)
+(assertTrue "self.assertTrue(" p ")")
 (celery_pdb "from celery.contrib import rdb; rdb.set_trace()")
-(clas "class " p "(" p "):" n> q)
-(clasm "@classmethod" n> "def " p "(cls, " p "):" n> q)
-(defd "def " p "(func):" n> p n> "def _" p "(*args, **kwargs):" n> p n> "ret = func(*args, **kwargs)" n> p n> "return ret" n n> "return _" q)
-(deff "def " p "(" p "):" n> q)
+(class "class " p "(" p "):" n> q)
+(classmethod "@classmethod" n> "def " p "(cls, " p "):" n> q)
+(def_decorator "def " p "(func):" n> p n> "def _" p "(*args, **kwargs):" n> p n> "ret = func(*args, **kwargs)" n> p n> "return ret" n n> "return _" q)
+(def_function "def " p "(" p "):" n> q)
 (doc "\"\"\"" p "\"\"\"")
 (doctest ">>> " p n> q)
 (for "for " p " in " p ":" n> q)
@@ -207,13 +1247,13 @@ python-base-mode
 (pass "pass")
 (print "print(" p ")")
 (prop "def " p "():"
-      n> "doc = \"\"\"" p "\"\"\"" 
+      n> "doc = \"\"\"" p "\"\"\""
       n> "def fget(self):"
-      n> "return self._" p 
+      n> "return self._" p
       n> n> "def fset(self, value):"
-      n> "self._" p " = value" 
+      n> "self._" p " = value"
       n> n> "def fdel(self):"
-      n> "del self._" p 
+      n> "del self._" p
       n> "return locals()"
       n> p " = property(**" p "())")
 (reg p " = re.compile(r\"" p "\")")
@@ -240,6 +1280,487 @@ python-base-mode
 (while "while " p ":" n> q)
 (with "with " p p ":" n> q)
 (with_statement "from __future__ import with_statement")
+
+(withopn "with open(" (p "\"filename\"") ", encoding=\"" (p "utf-8")
+           "\", mode=\"" (p "r") "\") as " (p "file") ":" n> q)
+
+(impas "import " (p "lib") " as " (p "alias") n q)
+
+(__contains "def __contains__(self, el):" n> p n> "pass")
+(__enter "def __enter__(self):" n> p n> "return self")
+(__eq "def __eq__(self, other):" n> "return self." p " == other." q)
+(__exit "def __exit__(self, type, value, traceback):" n> p n> "pass")
+(__getitem "def __len__(self):" n> p n> "pass")
+(__iter "def __iter__(self):" n> "return " q)
+(__new "def __new__(mcs, name, bases, dict):" n> p n> "return type.__new__(mcs, name, bases, dict)")
+(__setitem "__all__ = [" n> p n> "]")
+(asrt "assert " q)
+(asrtEqual "self.assertEqual(" p ", " p ")")
+(asrtFalse "self.assertFalse(" p ")")
+(asrtIn "self.assertIn(" p ", " p ")")
+(asrtNotEqual "self.assertNotEqual(" p ", " p ")")
+(asrtRaises "assertRaises(" p ", " p ")")
+(asrtRaises-with "with self.assertRaises(" p "):" n> q)
+(asrtTrue "self.assertTrue(" p ")")
+(clas "class " p "(" p "):" n> q)
+(clasm "@classmethod" n> "def " p "(cls, " p "):" n> q)
+(defd "def " p "(func):" n> p n> "def _" p "(*args, **kwargs):" n> p n> "ret = func(*args, **kwargs)" n> p n> "return ret" n n> "return _" q)
+(deff "def " p "(" p "):" n> q)
+
+racket-mode
+
+(cs "(case " (p "expression") " [" (p "datum") " " q "])")
+(cslmd "(case-lambda [" (p "arguments") " " q "])")
+(cnd "(cond [" (p "predicate") " " q "])")
+(dfnsynrule "(define-syntax-rule (" (p "id") " " (p "pattern")
+                    ") " q ")")
+(doloop "(do ([" (p "name") " " (p "init") " " (p "step") "]" p ")" n>
+    "(" (p "stop-predicate") " " (p "finish") ")" n> q ")" >)
+(fr "(for" p " (" (p "for-clause") ") " q ")")
+(lt "(let" p " ([" (p "name") " " (p "expression") "]" p ") " q ")")
+(mtch "(match " (p "expression") " [" (p "clause") " " q "])")
+(mod "(module " (p "id") " " (p "module-path") n> q ")" >)
+(modplus "(module+ " (p "id") n> q ")" >)
+(modstar "(module* " (p "id") " " (p "module-path") n> q ")" >)
+(synrule "(syntax-rules (" (p "literal-id") p ")" n>
+              "[(" (p "id") " " (p "pattern") ") " (p "template") "]" p
+              ")" >)
+
+(whn "(when (" (p "predicate") ") " q ")")
+(unl "(unless (" (p "predicate") ") " q ")")
+(lmd "(lambda (" (p "arguments") ") " q ")")
+(ifc "(if (" (p "predicate") ")" n> q ")" >)
+(dfn "(define (" (p "name") " " (p "arguments") ") " q ")")
+
+raku-mode
+
+(subr "sub " (p "name") "(" (p "args") ") {" n> q n "}" >)
+(multisubr "multi " (p "name") "(" (p "args") ") {" n> q n "}" >)
+(mn "sub MAIN(" (p "args") ") {" n> q n "}" >)
+
+reason-mode
+
+(cmp "module " (p "Component") " = {" n>
+           "[@react.component]" n>
+           "let make = (" (p "parameters") ") => {" n> q n "};" > n "};" >)
+(fr "for (" (p "i") " in " (p "iFirst") " to " (p "iLast") ") {" n>
+     q n "};" >)
+(fn "(" (p "parameters") ") => " q)
+(fntr "module " (p "Functor") " = (" (p "Module") ": "
+         (p "ModuleType") ") => {" n> q n "};" >)
+(lt "let " (p "var") " = " (p "e") ";" n q)
+(arm "| " (p "Case") " => " q)
+(mod "module " (p "M") " = {" n> q n "};" >)
+(swch "switch (" (p "to_match") ") {" n
+        "| " (p "matching") " => " q n "}")
+(wh "while (" (p "cond") ") {" n> q n "};" >)
+
+(ifc "if (" (p "cond") ") {" n> q n "}" >)
+(ife "if (" (p "cond") ") {" n> p n "} else {" > n> q n "}" >)
+
+rjsx-mode
+
+(expgql "export default compose(" n>
+        "graphql(" (p "queryOrMutation") ", { name: " (p "name") " })," n
+        ")(" (p (file-name-base (or (buffer-file-name) "Component"))) ")" >)
+
+(tst
+ "import React from 'react'" n
+ "import renderer from 'react-test-renderer'" n n
+ "import { "
+ (p (file-name-base (or (buffer-file-name) "Component")) component)
+ " } from '../" (s component) "'" n n
+ "describe('<" (s component) " />', () => {" n>
+ "const defaultProps = {}" n>
+ "const wrapper = renderer.create(<" (s component)
+ " {...defaultProps} />)" n n>
+ "test('render', () => {" n>
+ "expect(wrapper).toMatchSnapshot()" n
+ "})" > n
+ "})" >)
+
+(tstredux
+ "import React from 'react'" n
+ "import renderer from 'react-test-renderer'" n
+ "import { Provider } from 'react-redux'" n n
+ "import store from 'src/store'" n
+ "import { "
+ (p (file-name-base (or (buffer-file-name) "Component")) component)
+ " } from '../" (s component) "'" n n
+ "describe('<" (s component) " />', () => {" n>
+ "const defaultProps = {}" n>
+ "const wrapper = renderer.create(" n>
+ "<Provider store={store}>" n>
+ "<" (s component) " {...defaultProps} />" n
+ "</Provider>," > n
+ ")" > n n>
+ "test('render', () => {" n>
+ "expect(wrapper).toMatchSnapshot()" n
+ "})" > n
+ "})" >)
+
+(rntst
+ "import 'react-native'" n
+ "import React from 'react'" n
+ "import renderer from 'react-test-renderer'" n n
+ "import "
+ (p (file-name-base (or (buffer-file-name) "Component")) component)
+ " from '../" (s component) "'" n n
+ "describe('<" (s component) " />', () => {" n>
+ "const defaultProps = {}" n>
+ "const wrapper = renderer.create(<" (s component)
+ " {...defaultProps} />)" n n>
+ "test('render', () => {" n>
+ "expect(wrapper).toMatchSnapshot()" n
+ "})" > n
+ "})" >)
+
+(rntstredux
+ "import 'react-native'" n
+ "import React from 'react'" n
+ "import renderer from 'react-test-renderer'" n
+ "import { Provider } from 'react-redux'" n n
+ "import store from 'src/store'" n
+ "import "
+ (p (file-name-base (or (buffer-file-name) "Component")) component)
+ " from '../" (s component) "'" n n
+ "describe('<" (s component) " />', () => {" n>
+ "const defaultProps = {}" n>
+ "const wrapper = renderer.create(" n>
+ "<Provider store={store}>" n>
+ "<" (s component) " {...defaultProps} />" n
+ "</Provider>," > n
+ ")" > n n>
+ "test('render', () => {" n>
+ "expect(wrapper).toMatchSnapshot()" n
+ "})" > n
+ "})" >)
+
+(reduxcnst "export const " (p "constantName" name) " = '" (s name) "'")
+
+(rncmpredux
+ "import React, { Component } from 'react'" n
+ "import { View, Text } from 'react-native'" n
+ "import PropTypes from 'prop-types'" n
+ "import { connect } from 'react-redux'" n n
+ "export class "
+ (p (file-name-base (or (buffer-file-name) "Component")) component)
+ " extends Component {" n>
+ "static propTypes = {" n> (p "prop") ": " (p "PropTypes") n "}" > n n>
+ "render() {" n>
+ "return (" n>
+ "<View>" n>
+ "<Text>" (p "textInComponent") "</Text>" n
+ "</View>" > n
+ ")" > n
+ "}" > n
+ "}" > n n
+ "const mapStateToProps = (state, ownProps) => ({" n> q n "})" > n n
+ "const mapDispatchToProps = (dispatch, ownProps) => ({" n> p n "})" > n n
+ "export default connect(mapStateToProps, mapDispatchToProps)("
+ (s component) ")")
+
+(hocredux
+ "import React from 'react'" n
+ "import PropTypes from 'prop-types'" n
+ "import { connect } from 'react-redux'" n n
+ "export const " (p "hocComponentName" hoc)
+ " = (WrappedComponent) => {" n>
+ "const hocComponent = (props) => <WrappedComponent {...props} />" n n>
+ "hocComponent.propTypes = {" n> q n "}" > n n>
+ "return hocComponent" n
+ "}" > n n
+ "const mapStateToProps = (state, ownProps) => ({" n> p n "})" > n n
+ "const mapDispatchToProps = (dispatch, ownProps) => ({" n> p n "})" > n n
+ "export default WrapperComponent => connect(mapStateToProps, "
+ "mapDispatchToProps)(" (s hoc) "(WrapperComponent))")
+
+rst-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format (GPL-3.0 license)
+(title (make-string (length title) ?=) n (p "Title: " title) n (make-string (length title) ?=) n)
+
+(gvz ".. graphviz::" n n> q)
+(grf ".. graph:: " (p "name") n n> q)
+(dgr ".. digraph:: " (p "name") n n> q)
+(automod ".. automodule:: " q)
+(autofn ".. autofunction:: " q)
+(autocls ".. autoclass:: " (p "class") n> ":members: " q)
+
+ruby-base-mode
+
+(mthdargs "def " (p "method") "(" (p "args") ")" n> q n "end" >)
+
+rust-mode rust-ts-mode
+
+(if "if " p " {" n> q n "}" > q)
+
+(el "if " p " {" n> p n "} else {" >n> p n "}" > q)
+
+(elif "if " p " {" n> p n "} else if " p " {" >n> p n "}" > q)
+
+(fn "fn " p "(" p ") {" n> p n "}" q)
+
+(fnr "fn " p "(" p ") -> " p " {" n> p n "}" q)
+
+(crt "extern crate " q ";")
+
+(drv & "#[derive(" p ")]" q)
+
+(d "dbg!(" p ")" q)
+
+(lp "loop {" n> q n "}" > q)
+
+sh-base-mode
+
+(! & "#!/usr/bin/env bash" n q)
+
+(if "if [ " p " ]" n "  then " p n "fi" q)
+
+(ife "if [ " p " ]" n "  then " p n "else" p n "fi" q)
+
+(cs "case " p " in" n> p " )" n> p n> ";;" n> q n "esac")
+
+(fr "for " p " in " p n "do" n> q n "done")
+
+snippet-mode
+
+(sniphdr "# name: " (p "name") n "# key: " (p "trigger") n
+      "# contributor: " (p (user-full-name)) n "# --" n q)
+(mir "${" (p "n") ":$(" q ")}")
+(fld "${" (p "n") ":" (p "default") "$(" q ")}")
+
+sql-mode
+
+(pgfn "CREATE OR REPLACE FUNCTION " (s function-name) "(" (s arguments) ")" n
+"RETURNS " (p "void") " AS $$" n
+"DECLARE" n> (p "-- declare variable as: name type := value;") n
+"BEGIN" n>
+r> n
+"END;" n
+"$$ LANGUAGE plpgsql" n
+)
+
+terraform-mode
+
+(vr "variable \"" (p "name") "\" {" n> "default = \"" q "\"" n "}" >)
+(gcpsslcert "resource \"google_compute_ssl_certificate\" \"" (p "name")
+            "\" {" n> "private_key = file(\"" (p "private-key") "\")" n>
+            "certificate = file(\"" q "\")" n "}" >)
+
+texinfo-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format (GPL-3.0 license)
+(defmac "@defmac " p n> r> "@end defmac")
+(defun "@defun " p n> r> "@end defun")
+(defvar "@defvar " p n> r> "@end defvar")
+(example "@example " p n> r> "@end example")
+(lisp "@lisp " p n> r> "@end lisp")
+(bullet "@itemize @bullet{}" n> r> "@end itemize")
+(code "@code{" p "}")
+(var "@var{" p "}")
+
+text-mode
+
+;; taken from https://github.com/minad/tempel/blob/5b09f612cfd805dba5e90bf06580583cab045499/README.org#template-file-format (GPL-3.0 license)
+(box "┌─" (make-string (length str) ?─) "─┐" n
+     "│ " (s str)                       " │" n
+     "└─" (make-string (length str) ?─) "─┘" n)
+(abox "+-" (make-string (length str) ?-) "-+" n
+      "| " (s str)                       " |" n
+      "+-" (make-string (length str) ?-) "-+" n)
+
+(cut "--8<---------------cut here---------------start------------->8---" n r n
+     "--8<---------------cut here---------------end--------------->8---" n)
+(rot13 (p "plain text" text) n "----" n (rot13 text))
+(calc (p "taylor(sin(x),x=0,3)" formula) n "----" n (format "%s" (calc-eval formula)))
+(table (p (read-number "Rows: ") rows noinsert)
+       (p (read-number "Cols: ") cols noinsert)
+       "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n
+       "|" (* cols "----|") n
+       (* rows "| " (p "  ") (* (1- cols) " | " (p "  ")) " |" n))
+
+tuareg-mode
+
+(ast "assert " q ";;")
+(cmt "(* " q " *)")
+(fr "for " (p "cond") " do" n> q n "done" >)
+(fn "fun " (p "args") " -> " q)
+(arm "| " (p "match") " -> " q)
+(lt "let " (p "var") " " q)
+(lc "[? " p " | " q " ?]")
+(mn "let main =" n> q)
+(mtch "match " (p "to_match") " with" n>
+       "| " (p "matching") " -> " q)
+(mod "module " (p "A") " =" n>
+     "struct" n> (p "type t = { name : string; phone : string }") n>
+     q n "end;;" >)
+(opnmod "open " (p "Module"))
+(prn "Printf.printf \"" (p "string") "\" " (p "vals") ";;")
+(fnrecur "let rec " (p "fun") " " (p "args") " =" n> q)
+(vl "val " (p "fun") " : " q)
+(wh "while " (p "cond") " do" n> q n "done" >)
+
+(typvariant "type " (p "expr") " =" n> "| " q)
+(typrec "type " (p "name") " = { " (p "field") " : " (p "int")
+             "; " q " }")
+(ifc "if " (p "cond") " then" n> q)
+(ife "if " (p "cond") " then" n> p n "else" > n> q)
+
+(tr "try" n> p n "with" > n> q)
+
+udev-mode
+
+(envmtch "ENV{" p "}" q)
+(gt "GOTO=\"" (p nil label) "\"" n q n n "LABEL=\"" (s label) "\"")
+(krnnot "KERNEL!=\"" q "\"")
+(actadd "ACTION==\"add\", " q)
+(envsub "$env{" p "} " q)
+(runcmd "RUN+=\"" q "\"")
+
+yaml-mode yaml-ts-mode
+
+(ent (p "entry") ": " (p "value") n q)
+(lst "[" p "]" n q)
+(yamlsep "--- # " (p "section") n q)
+
+zig-mode
+
+(elsifc "else if (" p ") {" n> q n "}" >)
+(els "else {" n> q n "}" >)
+(fn "fn " (p "name") "(" p ") " (p "!void") " {" n> q n "}" >)
+(ifc "if (" p ") {" n> q n "}" >)
+(imp "const " (p "name") " = @import(\"" (p "lib") "\");")
+(strc "struct {" n> q n "}" >)
+(swch "switch (" p ") {" n> p " => " q n "}" >)
+(tst "test \"" p "\" {" n> q n "}" >)
+(unn "union " (p "(enum)") " {" n> q n "}" >)
+
+(mn "pub fn main(" (p "args") ") " (p "!void") " {" n> q n "}" >)
+(fr "for (" (p "items") ") |" (p "value") "| {" n> q n "}" >)
+(enm "enum(" (p "type") ") {" n> q n "}" >)
+
+lisp-mode emacs-lisp-mode ;; Specify multiple modes
+
+(lambda "(lambda (" p ")" n> r> ")")
+
+shell-mode
+
+(for "for " (p "i") " in " p " { " q " }")
+(while "while { " p " } { " q " }")
+(until "until { " p " } { " q " }")
+(if "if { " p " } { " q " }")
+(ife "if { " p " } { " p " } { " q " }")
+(unl "unless { " p " } { " q " }")
+(unle "unless { " p " } { " p " } { " q " }")
+
+;; ---------------------------------------------------------------------------
+;; scripts/check-templates.el --- tempel-collection, verbatim, commented out
+;; Run the original with:
+;;   emacs --batch -l scripts/check-templates.el -f check-templates
+;; ---------------------------------------------------------------------------
+;; ;;; check-templates.el --- Validate Tempel template data files -*- lexical-binding: t -*-
+;;
+;; ;; Commentary:
+;; ;;
+;; ;; Validates all templates/*.eld files against the data format that
+;; ;; `tempel--file-read' and `tempel--file-prepare' (tempel.el) expect:
+;; ;;
+;; ;;   - the file contents, wrapped in one pair of parentheses, must be
+;; ;;     readable as a single Lisp list
+;; ;;   - every element of that list must be a mode symbol, a plist
+;; ;;     keyword, or a template list; any other element makes
+;; ;;     `tempel--file-prepare' loop forever
+;; ;;   - every group of templates must name at least one mode, otherwise
+;; ;;     the templates are silently dropped
+;; ;;   - every plist keyword must have a value; a dangling keyword
+;; ;;     silently disables the templates of its group
+;; ;;
+;; ;; Usage (from the repository root):
+;; ;;
+;; ;;   emacs --batch -l scripts/check-templates.el -f check-templates
+;; ;;
+;; ;; Exits non-zero if any file fails validation.
+;;
+;; ;;; Code:
+;;
+;; (defconst check-templates--dir
+;;   (expand-file-name
+;;    "../templates"
+;;    (file-name-directory
+;;     (cond
+;;      (load-in-progress load-file-name)
+;;      ((and (boundp 'byte-compile-current-file) byte-compile-current-file)
+;;       byte-compile-current-file)
+;;      (:else (buffer-file-name))))))
+;;
+;; (defun check-templates--validate (file)
+;;   "Validate template file FILE. Return a list of error strings."
+;;   (let ((data
+;;          (condition-case err
+;;              (with-temp-buffer
+;;                (insert "(\n")
+;;                (insert-file-contents file)
+;;                (goto-char (point-max))
+;;                (insert "\n)")
+;;                (goto-char (point-min))
+;;                (read (current-buffer)))
+;;            (error (list (format "unreadable Lisp data: %s"
+;;                                 (error-message-string err)))))))
+;;     (cond
+;;      ((null data)
+;;       (list "file contains no templates"))
+;;      ((not (listp data))
+;;       (list "top-level form is not a list"))
+;;      (t
+;;       (let (errors)
+;;         (while data
+;;           (let ((modes nil) (saw-plist nil) (saw-template nil))
+;;             (while (and (car data) (symbolp (car data)) (not (keywordp (car data))))
+;;               (push (pop data) modes))
+;;             (while (keywordp (car data))
+;;               (setq saw-plist t)
+;;               (unless (cadr data)
+;;                 (push (format "dangling keyword %S (missing value)" (car data))
+;;                       errors))
+;;               (setq data (cddr data)))
+;;             (while (consp (car data))
+;;               (setq saw-template t)
+;;               (pop data))
+;;             (cond
+;;              ((and (null modes) (not saw-plist) (not saw-template) (consp data))
+;;               (push (format "unexpected element %S (must be a mode symbol, keyword, or template list)"
+;;                             (car data))
+;;                     errors)
+;;               (pop data))
+;;              ((and (null modes) (or saw-plist saw-template))
+;;               (push "template group without mode (templates are silently dropped)"
+;;                     errors))
+;;              (t nil))))
+;;         (nreverse errors))))))
+;;
+;; (defun check-templates ()
+;;   "Validate all templates/*.eld files. Exit non-zero if any fail."
+;;   (interactive)
+;;   (unless (directory-file-name check-templates--dir)
+;;     (user-error "templates directory not found: %s" check-templates--dir))
+;;   (let ((failures 0) (checked 0))
+;;     (dolist (file (sort (directory-files check-templates--dir t "\\.eld$")
+;;                         #'string<))
+;;       (setq checked (1+ checked))
+;;       (let ((errors (check-templates--validate file)))
+;;         (if errors
+;;             (progn
+;;               (dolist (err errors)
+;;                 (message "FAIL %s: %s" (file-relative-name file) err))
+;;               (setq failures (1+ failures)))
+;;           (message "ok   %s" (file-relative-name file)))))
+;;     (message "%d file(s) checked, %d failure(s)" checked failures)
+;;     (when (and (not (zerop failures)) (not interactive-mode-p))
+;;       (kill-emacs 1))))
+;;
+;; (provide 'check-templates)
+;; ;;; check-templates.el ends here
 
 ;; Local Variables:
 ;; mode: lisp-data

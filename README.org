@@ -145,6 +145,30 @@ skips that function -- the setting would read back as =t= while no ts-mode was
 ever enabled. HTML files land in =mhtml-ts-mode=, which is the pair Emacs ships
 and which also drives the embedded CSS and JavaScript grammars.
 
+* Tempel templates
+Tempel keeps its templates in one lisp-data file, =templates=, next to
+=init.el=: the local templates merged with every template data file of
+[[https://github.com/Crandel/tempel-collection][Crandel/tempel-collection]],
+where a name that exists in both is taken from the collection. Tempel does not
+diagnose a file that breaks that format -- a template group without a mode is
+dropped in silence, and an element its reader cannot consume hangs
+=tempel--file-read= outright -- so =moyue check-templates= reads the file the
+same way and names the offending form instead:
+#+begin_src shell
+bin/moyue check-templates                        # the configured templates file
+bin/moyue check-templates FILE                   # an explicit file
+bin/moyue check-templates .cache/tempel-collection/templates  # every *.eld
+#+end_src
+
+A =DIR= argument checks every =*.eld= file directly inside it, which is the
+layout the collection uses, so a checkout below =.cache/= can be validated
+whole. The command exits non-zero when any file fails, which makes it usable as
+a gate. Two checks go past the collection's own =scripts/check-templates.el=:
+data after the first Lisp form (what unbalanced parentheses look like) is an
+error instead of being ignored, and a template name defined twice for one mode
+is reported, because =tempel-expand= can only ever reach the first of the two.
+The implementation is [[file:bin/commands/templates.el][bin/commands/templates.el]].
+
 * Docker
 The [[file:Dockerfile][Dockerfile]] builds a lean base image (Emacs + git + a C toolchain)
 for three distributions; the configuration itself is never baked in, it is
