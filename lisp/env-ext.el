@@ -21,6 +21,10 @@
 ;; `moyu/env-ensure-file' never overwrites an existing file; refresh it
 ;; explicitly from the shell with M-x moyu/reload-env.
 ;;
+;; PATH always contains `user-emacs-directory'/bin (see
+;; `moyu/env-add-bin-to-path' and `moyu/env-extra-path').  Use
+;; M-x moyu/add-to-path to add another directory and save it to the file.
+;;
 ;;; Code:
 
 (defvar moyu/env-filename "env.el"
@@ -33,6 +37,30 @@ commands such as `moyue install' can bind that variable and still resolve
 the same file."
   (expand-file-name moyu/env-filename
                     (expand-file-name ".cache/" user-emacs-directory)))
+
+(defcustom moyu/env-add-bin-to-path t
+  "Whether `user-emacs-directory'/bin is kept on PATH by default.
+That directory holds the `moyue', `dockemacs' and `install-emacs'
+commands provided by this configuration."
+  :type 'boolean
+  :group 'environment)
+
+(defcustom moyu/env-extra-path nil
+  "Extra directories to put on PATH.
+Each entry is expanded with `expand-file-name' and placed before the
+directories inherited from the login shell."
+  :type '(repeat directory)
+  :group 'environment)
+
+(defun moyu/env-path-additions ()
+  "Return the directories added to PATH by default.
+These are `user-emacs-directory'/bin (unless `moyu/env-add-bin-to-path'
+is nil) followed by `moyu/env-extra-path'."
+  (delete-dups
+   (mapcar #'directory-file-name
+           (append (when moyu/env-add-bin-to-path
+                     (list (expand-file-name "bin/" user-emacs-directory)))
+                   (mapcar #'expand-file-name moyu/env-extra-path)))))
 
 (defvar moyu/denied-env-patterns
   '(;; Unix/shell state that shouldn't be persisted
@@ -97,10 +125,19 @@ falling back to process-environment")
             (seq-filter (lambda (s) (string-match-p "=" s))
                         (split-string raw "\n" t)))))))))
 
+(defun moyu/env--path-with-additions (path)
+  "Return PATH with `moyu/env-path-additions' placed at the front."
+  (mapconcat #'identity
+             (delete-dups
+              (append (moyu/env-path-additions)
+                      (split-string (or path "") path-separator t)))
+             path-separator))
+
 (defun moyu/env--captured-entries ()
   "Return the capturable login-shell environment as sorted (KEY . VALUE) pairs.
 Denied names (see `moyu/denied-env-patterns') are dropped and duplicate
-names are collapsed, last value first, so the generated file is stable."
+names are collapsed, last value first, so the generated file is stable.
+The directories in `moyu/env-path-additions' are always put on PATH."
   (let ((seen (make-hash-table :test #'equal))
         pairs)
     (dolist (entry (moyu/env--shell-environ))
@@ -109,6 +146,9 @@ names are collapsed, last value first, so the generated file is stable."
                    (not (string-empty-p (car kv)))
                    (not (moyu/env--denied-p (car kv))))
           (puthash (car kv) (cdr kv) seen))))
+    ;; Make sure `user-emacs-directory'/bin and the configured extras are
+    ;; part of the PATH written to the environment file.
+    (puthash "PATH" (moyu/env--path-with-additions (gethash "PATH" seen)) seen)
     (maphash (lambda (key value) (push (cons key value) pairs)) seen)
     (sort pairs (lambda (a b) (string< (car a) (car b))))))
 
@@ -129,7 +169,8 @@ FILE defaults to the value of `moyu/env-file'.  Return the file name."
               ";; This is ordinary Emacs Lisp: add, change or remove variables\n"
               ";; as needed.  It is created only once and never overwritten by\n"
               ";; `moyu/env-ensure-file'; M-x moyu/reload-env regenerates it\n"
-              ";; from the shell.\n"
+              ";; from the shell, and M-x moyu/add-to-path appends a directory\n"
+              ";; to PATH and saves it here.\n"
               ";;\n")
       (dolist (kv entries)
         (insert (format "(setenv %s %s)\n"
@@ -160,6 +201,59 @@ manual edits survive."
     (when (and shell (not (string-empty-p shell)))
       (setq-default shell-file-name shell))))
 
+;;;###autoload
+(defun moyu/env-add-to-path (path &optional append)
+  "Add PATH to the PATH of the current Emacs session.
+PATH is expanded and normalized; when it is not already on PATH it is
+inserted at the front, or at the end when APPEND is non-nil.  `exec-path'
+is refreshed.  Return the new PATH value."
+  (let* ((dir (directory-file-name (expand-file-name path)))
+         (entries (split-string (or (getenv "PATH") "") path-separator t))
+         (present (member dir (mapcar #'directory-file-name entries)))
+         (new (cond (present entries)
+                    (append (append entries (list dir)))
+                    (t (cons dir entries)))))
+    (setenv "PATH" (mapconcat #'identity new path-separator))
+    (moyu/env--refresh-derived)
+    (getenv "PATH")))
+
+(defun moyu/env-ensure-path-additions ()
+  "Put `moyu/env-path-additions' on the PATH of the current session.
+Return the new PATH value."
+  (let ((entries (delete-dups
+                  (append (moyu/env-path-additions)
+                          (split-string (or (getenv "PATH") "")
+                                        path-separator t)))))
+    (setenv "PATH" (mapconcat #'identity entries path-separator))
+    (moyu/env--refresh-derived)
+    (getenv "PATH")))
+
+(defun moyu/env-persist-path (&optional file)
+  "Write the PATH of the current session into the environment file FILE.
+FILE defaults to `moyu/env-file' and is created from the login shell when
+it does not exist yet.  Only the `(setenv \"PATH\" ...)' form is replaced,
+so the rest of the file — including hand edits — is preserved.  Return FILE."
+  (let* ((file (or file (moyu/env-file)))
+         (form (format "(setenv \"PATH\" %s)\n"
+                       (prin1-to-string (or (getenv "PATH") "")))))
+    (unless (file-exists-p file)
+      (moyu/env-generate-file file))
+    (with-temp-buffer
+      (setq-local coding-system-for-write 'utf-8-unix)
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (if (re-search-forward "^(setenv[ \t]+\"PATH\"" nil t)
+          (let ((beg (match-beginning 0)))
+            (goto-char beg)
+            (forward-sexp 1)
+            (delete-region beg (point))
+            (insert form))
+        (goto-char (point-max))
+        (unless (bolp) (insert "\n"))
+        (insert form))
+      (write-region (point-min) (point-max) file nil 'silent))
+    file))
+
 (defun moyu/env-load-file (&optional file noerror)
   "Load the environment variables stored in FILE into this Emacs session.
 FILE defaults to `moyu/env-file'.  The file is ordinary Emacs Lisp and is
@@ -189,8 +283,10 @@ not exist, unless NOERROR is non-nil, in which case nil is returned."
 ;;;###autoload
 (defun moyu/env-load (&optional noerror)
   "Load the default environment file into this Emacs session.
-With NOERROR non-nil, do nothing when the file does not exist."
-  (moyu/env-load-file (moyu/env-file) noerror))
+With NOERROR non-nil, do nothing when the file does not exist.  The
+directories from `moyu/env-path-additions' are put on PATH afterwards."
+  (prog1 (moyu/env-load-file (moyu/env-file) noerror)
+    (moyu/env-ensure-path-additions)))
 
 ;;;###autoload
 (defun moyu/reload-env ()
@@ -198,8 +294,21 @@ With NOERROR non-nil, do nothing when the file does not exist."
   (interactive)
   (moyu/env-generate-file)
   (moyu/env-load-file)
+  (moyu/env-ensure-path-additions)
   (message "env-ext: environment reloaded from %s (%d vars)"
            (moyu/env-file) (length process-environment)))
+
+;;;###autoload
+(defun moyu/add-to-path (path &optional append)
+  "Add PATH to PATH and save the result to the environment file.
+With a prefix argument APPEND, append PATH instead of prepending it, so
+the change also survives the next Emacs start."
+  (interactive "DAdd directory to PATH: \nP")
+  (let ((dir (directory-file-name (expand-file-name path))))
+    (moyu/env-add-to-path dir append)
+    (moyu/env-persist-path)
+    (message "env-ext: %s added to PATH and saved to %s"
+             dir (moyu/env-file))))
 
 ;;;###autoload
 (defun moyu/env-visit-file ()
@@ -457,10 +566,162 @@ With NOERROR non-nil, do nothing when the file does not exist."
           (ignore-errors (delete-directory dir t))))))
 
   (ert-deftest env-ext/env-load-noerror-when-missing ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (user-emacs-directory (file-name-as-directory dir)))
+        (unwind-protect (should-not (moyu/env-load 'noerror))
+          (ignore-errors (delete-directory dir t))))))
+
+  (ert-deftest env-ext/env-load-adds-config-bin ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (user-emacs-directory (file-name-as-directory dir))
+             (bin (expand-file-name "bin" dir)))
+        (unwind-protect
+            (progn
+              (make-directory (expand-file-name ".cache" dir) t)
+              (with-temp-file (moyu/env-file)
+                (insert "(setenv \"PATH\" \"/usr/bin\")\n"))
+              (moyu/env-load)
+              (should (equal (getenv "PATH") (concat bin ":/usr/bin")))
+              (should (member bin exec-path)))
+          (ignore-errors (delete-directory dir t))))))
+
+  ;;; moyu/env-path-additions
+
+  (ert-deftest env-ext/path-additions-default-to-config-bin ()
     (let* ((dir (make-temp-file "env-ext-home-" t))
            (user-emacs-directory (file-name-as-directory dir)))
-      (unwind-protect (should-not (moyu/env-load 'noerror))
+      (unwind-protect
+          (progn
+            (should (equal (moyu/env-path-additions)
+                           (list (expand-file-name "bin" dir))))
+            (let ((moyu/env-extra-path '("~/extra")))
+              (should (equal (moyu/env-path-additions)
+                             (list (expand-file-name "bin" dir)
+                                   (expand-file-name "~/extra")))))
+            (let ((moyu/env-add-bin-to-path nil))
+              (should-not (moyu/env-path-additions))))
         (ignore-errors (delete-directory dir t)))))
+
+  (ert-deftest env-ext/generate-adds-config-bin-to-path ()
+    (env-test--with-captured '("PATH=/usr/bin")
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (user-emacs-directory (file-name-as-directory dir))
+             (bin (expand-file-name "bin" dir))
+             (file (expand-file-name ".cache/env.el" dir)))
+        (unwind-protect
+            (progn
+              (moyu/env-generate-file file)
+              (with-temp-buffer
+                (insert-file-contents file)
+                (should (string-match-p (regexp-quote bin)
+                                        (buffer-string)))))
+          (ignore-errors (delete-directory dir t))))))
+
+  ;;; moyu/env-add-to-path
+
+  (ert-deftest env-ext/add-to-path-prepends-and-dedupes ()
+    (env-test--save-globals
+      (setenv "PATH" "/usr/bin:/bin")
+      (should (equal (moyu/env-add-to-path "/opt/tool")
+                     "/opt/tool:/usr/bin:/bin"))
+      ;; A second call leaves PATH untouched.
+      (should (equal (moyu/env-add-to-path "/opt/tool")
+                     "/opt/tool:/usr/bin:/bin"))
+      (should (member "/opt/tool" exec-path))))
+
+  (ert-deftest env-ext/add-to-path-append ()
+    (env-test--save-globals
+      (setenv "PATH" "/usr/bin:/bin")
+      (should (equal (moyu/env-add-to-path "/opt/tool" 'append)
+                     "/usr/bin:/bin:/opt/tool"))))
+
+  (ert-deftest env-ext/add-to-path-normalizes-trailing-slash ()
+    (env-test--save-globals
+      (setenv "PATH" "/usr/bin:")
+      (moyu/env-add-to-path "/opt/tool/")
+      (should (equal (moyu/env-add-to-path "/opt/tool")
+                     "/opt/tool:/usr/bin"))))
+
+  (ert-deftest env-ext/ensure-path-additions-prepends-config-bin ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (user-emacs-directory (file-name-as-directory dir))
+             (bin (expand-file-name "bin" dir)))
+        (unwind-protect
+            (progn
+              (setenv "PATH" "/usr/bin")
+              (moyu/env-ensure-path-additions)
+              (should (equal (getenv "PATH") (concat bin ":/usr/bin")))
+              (should (member bin exec-path)))
+          (ignore-errors (delete-directory dir t))))))
+
+  ;;; moyu/env-persist-path
+
+  (ert-deftest env-ext/persist-path-updates-existing-form ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (file (expand-file-name ".cache/env.el" dir)))
+        (unwind-protect
+            (progn
+              (make-directory (expand-file-name ".cache" dir) t)
+              (with-temp-file file
+                (insert ";; hand written\n"
+                        "(setenv \"PATH\" \"/old\")\n"
+                        "(setenv \"FOO\" \"bar\")\n"))
+              (setenv "PATH" "/new/bin:/usr/bin")
+              (should (equal file (moyu/env-persist-path file)))
+              (with-temp-buffer
+                (insert-file-contents file)
+                (let ((c (buffer-string)))
+                  (should (string-match-p
+                           "(setenv \"PATH\" \"/new/bin:/usr/bin\")" c))
+                  (should-not (string-match-p "\"/old\"" c))
+                  (should (string-match-p "hand written" c))
+                  (should (string-match-p "(setenv \"FOO\" \"bar\")" c))
+                  (should (= 1 (length
+                                (seq-filter
+                                 (lambda (l) (string-match-p "(setenv \"PATH\"" l))
+                                 (split-string c "\n"))))))))
+          (ignore-errors (delete-directory dir t))))))
+
+  (ert-deftest env-ext/persist-path-inserts-when-absent ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (file (expand-file-name ".cache/env.el" dir)))
+        (unwind-protect
+            (progn
+              (make-directory (expand-file-name ".cache" dir) t)
+              (with-temp-file file (insert "(setenv \"FOO\" \"bar\")\n"))
+              (setenv "PATH" "/usr/bin")
+              (moyu/env-persist-path file)
+              (with-temp-buffer
+                (insert-file-contents file)
+                (should (string-match-p "(setenv \"PATH\" \"/usr/bin\")"
+                                        (buffer-string)))))
+          (ignore-errors (delete-directory dir t))))))
+
+  ;;; moyu/add-to-path
+
+  (ert-deftest env-ext/add-to-path-command-persists ()
+    (env-test--save-globals
+      (let* ((dir (make-temp-file "env-ext-home-" t))
+             (user-emacs-directory (file-name-as-directory dir)))
+        (unwind-protect
+            (progn
+              (make-directory (expand-file-name ".cache" dir) t)
+              (with-temp-file (moyu/env-file)
+                (insert "(setenv \"FOO\" \"bar\")\n"))
+              (setenv "PATH" "/usr/bin")
+              (moyu/add-to-path "/opt/tool")
+              (should (equal (getenv "PATH") "/opt/tool:/usr/bin"))
+              (with-temp-buffer
+                (insert-file-contents (moyu/env-file))
+                (should (string-match-p
+                         "(setenv \"PATH\" \"/opt/tool:/usr/bin\")"
+                         (buffer-string)))))
+          (ignore-errors (delete-directory dir t))))))
 
   ;;; moyu/reload-env
 
