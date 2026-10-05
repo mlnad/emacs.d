@@ -661,11 +661,7 @@ otherwise lost.
   :hook (prog-mode . eglot-ensure)
   :init
   (define-advice eglot-ensure (:around (fn))
-    (when (alist-get major-mode eglot-server-programs nil nil
-                     (lambda (modes key)
-                       (if (listp modes)
-                           (member key modes)
-                         (eq key modes))))
+    (when (cdr(eglot--lookup-mode major-mode))
       (funcall fn)))
   (setq eglot-connect-timeout 10
         eglot-autoshutdown t
