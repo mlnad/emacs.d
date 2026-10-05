@@ -134,8 +134,11 @@ Reads arguments from `argv' (populated by Emacs batch mode)."
                     ;; list all commands
                     (let ((lines (list "Usage: moyue COMMAND [ARGS...]\n\nCommands:")))
                       (dolist (cmd (moyue--sorted-commands))
+                        ;; Only the first line: a command's docstring may go
+                        ;; on to explain itself, and that belongs in
+                        ;; `moyue help COMMAND', not in the list.
                         (push (format "  %-16s %s" (moyue-command-name cmd)
-                                      (moyue-command-doc cmd))
+                                      (car (split-string (moyue-command-doc cmd) "\n")))
                               lines))
                       (push "\nRun 'moyue help COMMAND' for details on a specific command." lines)
                       (message "%s" (string-join (nreverse lines) "\n")))))
@@ -398,8 +401,131 @@ step is only announced, so the default install stays offline and quick."
       (message "Tree-sitter grammars skipped (%d pinned); add --grammars to build them"
                pinned))))
 
-(moyue-defcommand "install" "[--force-env] [--grammars]"
+;;;; ── `moyue install' and the tools it can also install ─────────────────────
+;; `moyue install TOOL' and `moyue install --tools' are handled by
+;; bin/commands/tools.el, which owns the recipe table and the download
+;; machinery.  They are reached through the `install' command rather than
+;; through a command of their own so that one word installs both the setup
+;; and the programs it uses.
+
+(defun moyue--ensure-bin-on-exec-path ()
+  "Put <config>/bin on `exec-path' for this run.
+`init.el' gives the directory the same place at the front of PATH, so a
+check that looks for a tool there matches what the editor itself sees."
+  (let ((dir (directory-file-name
+              (file-name-as-directory (expand-file-name "bin" (moyue--config-root))))))
+    (unless (member dir exec-path)
+      (setq exec-path (cons dir exec-path)))))
+
+(defun moyue--install-tool-arguments (args)
+  "Return the tool names ARGS asks `moyue install' to install, or nil.
+Names are recognised against the recipe table in bin/commands/tools.el, so
+`install' keeps installing the configuration itself when no argument names
+a tool -- and `moyue install --list' is the only way to ask for that table
+without naming a tool.  A word that is neither a flag nor a known tool is
+an error, so a typo cannot quietly turn into a full configuration install."
+  (cond
+   ((null args) nil)
+   ((member "--tools" args) t)
+   ((member "--list" args) t)
+   ((member "--all" args) t)
+   (t
+    ;; The recipe table is loaded by the time this runs: every `moyue' run
+    ;; loads bin/commands/tools.el, and `moyue install TOOL' is the point of
+    ;; that table.
+    (when (boundp 'moyue-tool-recipes)
+      (let ((names nil))
+        (dolist (arg args)
+          (cond
+           ((moyue--tool-known-p arg) (push arg names))
+           ((string-prefix-p "-" arg) nil)   ; a flag this command ignores
+           (t (error "moyue install: no tool named `%s'.  Known tools: %s"
+                     arg (string-join (mapcar #'symbol-name (moyue-tool-ids)) ", ")))))
+        (delete-dups (nreverse names)))))))
+
+(defun moyue--tool-known-p (name)
+  "Return non-nil when NAME names a recipe.
+Recipes are looked up by name rather than by symbol identity, because
+interning the same characters twice need not give `eq' symbols."
+  (and (boundp 'moyue-tool-recipes)
+       (cl-find name moyue-tool-recipes
+                :key (lambda (entry) (symbol-name (car entry)))
+                :test #'equal)))
+
+(defun moyue--install-tools-run (args tools)
+  "Run the tool part of `moyue install ARGS'.
+TOOLS is what `moyue--install-tool-arguments' decided: `t' for every
+recipe, a list of names for those recipes."
+  (require 'tools)
+  (cond
+   ((member "--list" args)
+    (moyue-tools-command '("list")))
+   ((eq tools t)
+    (moyue-tools--install-named nil (car (moyue-tools--parse-args args))))
+   (t
+    ;; The names are filtered out of ARGS, which leaves only the flags.
+    (moyue-tools--install-named tools (car (moyue-tools--parse-args args))))))
+
+(defun moyue--install-configuration (config-root force-env grammars)
+  "Install the configuration rooted at CONFIG-ROOT.
+FORCE-ENV regenerates `.cache/env.el' from the login shell and GRAMMARS
+also fetches and compiles the pinned tree-sitter grammars."
+  (let* ((init-tangle-src (expand-file-name "init.org" config-root))
+         (init-tangle-dst (expand-file-name "init.el" config-root))
+         (early-init-tangle-dst (expand-file-name "early-init.el" config-root))
+         (installed-packages-manifest-file
+          (expand-file-name ".cache/installed-packages.el" config-root))
+         (package-list nil))
+    (if (file-exists-p init-tangle-src)
+        (progn
+          (message "Step 1/4  Tangling %s ..." init-tangle-src)
+          (org-babel-tangle-file init-tangle-src)
+          (message "Tangle done."))
+      (message "moyue install: init.org not found: %s" init-tangle-src)
+      (kill-emacs 1))
+    (let ((env-result (moyue--ensure-env-file config-root force-env)))
+      (if (cdr env-result)
+          (message "Step 2/4  Environment file written: %s" (car env-result))
+        (message "Step 2/4  Environment file kept: %s (edit it by hand)"
+                 (car env-result))))
+    (if (file-exists-p init-tangle-dst)
+        (progn
+          (when (file-exists-p early-init-tangle-dst)
+            (message "Step 3/4  Loading %s ..." early-init-tangle-dst)
+            (load-file early-init-tangle-dst))
+          (moyue--configure-package-archives-from-init init-tangle-dst)
+          (setq package-list (moyue--collect-install-packages init-tangle-dst))
+          (when (< emacs-major-version 29)
+            (push 'use-package package-list)
+            (setq package-list (nreverse (delete-dups (nreverse package-list)))))
+          (moyue--installed-packages-manifest-write
+           installed-packages-manifest-file package-list)
+          (message "Collected %d packages -> %s"
+                   (length package-list) installed-packages-manifest-file)
+          (message "Step 4/4  Installing packages with package.el ...")
+          (let* ((result (moyue--install-package-list package-list))
+                 (failed (plist-get result :failed)))
+            (if failed
+                (progn
+                  (message "moyue install: %d packages failed:\n%s"
+                           (length failed)
+                           (string-join failed "\n"))
+                  (kill-emacs 1))
+              (message "Packages installed successfully. installed=%d skipped=%d"
+                       (plist-get result :installed)
+                       (plist-get result :skipped))
+              (moyue--install-grammars-step grammars))))
+      (message "moyue install: init.el not found after tangle: %s" init-tangle-dst)
+      (kill-emacs 1))))
+
+(moyue-defcommand "install" "[TOOL...] [--force-env] [--grammars] [--tools|--list]"
                   "Tangle init.org, prepare the environment file, then install from manifest.
+With TOOL arguments, install those external programs instead: each name is
+looked up in the recipe table of bin/commands/tools.el and downloaded and
+installed for this machine (see `moyue install --list').  `moyue install
+--tools' installs every recipe, `--version VERSION' pins a release and
+`--dry-run' only prints what would be downloaded.
+
 The environment file `.cache/env.el' is created from the login shell on
 the first run only; use --force-env to regenerate it from the shell.
 With --grammars, also check out and compile the pinned tree-sitter grammars
@@ -411,54 +537,14 @@ alone rather than reset."
                          (default-directory config-root)
                          (force-env (and (member "--force-env" args) t))
                          (grammars (and (member "--grammars" args) t))
-                         (init-tangle-src (expand-file-name "init.org" config-root))
-                         (init-tangle-dst (expand-file-name "init.el" config-root))
-                         (early-init-tangle-dst (expand-file-name "early-init.el" config-root))
-                         (installed-packages-manifest-file
-                          (expand-file-name ".cache/installed-packages.el" config-root))
-                         (package-list nil))
-                    (if (file-exists-p init-tangle-src)
-                        (progn
-                          (message "Step 1/4  Tangling %s ..." init-tangle-src)
-                          (org-babel-tangle-file init-tangle-src)
-                          (message "Tangle done."))
-                      (message "moyue install: init.org not found: %s" init-tangle-src)
-                      (kill-emacs 1))
-                    (let ((env-result (moyue--ensure-env-file config-root force-env)))
-                      (if (cdr env-result)
-                          (message "Step 2/4  Environment file written: %s" (car env-result))
-                        (message "Step 2/4  Environment file kept: %s (edit it by hand)"
-                                 (car env-result))))
-                    (if (file-exists-p init-tangle-dst)
-                        (progn
-                          (when (file-exists-p early-init-tangle-dst)
-                            (message "Step 3/4  Loading %s ..." early-init-tangle-dst)
-                            (load-file early-init-tangle-dst))
-                          (moyue--configure-package-archives-from-init init-tangle-dst)
-                          (setq package-list (moyue--collect-install-packages init-tangle-dst))
-                          (when (< emacs-major-version 29)
-                            (push 'use-package package-list)
-                            (setq package-list (nreverse (delete-dups (nreverse package-list)))))
-                          (moyue--installed-packages-manifest-write
-                           installed-packages-manifest-file package-list)
-                          (message "Collected %d packages -> %s"
-                                   (length package-list) installed-packages-manifest-file)
-                          (message "Step 4/4  Installing packages with package.el ...")
-                          (let* ((result (moyue--install-package-list package-list))
-                                 (failed (plist-get result :failed)))
-                            (if failed
-                                (progn
-                                  (message "moyue install: %d packages failed:\n%s"
-                                           (length failed)
-                                           (string-join failed "\n"))
-                                  (kill-emacs 1))
-                              (message "Packages installed successfully. installed=%d skipped=%d"
-                                       (plist-get result :installed)
-                                       (plist-get result :skipped))
-                              (moyue--install-grammars-step grammars))))
-                      (message "moyue install: init.el not found after tangle: %s" init-tangle-dst)
-                      (kill-emacs 1))))
-
+                         (tools (moyue--install-tool-arguments args)))
+                    ;; Installing external programs is a different job from
+                    ;; setting up the configuration, and the two never mix:
+                    ;; naming a tool leaves the elpa state alone, and the
+                    ;; default run installs no tools.
+                    (if tools
+                        (moyue--install-tools-run args tools)
+                      (moyue--install-configuration config-root force-env grammars))))
 (moyue-defcommand "update" ""
                   "Update packages from `.cache/installed-packages.el`."
                   (let* ((config-root (moyue--config-root))
@@ -569,6 +655,14 @@ The check is registered under the `config/' namespace for easy filtering:
 ;;             a minimal machine can still report a clean doctor
 ;;   :hint     one line, shown when the program is missing
 ;;   :modes    (lsp only) the major modes that would start this server
+;;   :install  (optional) a `moyue install' argument that would provide it;
+;;             when nil the tool id is tried, so the entries that
+;;             bin/commands/tools.el can install suggest themselves
+;;
+;; A program that bin/commands/tools.el has a recipe for does not need an
+;; entry here at all: `moyue--doctor-merge-tool-recipes' adds one per recipe
+;; once that library is loaded, so what can be installed and what doctor
+;; checks are always the same list.
 ;;
 ;; The names are looked up with `executable-find', i.e. on the `exec-path' of
 ;; the shell that runs `moyue doctor'; see the `config/env-file-*' checks for
@@ -619,12 +713,10 @@ The check is registered under the `config/' namespace for easy filtering:
     ;; ── Language servers (eglot) ──────────────────────────────────────────
     ;; Only the languages actually edited need a server, so these are all
     ;; optional: a missing one is reported as skipped, never as a failure.
-    (:id rust :kind lsp :commands ("rust-analyzer")
-     :modes (rust-ts-mode rust-mode rustic-mode)
-     :hint "rust-analyzer for Rust (`rustup component add rust-analyzer').")
-    (:id cpp :kind lsp :commands ("clangd" "ccls")
-     :modes (c-ts-mode c++-ts-mode c-mode c++-mode)
-     :hint "clangd (or ccls) for C and C++.")
+    ;;
+    ;; clangd is not listed here: bin/commands/tools.el carries its recipe, so
+    ;; `moyue install clangd' provides it and `moyue--doctor-merge-tool-recipes'
+    ;; derives the `config/lsp-cpp' check from that recipe.
     (:id python :kind lsp
      :commands ("pylsp" "pyls" "pyright-langserver" "basedpyright-langserver"
                 "jedi-language-server")
@@ -692,19 +784,47 @@ REQUIREMENT is one entry of `moyue-tool-requirements'; its :commands are
 tried in order and the first one on `exec-path' wins."
   (cl-find-if #'executable-find (plist-get requirement :commands)))
 
+(defun moyue--install-hint (requirement)
+  "Return how `moyue install' would provide REQUIREMENT, or nil.
+The recipe table in bin/commands/tools.el is consulted under the tool's id,
+so a program this very command can install is never described as somebody
+else's package."
+  (or (plist-get requirement :install)
+      (and (fboundp 'moyue-tool-recipes)
+           (let ((id (plist-get requirement :id)))
+             (and (assq id moyue-tool-recipes) (symbol-name id))))))
+
+(defun moyue--doctor-merge-tool-recipes ()
+  "Add a `moyue-tool-requirements' entry per recipe in bin/commands/tools.el.
+The recipe table lives in bin/commands/ and is therefore loaded after this
+file, so the merge happens when `moyue doctor' runs and only then.  An id
+that is already in the table is left alone, so the checks are defined once
+and a second doctor run in the same Emacs changes nothing."
+  (when (fboundp 'moyue-tool-recipes->requirements)
+    (dolist (requirement (moyue-tool-recipes->requirements))
+      (unless (cl-find (plist-get requirement :id) moyue-tool-requirements
+                       :key (lambda (entry) (plist-get entry :id)))
+        (setq moyue-tool-requirements
+              (append moyue-tool-requirements (list requirement)))))))
+
 (defun moyue--tool-check (requirement)
   "Assert that REQUIREMENT is satisfied, as the body of an ERT check.
 A missing program fails the check when :required is non-nil and skips it
 otherwise, so an optional tool that is not installed does not turn a minimal
-machine's doctor run red.  Either way the :hint says what to install."
+machine's doctor run red.  Either way the :hint says what to install, and
+`moyue install' is named when it has a recipe for the program."
   (let* ((id       (plist-get requirement :id))
          (commands (plist-get requirement :commands))
          (hint     (or (plist-get requirement :hint) ""))
+         (install  (moyue--install-hint requirement))
          (found    (moyue--tool-executable requirement)))
     (if found
         found
-      (let ((detail (format "%s (tried %s).  %s"
-                            id (string-join commands ", ") hint)))
+      (let ((detail (format "%s (tried %s).  %s%s"
+                            id (string-join commands ", ") hint
+                            (if install
+                                (format "  Install with `moyue install %s'." install)
+                              ""))))
         (if (plist-get requirement :required)
             (ert-fail (concat "required program not found: " detail))
           (ert-skip (concat "optional program not installed: " detail)))))))
@@ -730,6 +850,9 @@ program to that table is all it takes to add its check."
 (defun moyue--doctor-define-checks ()
   "Register the `config/...' ERT checks used by `moyue doctor'."
   (require 'ert)
+  ;; Every program `moyue install' has a recipe for becomes a check too, so
+  ;; the doctor run names exactly the tools this configuration can set up.
+  (moyue--doctor-merge-tool-recipes)
   ;; package.el is already required by this file; initialize it so that
   ;; `package-installed-p' works.
   (package-initialize)
@@ -979,6 +1102,11 @@ command-line programs and the eglot language servers.  SELECTOR is an ERT
 selector; a word that is not a test name is a regexp, so `moyue doctor tool'
 or `moyue doctor lsp' runs one family.  Any check that fails exits non-zero."
                   (moyue--configure-package-checks)
+                  ;; Every `moyue' run sees <config>/bin on PATH, because that
+                  ;; is where the configuration's own commands live; a tool
+                  ;; this run installed must not look missing because the
+                  ;; shell that launched Emacs had not learned about it yet.
+                  (moyue--ensure-bin-on-exec-path)
                   (moyue--doctor-define-checks)
                   (ert-run-tests-batch-and-exit
                    (moyue--doctor-selector (car args))))
@@ -987,10 +1115,6 @@ or `moyue doctor lsp' runs one family.  Any check that fails exits non-zero."
 ;;;; Optional extension: auto-load commands from bin/commands/*.el
 ;;;; ──────────────────────────────────────────────────────────────────────────
 
-(let ((commands-dir (expand-file-name "commands" moyue--bin-dir)))
-  (when (file-directory-p commands-dir)
-    (dolist (f (directory-files commands-dir t "\\.el\\'"))
-      (load f nil 'nomessage))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Tests
@@ -1069,6 +1193,18 @@ or `moyue doctor lsp' runs one family.  Any check that fails exits non-zero."
                                   (plist-get requirement :kind)
                                   (plist-get requirement :id)))))
         (should (ert-get-test name))))))
+
+;;;; ──────────────────────────────────────────────────────────────────────────
+;;;; Optional extension: load the commands from bin/commands/*.el
+;;;; ──────────────────────────────────────────────────────────────────────────
+;; This has to come last: those files register their commands with
+;; `moyue-defcommand', which is defined above, and they are loaded on every
+;; `moyue' run so that `moyue install TOOL' can consult the recipe table.
+
+(let ((commands-dir (expand-file-name "commands" moyue--bin-dir)))
+  (when (file-directory-p commands-dir)
+    (dolist (f (directory-files commands-dir t "\\.el\\'"))
+      (load f nil 'nomessage))))
 
 (provide 'moyue)
 ;;; moyue.el ends here

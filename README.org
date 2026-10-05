@@ -145,6 +145,53 @@ skips that function -- the setting would read back as =t= while no ts-mode was
 ever enabled. HTML files land in =mhtml-ts-mode=, which is the pair Emacs ships
 and which also drives the embedded CSS and JavaScript grammars.
 
+* External tools
+=moyue install= sets up the configuration; =moyue install TOOL= sets up the
+programs the configuration delegates work to. Each tool is described once, by
+an entry of =moyue-tool-recipes= in [[file:bin/commands/tools.el][bin/commands/tools.el]], and that same
+entry is what =moyue doctor= turns into a =config/tool-*= or =config/lsp-*=
+check -- so a program this command can install is exactly one whose absence
+doctor reports.
+
+#+begin_src shell
+bin/moyue install --list                 # what can be installed
+bin/moyue install clangd clang-format    # named tools
+bin/moyue install --all                  # every recipe
+bin/moyue install ruff --version 0.16.10 # pin a release
+bin/moyue install ruff --dry-run         # only print what would happen
+bin/moyue tools status                   # what is installed, what is missing
+bin/moyue tools remove clangd --force    # delete the package and its bin/ entry
+#+end_src
+
+Three shapes cover every recipe:
+
+- =:strategy single= -- one self-contained executable. It is downloaded into
+  =.cache/pkgs/<tool>/<version>/= and copied into =bin/=, which =init.el= keeps
+  at the front of PATH, so nothing else needs configuring. =clang-format= is
+  installed this way, from the static builds published by
+  [[https://github.com/cpp-linter/clang-tools-static-binaries][cpp-linter]].
+- =:strategy archive= -- a tarball or zip with more than one file. =clangd= is
+  the reason this exists: its executable needs the clang headers beside it
+  under =lib/clang/<major>/=, so the tree is unpacked into =.cache/pkgs/= and
+  only a relative symlink is left in =bin/=. clangd derives its resource
+  directory from the path of its own executable, and a symlink still resolves
+  there, so the bundled headers are found with no wrapper script.
+- =:strategy installer= -- the vendor ships an install script, which is what
+  =ruff=, =ty= and =rustup= do. The script is downloaded into the package cache
+  first and run from there, so it can be inspected and is never piped straight
+  from the network into a shell. =ruff= and =ty= install into =~/.local/bin=
+  (or into =bin/= when that is not writable, as in a sandbox), =CARGO_HOME= and
+  =RUSTUP_HOME= stay at their usual =~/.cargo= and =~/.rustup=, and rustup's
+  =rust-analyzer= component is added afterwards. The variables that stop a
+  script from editing shell startup files (=*_NO_MODIFY_PATH=1=) or updating
+  itself behind our back (=*_DISABLE_UPDATE=1=) are set by the recipe.
+
+Versions are reproducible: =:version= pins a fallback, the newest release is
+used only when it can actually be resolved (offline runs fall back to the pin),
+and =--version VERSION= overrides both. Downloads and their unpacked payloads
+stay below =.cache/pkgs/=, which =.gitignore= already excludes; the few
+entries this command adds to =bin/= are listed there too.
+
 * Tempel templates
 Tempel keeps its templates in one lisp-data file, =templates=, next to
 =init.el=: the local templates merged with every template data file of
@@ -212,6 +259,14 @@ DOCKEMACS_RUN_ARGS="--network=host"   bin/dockemacs run ubuntu
 
 =MOYUE_ITEST_BUILD_ARGS= and =MOYUE_ITEST_RUN_ARGS= are accepted as legacy
 aliases for the two variables above.
+
+The images carry what =moyue install TOOL= needs on top of the Emacs
+toolchain: =curl= for the vendor install scripts (ruff, ty, rustup) and
+=unzip= for clangd's release archive. =alpine= exercises the busybox =wget=
+path and the musl platform keys, which is where the two distributions differ
+most. Note that clangd publishes no musl build: =moyue install clangd= says
+so on Alpine and points at =apk add gcompat=, while ruff, ty, clang-format
+and the Rust toolchain all install there normally.
 
 * Customization
 It will automatically create a =~/.emacs.d/.cache/userconfig= file to override

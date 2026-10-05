@@ -60,3 +60,24 @@ early-init.el
 .aider*
 
 tree-sitter
+
+# External tools installed by `moyue install TOOL' (see bin/commands/tools.el).
+# They land in bin/ or in the package cache the rest of .cache already covers,
+# and a fresh clone gets them back with `moyue install --tools'.  The Windows
+# variants are listed too, so a checkout on that platform stays clean.
+/bin/clangd
+/bin/clangd.exe
+/bin/clang-format
+/bin/clang-format.exe
+/bin/cargo
+/bin/cargo.exe
+/bin/rustc
+/bin/rustc.exe
+/bin/rust-analyzer
+/bin/rust-analyzer.exe
+/bin/rustup
+/bin/rustup.exe
+/bin/ruff
+/bin/ruff.exe
+/bin/ty
+/bin/ty.exe
