@@ -165,6 +165,9 @@ Load the required packages for `init.el`.
 
 (require 'core)
 (require 'env-ext)
+;; `remote-ext' routes the processes of a remote workspace to the remote
+;; host; see the TRAMP section below.
+(require 'remote-ext)
 (require 'cl-lib)
 (require 'package)
 #+end_src
@@ -322,6 +325,26 @@ an interactive prompt.  Requires Emacs 30 or newer.")
    '((tramp-direct-async-process . t)))
   (connection-local-set-profiles
    '(:application tramp :protocol "ssh") 'moyu/tramp-direct-async-profile))
+#+end_src
+
+TRAMP only honours a process call when the caller asks it to.  The APIs that
+do are ~process-file~, ~start-file-process~, their ~-shell-command~ siblings,
+and ~make-process~ with ~:file-handler t~; ~call-process~, ~start-process~ and
+a bare ~make-process~ always run on *this* machine, and ~executable-find~
+ignores the remote host unless its =REMOTE= argument is set.  So tools that go
+through the former set (eglot, dape, ~grep~, ~compile~, magit) already work
+over TRAMP, while the latter set silently runs locally -- including =M-!=,
+which is ~shell-command~.
+
+=lisp/remote-ext.el= closes that gap: in a buffer whose ~default-directory~ is
+a TRAMP file name it routes those calls to the remote host, gives the buffer
+the remote ~exec-path~ so server discovery matches execution, and keeps
+per-host extra environment variables.  Local buffers are never touched.  See
+~moyu/remote-mode~, ~moyu/remote-status~ and ~moyu/remote-self-test~.
+#+begin_src emacs-lisp :tangle no
+;; Audit which of your packages are remote-blind before turning rewriting on:
+(setq moyu/remote-mode 'warn)     ; record would-be rewrites only
+(moyu/remote-self-test "/ssh:devbox:/work/")
 #+end_src
 
 ** Build-in Pacakges
