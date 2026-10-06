@@ -210,19 +210,6 @@ bin/moyue install uv ty ruff     # the Python toolchain
 bin/moyue doctor lsp             # what eglot would start
 #+end_src
 
-=ty server= is the server eglot starts; =ruff server=, basedpyright, pyright,
-pylsp and the rest stay as fallbacks, in the order =moyu/python-eglot-servers=
-lists them. Putting ty first is deliberate: eglot takes the first match from
-=eglot-server-programs=, and the entry Emacs ships still prefers pylsp.
-
-=ruff= does the editing work around the server. Apheleia sorts the imports and
-then formats (=ruff-isort= followed by =ruff=, the value
-=moyu/python-formatter= picks), and flymake runs =ruff check= beside ty's type
-checker through [[https://github.com/erickgnavar/flymake-ruff][flymake-ruff]] --
-but only when =ty= is installed, because a machine that fell back to
-=ruff server= already has every ruff diagnostic in the buffer and would see
-each of them twice.  =C-c C-v= runs the same linter on demand.
-
 The activation itself lives in [[file:lisp/python-ext.el][lisp/python-ext.el]].  It finds the project
 root (=project-current= first, then the nearest =pyproject.toml=, =uv.lock=,
 =requirements.txt=, =setup.py=, =setup.cfg= or =Pipfile=), takes the nearest
@@ -245,8 +232,7 @@ in, and are bound to =C-c u= in both Python modes:
 | =C-c u i= | =moyu/python-uv-init=   | =uv init DIRECTORY=       |
 
 =C-c u R= also runs a PEP 723 script: uv reads the inline metadata the file
-carries and builds the environment it names.  Poetry projects keep working
-through the =poetry= package; uv is what the rest of the section assumes.
+carries and builds the environment it names.
 
 * Tempel templates
 Tempel keeps its templates in one lisp-data file, =templates=, next to

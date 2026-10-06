@@ -43,6 +43,22 @@
   (file-name-directory (or load-file-name buffer-file-name ""))
   "Directory containing moyue.el and its companion files.")
 
+;; `bin/moyue' runs this file in a `-q --batch' Emacs, which never reads
+;; early-init.el, so the *.eln files this process compiles would otherwise land
+;; in the default ~/.emacs.d/eln-cache/, outside the cache the configuration
+;; keeps.  This process does compile subr trampolines: `moyue test' loads every
+;; lisp/ source, remote-ext advises `call-process' and `make-process', and this
+;; framework calls both.  Compile into the configuration's own cache instead,
+;; first in the list, so that a real session finds these files rather than
+;; building a second copy of them.
+(when (boundp 'native-comp-eln-load-path)
+  (let ((eln-dir (expand-file-name
+                  ".cache/eln-caches/"
+                  (file-name-directory (directory-file-name moyue--bin-dir)))))
+    (unless (file-exists-p eln-dir)
+      (make-directory eln-dir t))
+    (add-to-list 'native-comp-eln-load-path eln-dir)))
+
 (defvar moyue--commands (make-hash-table :test #'equal)
   "Registry mapping command-name strings to `moyue-command' structs.")
 
@@ -694,9 +710,6 @@ The check is registered under the `config/' namespace for easy filtering:
     (:id python3 :kind tool
      :commands ("python3" "python")
      :hint "Python shell and babel blocks.")
-    (:id poetry :kind tool
-     :commands ("poetry")
-     :hint "Python virtualenv management for the `poetry' package.")
     (:id latexmk :kind tool
      :commands ("latexmk")
      :hint "AUCTeX latexmk integration.")
@@ -964,9 +977,8 @@ signals this at run time, which is why it is asserted on the source."
   (moyue--config-check-package rust-mode)
   (moyue--config-check-package rustic)
   (moyue--config-check-package python)
+  (moyue--config-check-package ob-ipython)
   (moyue--config-check-package pyimport)
-  (moyue--config-check-package poetry)
-  (moyue--config-check-package flymake-ruff)
   (moyue--config-check-package geiser)
   (moyue--config-check-package buttercup)
   (moyue--config-check-package dockerfile-ts-mode)

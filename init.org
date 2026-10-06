@@ -74,6 +74,34 @@ The file is divided into several major sections:
 (setq moyu/package-mirror 'default
       moyu/default-font (font-spec :family \"Consolas\"
                                      :size 14))")))
+
+;; Native compilation.
+;;
+;; Emacs writes every *.eln it compiles into the *first* entry of
+;; `native-comp-eln-load-path', and the default first entry is
+;; ~/.emacs.d/eln-cache/.  The redirect has to happen here, in the earliest
+;; file Emacs reads: init.el requires remote-ext and loads packages long
+;; before it can adjust this list, and whatever gets compiled in that window
+;; lands in the default directory instead.
+;;
+;; Note what `native-comp-jit-compilation' does *not* control: advising a C
+;; function (a subr) such as `call-process' or `make-process' makes Emacs
+;; build a "subr trampoline" *.eln for it the first time the advised
+;; function runs, whether or not JIT compilation is enabled.
+(let ((eln-dir (moyu/cache-it "eln-caches/")))
+  (unless (file-exists-p eln-dir)
+    (make-directory eln-dir t))
+  (add-to-list 'native-comp-eln-load-path eln-dir))
+
+;; Native compilation of loaded packages is off.  Delete this line to turn it
+;; back on: it is faster, but the asynchronous compiler occasionally reports
+;; warnings that only it produces, because it starts from a pristine
+;; environment and so fails where byte-compilation succeeded.  The redirect
+;; above keeps the cache tidy either way.
+(setq native-comp-jit-compilation nil)
+
+;; Log those warnings instead of popping up a *Warnings* buffer at startup.
+(setq native-comp-async-report-warnings-errors 'silent)
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -158,18 +186,17 @@ assumed, so =use-package= ships with Emacs and needs no installation.
 #+end_src
 
 ** Libs
-Load the required packages for `init.el`.
+Load the required packages for `init.el`.  `remote-ext' routes the processes
+of a remote workspace to the remote host (see the TRAMP section below), and
+`python-ext' finds a Python project, activates the environment uv made for it
+and drives uv (see the Python section below).
 #+begin_src emacs-lisp :tangle yes
 (add-to-list 'load-path
              (expand-file-name "lisp" user-emacs-directory))
 
 (require 'core)
 (require 'env-ext)
-;; `remote-ext' routes the processes of a remote workspace to the remote
-;; host; see the TRAMP section below.
 (require 'remote-ext)
-;; `python-ext' finds a Python project, activates the environment uv made for
-;; it and drives uv; see the Python section below.
 (require 'python-ext)
 (require 'cl-lib)
 (require 'package)
@@ -223,8 +250,10 @@ Emacs launched from a desktop launcher inherits the shell environment
                 word-wrap t
                 truncate-lines t)
 
-  (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path (moyu/cache-it "eln-caches/")))
+  ;; `native-comp-eln-load-path' is set in early-init.el: doing it here was
+  ;; too late, and the *.eln files Emacs compiled before this point -- subr
+  ;; trampolines for the advised `call-process' and `make-process' in
+  ;; particular -- went to the default ~/.emacs.d/eln-cache/.
 
   (fset #'yes-or-no-p #'y-or-n-p)
   :config
@@ -932,50 +961,94 @@ toolchain: =uv= owns the interpreters and the project environment, =ty= is the
 language server eglot starts and =ruff= lints and formats.  All three are
 installed with =moyue install uv ty ruff= and reported by =moyue doctor= as
 =config/tool-uv=, =config/tool-ty=, =config/tool-ruff= and =config/lsp-python=.
+
 The pieces that are more than a =use-package= form live in
 [[file:lisp/python-ext.el][python-ext]]: it finds the project, activates the
 =.venv= uv creates buffer-locally (so eglot, apheleia and flymake all reach
 the project's own tools without two projects fighting over =exec-path=) and
-binds the =uv= commands under =C-c u=.
+binds the =uv= commands under =C-c u=.  That prefix is installed once
+=python-base-mode-map= exists, so both Python modes share it.
+
+The =:mode= entries besides =.py= are the files around a project.  =uv.lock=
+and =Pipfile= are TOML, and =.toml= already lands in =conf-toml-mode=, which
+the tree-sitter remap turns into =toml-ts-mode=; =requirements*.txt= is
+configuration rather than text.  =C-c C-v= runs =ruff check=, the same linter
+flymake runs.
+
+ruff's linter runs beside ty's type checker as a flymake backend of this
+configuration's own -- =moyu/python-ruff-backend= in
+[[file:lisp/python-ext.el][python-ext]] runs =ruff check= on the buffer and
+turns its concise output into diagnostics -- so that the two halves of the
+toolchain each report what they are good at;
+=moyu/python-flymake-ruff-load= decides whether that is wanted.
+
+IPython is a Python package, so it belongs to the environment uv manages for
+the project rather than to the system, and this configuration installs no
+Python package.  What it uses IPython for is ob-ipython: that evaluates an
+=ipython= source block against a real Jupyter kernel, which is what makes the
+magics (=%timeit=, =%matplotlib inline=), IPython's tracebacks and inline plots
+work.  ob-ipython is pointed at the environment's =jupyter=, or at a jupyter on
+PATH, with its client run by the Python of that same place, because those were
+installed together and are the ones that can import =jupyter_client=.  Such a
+block needs a =:session=, and =:results raw drawer= renders best.  What a
+environment must carry a jupyter and be able to import =jupyter_client= is
+ob-ipython's own requirement, not this configuration's; a buffer with neither
+an environment nor a jupyter is left alone.
+
+The interactive shell is a separate matter and is deliberately not touched:
+=run-python= keeps whatever =python-shell-interpreter= Emacs or the user set,
+and inside a project that one is the environment's own Python anyway, because
+=python-shell-virtualenv-root= has already put it on =exec-path=.  Choosing
+IPython for it is a preference, not something this section should decide.
+
+ob-ipython's own kernel autodetection stays where it is, on =org-mode-hook=:
+this section only chooses the =jupyter= it asks, by running before it, and
+stops the question from being asked at all when there is no jupyter to answer
+it -- the query reads an empty answer as JSON, and that error would otherwise
+abort the rest of =org-mode-hook= in every Org buffer.  Those two adjustments
+are =moyu/python-ob-ipython-setup= and =moyu/python-ob-ipython-advise= in
+[[file:lisp/python-ext.el][python-ext]], and the ob-ipython package below is
+what installs them.  The client ob-ipython runs is resolved from the file's own
+directory, because ob-ipython reads the interpreter from a temporary buffer
+where a value set for this one cannot reach it.  A block that drew a figure is
+shown without a second command.
 
 #+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode ("\\.py\\'" . python-ts-mode)
   :mode ("[./]flake8\\'" . conf-mode)
-  ;; uv keeps its lock file and its pins in TOML, and a project that has not
-  ;; adopted pyproject.toml still spells its requirements in a text file.
-  ;; `.toml' itself already lands in `conf-toml-mode', which the tree-sitter
-  ;; remap turns into `toml-ts-mode'.
   :mode ("\\(?:^\\|/\\)uv\\.lock\\'" . conf-toml-mode)
   :mode ("\\(?:^\\|/\\)Pipfile\\'" . conf-toml-mode)
   :mode ("\\(?:^\\|/\\)requirements[^/]*\\.txt\\'" . conf-mode)
   :hook (python-base-mode . moyu/python-setup)
   :custom
   (python-indent-offset 4)
-  ;; `C-c C-v' checks the buffer: ruff is the linter this configuration
-  ;; installs, and it is the same one flymake runs.
   (python-check-command "ruff check")
   :config
   (when (and (executable-find "python3")
              (string= python-shell-interpreter "python"))
     (setq python-shell-interpreter "python3")))
 
-;; `C-c u' drives uv in the project; the prefix is shared by both Python modes
-;; through `python-base-mode-map', and it is installed once that map exists.
 (with-eval-after-load 'python
   (define-key python-base-mode-map (kbd "C-c u") moyu/python-uv-map))
 
-;; ruff's linter runs beside ty's type checker through flymake, so that the
-;; two halves of the toolchain each report what they are good at.
-;; `moyu/python-flymake-ruff-load' decides whether that is wanted.
-(use-package flymake-ruff
+(use-package ob-ipython
   :ensure t
-  :defer t)
-
-;; Poetry projects still work; uv is what the sections above assume.
-(use-package poetry
-  :ensure t
-  :after python)
+  :after org
+  :config
+  (add-to-list 'org-babel-load-languages '(ipython . t))
+  (add-hook 'org-babel-after-execute-hook #'org-display-inline-images 'append)
+  ;; `ob-ipython' appends its own `org-mode-hook' entry while loading, and that
+  ;; entry asks `jupyter kernelspec list --json'.  Both helpers have to be in
+  ;; place before it runs: `add-hook' prepends, so
+  ;; `moyu/python-ob-ipython-setup' runs first and the advice around
+  ;; `ob-ipython-auto-configure-kernels' is what stops the question when no
+  ;; jupyter can answer it.  Without them the shell's error message is read as
+  ;; JSON, and the resulting signal aborts the rest of `org-mode-hook' in every
+  ;; Org buffer, so the entries after ob-ipython's -- `valign-mode' among them
+  ;; -- never run.  Both are idempotent, so a reload does not stack them.
+  (moyu/python-ob-ipython-advise)
+  (add-hook 'org-mode-hook #'moyu/python-ob-ipython-setup))
 #+end_src
 
 ** C/C++
