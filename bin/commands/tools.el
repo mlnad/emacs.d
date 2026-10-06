@@ -9,7 +9,7 @@
 ;; machinery below turns that entry into a download, a verification and an
 ;; install:
 ;;
-;;   moyue install clangd clang-format ruff ty   # named tools
+;;   moyue install clangd clang-format uv ruff ty  # named tools
 ;;   moyue install --list                        # what can be installed
 ;;   moyue install --all                         # install every recipe
 ;;   moyue tools status                          # what is installed where
@@ -31,7 +31,7 @@
 ;;                       executable and a symlink still resolves there, so the
 ;;                       bundled headers are found with no wrapper script.
 ;;
-;;   :strategy installer the vendor ships an install script (ruff, ty,
+;;   :strategy installer the vendor ships an install script (uv, ruff, ty,
 ;;                       rustup).  That script owns the layout -- astral
 ;;                       installs into `$HOME/.local/bin', rustup into
 ;;                       `$HOME/.cargo/bin' -- and both directories are already
@@ -142,7 +142,24 @@
                            ("TY_NO_MODIFY_PATH" . "1")
                            ("TY_DISABLE_UPDATE" . "1")))
                     (:verify ("ty" "--version")))
-     :hint "Type checking for Python (`moyue install ty`)."
+     :hint "Type checking and the Python language server (`moyue install ty`)."
+)
+
+    (uv
+     :kind tool
+     :commands ("uv" "uvx")
+     :title "uv (astral-sh/uv official installer)"
+     :version "0.12.23"
+     :latest (:github "astral-sh/uv")
+     :strategy installer
+     :download ((:url "https://astral.sh/uv/install.sh"
+                     :file "install.sh"
+                     :shell "sh"
+                     :env (("UV_INSTALL_DIR" . "~/.local/bin")
+                           ("UV_NO_MODIFY_PATH" . "1")
+                           ("UV_DISABLE_UPDATE" . "1")))
+                    (:verify ("uv" "--version")))
+     :hint "Python interpreters, virtualenvs and projects (`moyue install uv`)."
 )
 
     (rust
@@ -1276,10 +1293,13 @@ that runs `moyue test' only allows that inside the workspace."
     (let* ((requirements (moyue-tool-recipes->requirements))
            (ids (mapcar (lambda (r) (plist-get r :id)) requirements))
            (kinds (mapcar (lambda (r) (plist-get r :kind)) requirements)))
-      (should (= (length requirements) 7))
+      ;; clangd and rust each yield two checks (their server comes with the
+      ;; toolchain); clang-format, ruff, ty and uv one each.
+      (should (= (length requirements) 8))
       ;; A recipe and its `:also' entries are distinct checks.
       (should (equal (length ids) (length (delete-dups ids))))
       (should (memq 'cpp ids))
+      (should (memq 'uv ids))
       ;; The cpp check is the eglot one, so its kind must be `lsp'.
       (should (eq (plist-get (cl-find 'cpp requirements
                                       :key (lambda (r) (plist-get r :id)))
@@ -1331,6 +1351,27 @@ that runs `moyue test' only allows that inside the workspace."
     (should (equal (moyue-tools-resolve-version (moyue-tool-recipe "ruff") "1.2.3")
                    "1.2.3"))
     (should (equal (moyue-tools-resolve-version (moyue-tool-recipe "rust")) "stable")))
+
+  (ert-deftest moyue-tools/astral-tools-share-one-installer-shape ()
+    "uv, ruff and ty are installed by their own script, into ~/.local/bin.
+The three recipes exist so that `moyue install uv ruff ty' sets up the
+Python toolchain, and each must keep the script from editing shell startup
+files or updating itself behind our back."
+    (dolist (id '(uv ruff ty))
+      (let* ((recipe (moyue-tool-recipe id))
+             (download (moyue-tools--download-directive
+                        recipe (moyue-tool-recipe-field recipe :version)
+                        'linux-x86_64))
+             (env (plist-get download :env))
+             (lower (symbol-name id))
+             (upper (upcase lower)))
+        (should (eq (moyue-tool-recipe-field recipe :strategy) 'installer))
+        (should (equal (plist-get download :shell) "sh"))
+        (should (equal (plist-get download :verify) (list lower "--version")))
+        (should (equal (cdr (assoc (concat upper "_INSTALL_DIR") env))
+                       "~/.local/bin"))
+        (should (equal (cdr (assoc (concat upper "_NO_MODIFY_PATH") env)) "1"))
+        (should (equal (cdr (assoc (concat upper "_DISABLE_UPDATE") env)) "1")))))
 
   (ert-deftest moyue-tools/checksum-expectations-read-a-sha256-file ()
     (let ((file (moyue-tools--test-fixture
@@ -1406,6 +1447,10 @@ that runs `moyue test' only allows that inside the workspace."
       (cl-letf (((symbol-function 'moyue--config-root)
                  (lambda () (file-name-as-directory config)))
                 ((symbol-function 'executable-find) (lambda (_name) nil))
+                ;; Nothing is installed in ~/.local/bin here either, so the
+                ;; :post step stays as the recipe spells it; without this the
+                ;; test would read whatever the machine happens to have there.
+                ((symbol-function 'file-executable-p) (lambda (_file) nil))
                 ((symbol-function 'moyue-tools--run)
                  (lambda (command &optional _label)
                    (push command run)

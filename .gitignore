@@ -81,3 +81,7 @@ tree-sitter
 /bin/ruff.exe
 /bin/ty
 /bin/ty.exe
+/bin/uv
+/bin/uv.exe
+/bin/uvx
+/bin/uvx.exe

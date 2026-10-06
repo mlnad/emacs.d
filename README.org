@@ -45,7 +45,7 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 | Version Control | Magit, diff-hl                          |
 | Writing         | Org-mode, Markdown, LaTeX               |
 | Programming     | Eglot, Apheleia, Dape                   |
-| Languages       | Rustic, Python, Lisp                    |
+| Languages       | Rustic, Python (uv/ty/ruff), Lisp       |
 | UI              | Doom-themes, Doom-modeline, Popper      |
 
 * Installation
@@ -67,10 +67,11 @@ can be tangled into ~init.el~ and ~early-init.el~ by =org-babel-tangle=.
 readable Lisp, and the declared fonts are well formed. It also probes the
 external programs the configuration delegates work to, one check per program:
 =config/tool-*= for the command-line tools (git, grep, find, ripgrep, fd, the C
-toolchain, latexmk, ...) and =config/lsp-*= for the language servers eglot would
-start (rust-analyzer, clangd, pylsp, gopls, ...). A missing required tool fails
-the run; a missing optional one -- a language server for a language you do not
-edit, say -- is reported as =SKIPPED= instead. Add =EMACS_TEST_VERBOSE=1= to see
+toolchain, latexmk, uv, ruff, ty, ...) and =config/lsp-*= for the language
+servers eglot would start (rust-analyzer, clangd, ty, ruff, gopls, ...). A
+missing required tool fails the run; a missing optional one -- a language
+server for a language you do not edit, say -- is reported as =SKIPPED= instead.
+Add =EMACS_TEST_VERBOSE=1= to see
 the install hint of every program a check could not find.
 
 It runs the checks built into [[file:bin/moyue.el][bin/moyue.el]] and exits non-zero if any of
@@ -177,20 +178,75 @@ Three shapes cover every recipe:
   directory from the path of its own executable, and a symlink still resolves
   there, so the bundled headers are found with no wrapper script.
 - =:strategy installer= -- the vendor ships an install script, which is what
-  =ruff=, =ty= and =rustup= do. The script is downloaded into the package cache
-  first and run from there, so it can be inspected and is never piped straight
-  from the network into a shell. =ruff= and =ty= install into =~/.local/bin=
-  (or into =bin/= when that is not writable, as in a sandbox), =CARGO_HOME= and
-  =RUSTUP_HOME= stay at their usual =~/.cargo= and =~/.rustup=, and rustup's
-  =rust-analyzer= component is added afterwards. The variables that stop a
-  script from editing shell startup files (=*_NO_MODIFY_PATH=1=) or updating
-  itself behind our back (=*_DISABLE_UPDATE=1=) are set by the recipe.
+  =uv=, =ruff=, =ty= and =rustup= do. The script is downloaded into the
+  package cache first and run from there, so it can be inspected and is never
+  piped straight from the network into a shell. =uv=, =ruff= and =ty= install
+  into =~/.local/bin= (or into =bin/= when that is not writable, as in a
+  sandbox), =CARGO_HOME= and =RUSTUP_HOME= stay at their usual =~/.cargo= and
+  =~/.rustup=, and rustup's =rust-analyzer= component is added afterwards. The
+  variables that stop a script from editing shell startup files
+  (=*_NO_MODIFY_PATH=1=) or updating itself behind our back
+  (=*_DISABLE_UPDATE=1=) are set by the recipe.
 
 Versions are reproducible: =:version= pins a fallback, the newest release is
 used only when it can actually be resolved (offline runs fall back to the pin),
 and =--version VERSION= overrides both. Downloads and their unpacked payloads
 stay below =.cache/pkgs/=, which =.gitignore= already excludes; the few
 entries this command adds to =bin/= are listed there too.
+
+* Python
+Python buffers are edited with the built-in =python-ts-mode= and driven by
+three programs from [[https://astral.sh][Astral]], each one installed by =moyue install TOOL=
+and reported by =moyue doctor=:
+
+| Tool | Role                      | Check               |
+|------+---------------------------+---------------------|
+| uv   | interpreters, the =.venv= | =config/tool-uv=    |
+| ty   | language server (eglot)   | =config/lsp-python= |
+| ruff | linter and formatter      | =config/tool-ruff=  |
+
+#+begin_src shell
+bin/moyue install uv ty ruff     # the Python toolchain
+bin/moyue doctor lsp             # what eglot would start
+#+end_src
+
+=ty server= is the server eglot starts; =ruff server=, basedpyright, pyright,
+pylsp and the rest stay as fallbacks, in the order =moyu/python-eglot-servers=
+lists them. Putting ty first is deliberate: eglot takes the first match from
+=eglot-server-programs=, and the entry Emacs ships still prefers pylsp.
+
+=ruff= does the editing work around the server. Apheleia sorts the imports and
+then formats (=ruff-isort= followed by =ruff=, the value
+=moyu/python-formatter= picks), and flymake runs =ruff check= beside ty's type
+checker through [[https://github.com/erickgnavar/flymake-ruff][flymake-ruff]] --
+but only when =ty= is installed, because a machine that fell back to
+=ruff server= already has every ruff diagnostic in the buffer and would see
+each of them twice.  =C-c C-v= runs the same linter on demand.
+
+The activation itself lives in [[file:lisp/python-ext.el][lisp/python-ext.el]].  It finds the project
+root (=project-current= first, then the nearest =pyproject.toml=, =uv.lock=,
+=requirements.txt=, =setup.py=, =setup.cfg= or =Pipfile=), takes the nearest
+=.venv= that actually carries an interpreter, and sets it up buffer-locally:
+=python-shell-virtualenv-root=, =VIRTUAL_ENV= and the front of =exec-path=.
+eglot, apheleia, flymake and =run-python= therefore all reach the interpreter
+and the tools the project pinned, two projects never fight over =exec-path=,
+and a remote workspace keeps using the tools of the host that owns its files.
+
+The uv commands run from the project root, whatever directory the buffer is
+in, and are bound to =C-c u= in both Python modes:
+
+| Key     | Command                   | What it runs              |
+|---------+---------------------------+---------------------------|
+| =C-c u s= | =moyu/python-uv-sync=   | =uv sync=                 |
+| =C-c u l= | =moyu/python-uv-lock=   | =uv lock=                 |
+| =C-c u a= | =moyu/python-uv-add=    | =uv add PACKAGE...=       |
+| =C-c u r= | =moyu/python-uv-run=    | =uv run COMMAND...=       |
+| =C-c u R= | =moyu/python-uv-run-file= | =uv run= the current file |
+| =C-c u i= | =moyu/python-uv-init=   | =uv init DIRECTORY=       |
+
+=C-c u R= also runs a PEP 723 script: uv reads the inline metadata the file
+carries and builds the environment it names.  Poetry projects keep working
+through the =poetry= package; uv is what the rest of the section assumes.
 
 * Tempel templates
 Tempel keeps its templates in one lisp-data file, =templates=, next to
@@ -261,7 +317,7 @@ DOCKEMACS_RUN_ARGS="--network=host"   bin/dockemacs run ubuntu
 aliases for the two variables above.
 
 The images carry what =moyue install TOOL= needs on top of the Emacs
-toolchain: =curl= for the vendor install scripts (ruff, ty, rustup) and
+toolchain: =curl= for the vendor install scripts (uv, ruff, ty, rustup) and
 =unzip= for clangd's release archive. =alpine= exercises the busybox =wget=
 path and the musl platform keys, which is where the two distributions differ
 most. Note that clangd publishes no musl build: =moyue install clangd= says

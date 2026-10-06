@@ -718,10 +718,11 @@ The check is registered under the `config/' namespace for easy filtering:
     ;; `moyue install clangd' provides it and `moyue--doctor-merge-tool-recipes'
     ;; derives the `config/lsp-cpp' check from that recipe.
     (:id python :kind lsp
-     :commands ("pylsp" "pyls" "pyright-langserver" "basedpyright-langserver"
-                "jedi-language-server")
+     :commands ("ty" "ruff" "pylsp" "pyls" "pyright-langserver"
+                "basedpyright-langserver" "jedi-language-server" "ruff-lsp")
      :modes (python-ts-mode python-mode)
-     :hint "A Python server, e.g. `pip install python-lsp-server' or pyright.")
+     :install "ty"
+     :hint "A Python language server; this configuration prefers ty for types and ruff for lint and format.")
     (:id go :kind lsp :commands ("gopls")
      :modes (go-ts-mode go-mode)
      :hint "gopls for Go (`go install golang.org/x/tools/gopls@latest').")
@@ -965,6 +966,7 @@ signals this at run time, which is why it is asserted on the source."
   (moyue--config-check-package python)
   (moyue--config-check-package pyimport)
   (moyue--config-check-package poetry)
+  (moyue--config-check-package flymake-ruff)
   (moyue--config-check-package geiser)
   (moyue--config-check-package buttercup)
   (moyue--config-check-package dockerfile-ts-mode)

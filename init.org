@@ -168,6 +168,9 @@ Load the required packages for `init.el`.
 ;; `remote-ext' routes the processes of a remote workspace to the remote
 ;; host; see the TRAMP section below.
 (require 'remote-ext)
+;; `python-ext' finds a Python project, activates the environment uv made for
+;; it and drives uv; see the Python section below.
+(require 'python-ext)
 (require 'cl-lib)
 (require 'package)
 #+end_src
@@ -924,20 +927,52 @@ API as-is, so they need to be updated when a provider retires one.
 #+end_src
 
 ** Python
+Python is edited with the built-in tree-sitter mode and driven by the Astral
+toolchain: =uv= owns the interpreters and the project environment, =ty= is the
+language server eglot starts and =ruff= lints and formats.  All three are
+installed with =moyue install uv ty ruff= and reported by =moyue doctor= as
+=config/tool-uv=, =config/tool-ty=, =config/tool-ruff= and =config/lsp-python=.
+The pieces that are more than a =use-package= form live in
+[[file:lisp/python-ext.el][python-ext]]: it finds the project, activates the
+=.venv= uv creates buffer-locally (so eglot, apheleia and flymake all reach
+the project's own tools without two projects fighting over =exec-path=) and
+binds the =uv= commands under =C-c u=.
+
 #+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode ("\\.py\\'" . python-ts-mode)
   :mode ("[./]flake8\\'" . conf-mode)
+  ;; uv keeps its lock file and its pins in TOML, and a project that has not
+  ;; adopted pyproject.toml still spells its requirements in a text file.
+  ;; `.toml' itself already lands in `conf-toml-mode', which the tree-sitter
+  ;; remap turns into `toml-ts-mode'.
+  :mode ("\\(?:^\\|/\\)uv\\.lock\\'" . conf-toml-mode)
+  :mode ("\\(?:^\\|/\\)Pipfile\\'" . conf-toml-mode)
+  :mode ("\\(?:^\\|/\\)requirements[^/]*\\.txt\\'" . conf-mode)
+  :hook (python-base-mode . moyu/python-setup)
   :custom
   (python-indent-offset 4)
+  ;; `C-c C-v' checks the buffer: ruff is the linter this configuration
+  ;; installs, and it is the same one flymake runs.
+  (python-check-command "ruff check")
   :config
   (when (and (executable-find "python3")
              (string= python-shell-interpreter "python"))
     (setq python-shell-interpreter "python3")))
 
-(use-package pyimport
-  :ensure t)
+;; `C-c u' drives uv in the project; the prefix is shared by both Python modes
+;; through `python-base-mode-map', and it is installed once that map exists.
+(with-eval-after-load 'python
+  (define-key python-base-mode-map (kbd "C-c u") moyu/python-uv-map))
 
+;; ruff's linter runs beside ty's type checker through flymake, so that the
+;; two halves of the toolchain each report what they are good at.
+;; `moyu/python-flymake-ruff-load' decides whether that is wanted.
+(use-package flymake-ruff
+  :ensure t
+  :defer t)
+
+;; Poetry projects still work; uv is what the sections above assume.
 (use-package poetry
   :ensure t
   :after python)
