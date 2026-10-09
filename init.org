@@ -984,16 +984,27 @@ toolchain each report what they are good at;
 
 IPython is a Python package, so it belongs to the environment uv manages for
 the project rather than to the system, and this configuration installs no
-Python package.  What it uses IPython for is ob-ipython: that evaluates an
-=ipython= source block against a real Jupyter kernel, which is what makes the
-magics (=%timeit=, =%matplotlib inline=), IPython's tracebacks and inline plots
-work.  ob-ipython is pointed at the environment's =jupyter=, or at a jupyter on
-PATH, with its client run by the Python of that same place, because those were
-installed together and are the ones that can import =jupyter_client=.  Such a
-block needs a =:session=, and =:results raw drawer= renders best.  What a
-environment must carry a jupyter and be able to import =jupyter_client= is
-ob-ipython's own requirement, not this configuration's; a buffer with neither
-an environment nor a jupyter is left alone.
+Python package.  It is used only where an Org file asks for it, and it asks in
+its own keywords:
+
+#+begin_src org
+#+OB_IPYTHON: t
+#+OB_IPYTHON_KERNEL: python3
+#+OB_IPYTHON_SESSION: notes
+#+end_src
+
+Everything else stays ob-python: an Org file without that keyword never has a
+jupyter looked for, and =python= source blocks are what they always were.
+=OB_IPYTHON= may be empty, =t= or =yes= for the nearest =.venv= that carries an
+interpreter, with PATH after it, or name a directory -- an environment, or a
+project with a =.venv= in it -- and an environment without a jupyter is
+reported rather than used.  The other two keywords are optional: the kernel
+block default, and the session, which ob-ipython requires and which is the
+file's own name when the keyword is absent.  An =ipython= block then runs against
+that environment's kernel, which is what makes the magics (=%timeit=,
+=%matplotlib inline=), IPython's tracebacks and inline plots work; it needs a
+=:session=, which the keyword above fills in, and =:results raw drawer=
+renders best.
 
 The interactive shell is a separate matter and is deliberately not touched:
 =run-python= keeps whatever =python-shell-interpreter= Emacs or the user set,
@@ -1001,17 +1012,19 @@ and inside a project that one is the environment's own Python anyway, because
 =python-shell-virtualenv-root= has already put it on =exec-path=.  Choosing
 IPython for it is a preference, not something this section should decide.
 
-ob-ipython's own kernel autodetection stays where it is, on =org-mode-hook=:
-this section only chooses the =jupyter= it asks, by running before it, and
-stops the question from being asked at all when there is no jupyter to answer
-it -- the query reads an empty answer as JSON, and that error would otherwise
-abort the rest of =org-mode-hook= in every Org buffer.  Those two adjustments
-are =moyu/python-ob-ipython-setup= and =moyu/python-ob-ipython-advise= in
-[[file:lisp/python-ext.el][python-ext]], and the ob-ipython package below is
-what installs them.  The client ob-ipython runs is resolved from the file's own
-directory, because ob-ipython reads the interpreter from a temporary buffer
-where a value set for this one cannot reach it.  A block that drew a figure is
-shown without a second command.
+ob-ipython needs two adjustments, and both are advices because they concern
+what it cannot be told.  Its kernelspec query reads an empty answer as JSON,
+which is why the query is off here -- a file that wants =jupyter-R= style
+blocks can run =M-x ob-ipython-auto-configure-kernels= -- and its client asks
+for its interpreter from a temporary buffer, where a value set for the Org
+buffer cannot reach.  That second one is worth spelling out:
+`let'-binding =python-shell-interpreter= would not help either, because the
+buffer-local binding the file sets shadows it and the temporary buffer then
+reads the variable's global default; the value therefore travels in a variable
+of this configuration's own, which is never buffer-local.
+=moyu/org-ipython-setup= and =moyu/org-ipython-advise= are the two halves of
+that, in [[file:lisp/python-ext.el][python-ext]].  A block that drew a figure
+is shown without a second command.
 
 #+begin_src emacs-lisp :tangle yes
 (use-package python
@@ -1036,19 +1049,11 @@ shown without a second command.
   :ensure t
   :after org
   :config
+  (remove-hook 'org-mode-hook #'ob-ipython-auto-configure-kernels)
+  (add-hook 'org-mode-hook #'moyu/org-ipython-setup)
+  (moyu/org-ipython-advise)
   (add-to-list 'org-babel-load-languages '(ipython . t))
-  (add-hook 'org-babel-after-execute-hook #'org-display-inline-images 'append)
-  ;; `ob-ipython' appends its own `org-mode-hook' entry while loading, and that
-  ;; entry asks `jupyter kernelspec list --json'.  Both helpers have to be in
-  ;; place before it runs: `add-hook' prepends, so
-  ;; `moyu/python-ob-ipython-setup' runs first and the advice around
-  ;; `ob-ipython-auto-configure-kernels' is what stops the question when no
-  ;; jupyter can answer it.  Without them the shell's error message is read as
-  ;; JSON, and the resulting signal aborts the rest of `org-mode-hook' in every
-  ;; Org buffer, so the entries after ob-ipython's -- `valign-mode' among them
-  ;; -- never run.  Both are idempotent, so a reload does not stack them.
-  (moyu/python-ob-ipython-advise)
-  (add-hook 'org-mode-hook #'moyu/python-ob-ipython-setup))
+  (add-hook 'org-babel-after-execute-hook #'org-display-inline-images 'append))
 #+end_src
 
 ** C/C++

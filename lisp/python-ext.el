@@ -37,6 +37,9 @@
 (defvar apheleia-formatter)
 ;; `ob-ipython' is loaded with Org, long after this file.
 (defvar ob-ipython-command)
+(defvar org-babel-default-header-args:ipython)
+;; Declared for the compiler's sake; `python.el' gives it its value.
+(defvar python-shell-interpreter)
 (defvar python-shell-virtualenv-root)
 (declare-function compile "compile" (command &optional comint))
 (declare-function flymake-diag-region "flymake" (buffer line col))
@@ -46,8 +49,9 @@
 (declare-function flymake-diagnostic-type "flymake" (diagnostic))
 (declare-function flymake-make-diagnostic "flymake"
                   (buffer beg end type text &optional backend))
-(declare-function ob-ipython--get-python "ob-ipython" ())
-(declare-function ob-ipython-auto-configure-kernels "ob-ipython" (&optional replace))
+(declare-function ob-ipython-inspect "ob-ipython" (buffer pos))
+(declare-function org-babel-execute:ipython "ob-ipython" (body params))
+(declare-function org-collect-keywords "org" (keywords &optional unique directory))
 (declare-function project-root "project" (project))
 
 (defgroup moyu/python nil
@@ -302,65 +306,102 @@ carries every ruff diagnostic and would show each of them twice."
     (require 'flymake)
     (add-hook 'flymake-diagnostic-functions #'moyu/python-ruff-backend nil t)))
 
-(defun moyu/python-ob-ipython-setup ()
-  "Point ob-ipython at the project's jupyter, or at one on PATH.
-`ob-ipython' starts its kernel with `ob-ipython-command', and the environment
-the project made comes first, because that is where a package it declared
-belongs; a jupyter on PATH is the fallback.  This only chooses the command --
-asking it for its kernels is ob-ipython's own `org-mode-hook' entry, which
-runs after this one."
-  (when-let* ((jupyter (or (moyu/python-environment-program "jupyter")
-                           (executable-find "jupyter"))))
-    (setq-local ob-ipython-command jupyter)))
+;;;; ── ob-ipython, for the Org files that ask for it ────────────────────────
 
-(defun moyu/python-ob-ipython-configure-kernels (configure)
-  "Run CONFIGURE -- ob-ipython's kernelspec query -- only if it can answer.
-CONFIGURE runs `jupyter kernelspec list --json' and reads the answer as JSON;
-with no jupyter at all that answer is the empty string, and the JSON error
-aborts the rest of `org-mode-hook' in every Org buffer, Python or not.  A
-jupyter that is there but broken reports itself when a block is evaluated."
-  (when (executable-find (or (bound-and-true-p ob-ipython-command) "jupyter"))
-    (funcall configure)))
+(defconst moyu/org-ipython-keywords
+  '("OB_IPYTHON" "OB_IPYTHON_KERNEL" "OB_IPYTHON_SESSION")
+  "The keywords an Org file uses to ask for `ob-ipython'.
+`OB_IPYTHON' turns it on for that file and may name the environment; the
+other two give the kernel and the session a block would otherwise repeat.")
 
-(defun moyu/python-ob-ipython-get-python (get-python)
+(defun moyu/org-ipython--environment-pair (venv)
+  "Return (JUPYTER . PYTHON) for the virtualenv VENV, or nil.
+Only an environment that carries both can start a kernel and run the client
+that talks to it."
+  (when venv
+    (let ((jupyter (moyu/python--venv-program venv "jupyter"))
+          (python (moyu/python--venv-program venv "python")))
+      (when (and (file-executable-p jupyter) (file-executable-p python))
+        (cons jupyter python)))))
+
+(defun moyu/org-ipython-environment (value)
+  "Return (JUPYTER . PYTHON) for an `OB_IPYTHON' keyword VALUE, or nil.
+VALUE may be empty, `t' or `yes' for the project's own environment --
+the nearest `.venv' that carries an interpreter, and PATH after that -- or
+the directory of one, which may also be a project with a `.venv' in it."
+  (if (member value '(nil "" "t" "yes"))
+      (or (moyu/org-ipython--environment-pair (moyu/python-venv-root))
+          (let ((jupyter (executable-find "jupyter"))
+                (python (or (executable-find "python")
+                            (executable-find "python3"))))
+            (when (and jupyter python) (cons jupyter python))))
+    (let* ((directory (file-name-as-directory (expand-file-name value)))
+           (venv (if (file-executable-p (moyu/python--venv-program directory "python"))
+                     directory
+                   (expand-file-name moyu/python-venv-directory directory))))
+      (moyu/org-ipython--environment-pair venv))))
+
+(defun moyu/org-ipython-setup ()
+  "Configure ob-ipython for this buffer when the file asks for it.
+The file asks with `#+OB_IPYTHON:'; without that keyword this does nothing
+at all, so an Org file that never mentions it keeps `python' blocks to
+ob-python and no jupyter is ever looked for.  With it, the environment named
+there (or the project's own) becomes the `jupyter' ob-ipython starts kernels
+with and the interpreter its client runs with, while
+
+  #+OB_IPYTHON_KERNEL:   the kernel a block gets by default
+  #+OB_IPYTHON_SESSION:  the session a block gets by default, because
+                         ob-ipython requires one; the file's name otherwise"
+  (let ((keywords (org-collect-keywords moyu/org-ipython-keywords)))
+    (when (assoc "OB_IPYTHON" keywords #'equal)
+      (cl-labels ((value (name) (cadr (assoc name keywords #'equal))))
+        (if-let* ((environment (moyu/org-ipython-environment (value "OB_IPYTHON"))))
+            (let ((parameters (list (cons :session
+                                          (or (value "OB_IPYTHON_SESSION")
+                                              (file-name-base (or buffer-file-name "ipython")))))))
+              (when-let* ((kernel (value "OB_IPYTHON_KERNEL")))
+                (push (cons :kernel kernel) parameters))
+              (setq-local ob-ipython-command (car environment))
+              (setq-local python-shell-interpreter (cdr environment))
+              (setq-local org-babel-default-header-args:ipython parameters))
+          (message "ob-ipython: no jupyter for `%s'" (value "OB_IPYTHON")))))))
+
+(defvar moyu/org-ipython--client-python nil
+  "The interpreter ob-ipython's client should use, while a block runs.
+Deliberately never buffer-local: `ob-ipython' asks for its interpreter from a
+temporary buffer, where only a dynamic binding reaches.  A `let' of
+`python-shell-interpreter' itself would not do, because the buffer-local
+binding the Org file sets shadows it, and the temporary buffer would then read
+that variable's global default instead of this file's environment.")
+
+(defun moyu/org-ipython-lift (function &rest arguments)
+  "Call FUNCTION with the environment this Org file declared carried along.
+The value travels in `moyu/org-ipython--client-python' rather than in
+`python-shell-interpreter', for the reason given there; a file that never
+asked for ob-ipython has no buffer-local interpreter and carries nothing."
+  (let ((moyu/org-ipython--client-python
+         (when (local-variable-p 'python-shell-interpreter)
+           python-shell-interpreter)))
+    (apply function arguments)))
+
+(defun moyu/org-ipython-get-python (get-python)
   "Return the interpreter ob-ipython should run its client with.
-`ob-ipython' asks for `python-shell-interpreter' from inside a temporary
-buffer, where a value set for one project's buffer cannot reach it -- so the
-client would be run by whatever interpreter the whole session defaults to.
-The environment is therefore resolved from `default-directory', which
-`with-temp-buffer' does inherit.  Its Python is returned when the environment
-is also where the jupyter came from, since the two were installed together
-and that is the interpreter which can import `jupyter_client'; GET-PYTHON --
-ob-ipython's own, PATH-based answer -- is the fallback for everything else,
-including a jupyter that itself came from PATH."
-  (or (when (moyu/python-environment-program "jupyter")
-        (moyu/python-environment-program "python"))
-      (funcall get-python)))
+GET-PYTHON is ob-ipython's own answer, and is used unless a declared
+environment was carried into this call."
+  (if (and moyu/org-ipython--client-python
+           (file-executable-p moyu/org-ipython--client-python))
+      moyu/org-ipython--client-python
+    (funcall get-python)))
 
-(defun moyu/python-ob-ipython-advise ()
-  "Teach ob-ipython two things it cannot work out by itself.
-It has no notion of a project environment -- `ob-ipython--get-python' is the
-only place it looks, and it looks at `python-shell-interpreter' and
-`exec-path' -- so the two adjustments are advices rather than settings:
-
-  `ob-ipython--get-python'           resolve the client's interpreter from
-                                     `default-directory', because ob-ipython
-                                     asks for it from a temporary buffer,
-                                     where a buffer-local value cannot reach
-  `ob-ipython-auto-configure-kernels' do not ask for kernelspecs when there
-                                     is no jupyter to answer, since the empty
-                                     answer is read as JSON and the error
-                                     would abort the rest of `org-mode-hook'
-
-Both are idempotent, so a reloaded configuration does not stack them."
-  (unless (advice-member-p #'moyu/python-ob-ipython-get-python
+(defun moyu/org-ipython-advise ()
+  "Let ob-ipython use the environment the Org file declared."
+  (dolist (function '(org-babel-execute:ipython ob-ipython-inspect))
+    (unless (advice-member-p #'moyu/org-ipython-lift function)
+      (advice-add function :around #'moyu/org-ipython-lift)))
+  (unless (advice-member-p #'moyu/org-ipython-get-python
                            'ob-ipython--get-python)
     (advice-add 'ob-ipython--get-python :around
-                #'moyu/python-ob-ipython-get-python))
-  (unless (advice-member-p #'moyu/python-ob-ipython-configure-kernels
-                           'ob-ipython-auto-configure-kernels)
-    (advice-add 'ob-ipython-auto-configure-kernels :around
-                #'moyu/python-ob-ipython-configure-kernels)))
+                #'moyu/org-ipython-get-python)))
 
 ;;;###autoload
 (defun moyu/python-setup ()
@@ -564,88 +605,144 @@ whatever `python-shell-interpreter' says."
           (moyu/python-setup)
           (should-not (local-variable-p 'python-shell-interpreter))))))
 
-  ;;; moyu/python-ob-ipython-setup
+  ;;; ob-ipython, for the Org files that ask for it
 
-  (ert-deftest python-ext/ob-ipython-uses-the-environments-jupyter ()
-    "A project with jupyter in its .venv gets ob-ipython pointed at it."
-    (python-test--project
-      (let ((venv (python-test--venv root)))
-        (python-test--tool venv "jupyter")
-        (with-temp-buffer
-          (setq-local default-directory root)
-          (cl-letf (((symbol-function 'executable-find)
-                     (lambda (name) (and (equal name "jupyter")
-                                         "/usr/local/bin/jupyter"))))
-            (moyu/python-ob-ipython-setup)
-            (should (equal ob-ipython-command
-                           (expand-file-name "jupyter"
-                                             (expand-file-name "bin" venv)))))))))
-
-  (ert-deftest python-ext/ob-ipython-falls-back-to-a-jupyter-on-path ()
-    "With no jupyter in the environment, the one on PATH is asked."
-    (python-test--project
-      (python-test--venv root)
-      (with-temp-buffer
+  (defun python-test--org (root name &rest lines)
+    "Return an Org buffer for ROOT/NAME whose body is LINES.
+The buffer is in `org-mode' with `default-directory' at ROOT, so that the
+keyword setup can be exercised the way a real file would exercise it."
+    (let ((buffer (generate-new-buffer name)))
+      (with-current-buffer buffer
+        (setq buffer-file-name (expand-file-name name root))
         (setq-local default-directory root)
+        (insert (mapconcat #'identity lines "\n") "\n")
+        (org-mode))
+      buffer))
+
+  (ert-deftest python-ext/org-ipython-is-off-by-default ()
+    "An Org file that does not ask keeps ob-python and nothing else.
+No jupyter is looked for, and the buffer is left exactly as it was."
+    (python-test--project
+      (let ((venv (python-test--venv root))
+            (buffer nil))
+        (python-test--tool venv "jupyter")
+        (setq buffer (python-test--org root "plain.org"
+                                       "#+begin_src python"
+                                       "print(1 + 1)"
+                                       "#+end_src"))
+        (unwind-protect
+            (with-current-buffer buffer
+              (cl-letf (((symbol-function 'executable-find)
+                         (lambda (name) (and (equal name "jupyter") "/usr/bin/jupyter"))))
+                (moyu/org-ipython-setup))
+              (should-not (local-variable-p 'ob-ipython-command))
+              (should-not (local-variable-p 'org-babel-default-header-args:ipython)))
+          (kill-buffer buffer)))))
+
+  (ert-deftest python-ext/org-ipython-takes-the-project-environment ()
+    "`#+OB_IPYTHON: t' points the file at its own .venv, and names a session."
+    (python-test--project
+      (let ((venv (python-test--venv root))
+            (buffer nil))
+        (python-test--tool venv "jupyter")
+        (setq buffer (python-test--org root "notes.org"
+                                       "#+OB_IPYTHON: t"
+                                       "#+begin_src ipython"
+                                       "print(1 + 1)"
+                                       "#+end_src"))
+        (unwind-protect
+            (with-current-buffer buffer
+              (moyu/org-ipython-setup)
+              (should (equal ob-ipython-command
+                             (expand-file-name "jupyter"
+                                               (expand-file-name "bin" venv))))
+              (should (equal python-shell-interpreter
+                             (expand-file-name "python"
+                                               (expand-file-name "bin" venv))))
+              ;; ob-ipython requires a session, so the file's name becomes one.
+              (should (equal (alist-get :session org-babel-default-header-args:ipython)
+                             "notes")))
+          (kill-buffer buffer)))))
+
+  (ert-deftest python-ext/org-ipython-honours-kernel-and-session ()
+    (python-test--project
+      (let ((venv (python-test--venv root))
+            (buffer nil))
+        (python-test--tool venv "jupyter")
+        (setq buffer (python-test--org root "k.org"
+                                       "#+OB_IPYTHON: t"
+                                       "#+OB_IPYTHON_KERNEL: python3"
+                                       "#+OB_IPYTHON_SESSION: shared"))
+        (unwind-protect
+            (with-current-buffer buffer
+              (moyu/org-ipython-setup)
+              (should (equal (alist-get :session org-babel-default-header-args:ipython)
+                             "shared"))
+              (should (equal (alist-get :kernel org-babel-default-header-args:ipython)
+                             "python3")))
+          (kill-buffer buffer)))))
+
+  (ert-deftest python-ext/org-ipython-takes-a-named-directory ()
+    "A directory is taken as an environment, or as a project holding one."
+    (python-test--project
+      (let ((project (expand-file-name "other" root))
+            (buffer nil))
+        (make-directory project t)
+        (python-test--tool (python-test--venv project) "jupyter")
+        (setq buffer (python-test--org root "named.org"
+                                       (format "#+OB_IPYTHON: %s" project)))
+        (unwind-protect
+            (with-current-buffer buffer
+              (moyu/org-ipython-setup)
+              (should (equal ob-ipython-command
+                             (expand-file-name "jupyter"
+                                               (expand-file-name ".venv/bin" project)))))
+          (kill-buffer buffer)))))
+
+  (ert-deftest python-ext/org-ipython-reports-an-environment-without-jupyter ()
+    "An environment that cannot start a kernel leaves the file alone."
+    (python-test--project
+      (let ((venv (python-test--venv root))
+            (buffer nil))
+        (setq buffer (python-test--org root "broken.org" "#+OB_IPYTHON: t"))
+        (unwind-protect
+            (with-current-buffer buffer
+              (cl-letf (((symbol-function 'message) (lambda (&rest _) nil)))
+                (moyu/org-ipython-setup))
+              (should-not (local-variable-p 'ob-ipython-command))
+              (should-not (local-variable-p 'org-babel-default-header-args:ipython)))
+          (kill-buffer buffer)))))
+
+  (ert-deftest python-ext/org-ipython-environment-falls-back-to-path ()
+    "With no environment of its own, the file gets the one on PATH."
+    (python-test--project
+      (let ((default-directory root))
         (cl-letf (((symbol-function 'executable-find)
-                   (lambda (name) (and (equal name "jupyter")
-                                       "/usr/local/bin/jupyter"))))
-          (moyu/python-ob-ipython-setup)
-          (should (equal ob-ipython-command "/usr/local/bin/jupyter"))))))
+                   (lambda (name) (and (member name '("jupyter" "python"))
+                                       (concat "/usr/bin/" name)))))
+          (should (equal (moyu/org-ipython-environment "t")
+                         '("/usr/bin/jupyter" . "/usr/bin/python")))))))
 
-  (ert-deftest python-ext/ob-ipython-asks-for-kernels-only-with-a-jupyter ()
-    "The kernelspec query is skipped when there is nothing that can answer.
-`jupyter kernelspec list --json' prints nothing without a jupyter, and
-ob-ipython reads that empty answer as JSON, which aborts the rest of
-`org-mode-hook' in every Org buffer."
-    (let* ((called nil)
-           (configure (lambda () (setq called t))))
-      (cl-letf (((symbol-function 'executable-find) (lambda (_name) nil)))
-        (moyu/python-ob-ipython-configure-kernels configure)
-        (should-not called))
-      (cl-letf (((symbol-function 'executable-find)
-                 (lambda (name) (and (equal name "jupyter") "/usr/bin/jupyter"))))
-        (moyu/python-ob-ipython-configure-kernels configure)
-        (should called))))
-
-  (ert-deftest python-ext/ob-ipython-client-uses-the-environments-python ()
-    "The client is run by the environment's Python, not the session default.
-ob-ipython resolves the interpreter inside a temporary buffer, where a
-buffer-local value cannot reach it, so it is resolved from the directory."
+  (ert-deftest python-ext/org-ipython-lift-carries-the-declared-python ()
+    "What the file declared is what ob-ipython's client gets, even from a
+temporary buffer -- which is where ob-ipython asks, and where the
+buffer-local `python-shell-interpreter' cannot reach."
+    (require 'python)
     (python-test--project
-      (let* ((venv (python-test--venv root))
-             (python (expand-file-name "python" (expand-file-name "bin" venv)))
-             (default-directory root))
-        (python-test--tool venv "jupyter")
-        (should (equal (moyu/python-ob-ipython-get-python
-                        (lambda () "/usr/bin/python3"))
-                       python)))))
+      (let ((python (python-test--tool (python-test--venv root) "python")))
+        (with-temp-buffer
+          (setq-local python-shell-interpreter python)
+          (should (equal (moyu/org-ipython-lift
+                          (lambda () (moyu/org-ipython-get-python (lambda () "fallback"))))
+                         python))))))
 
-  (ert-deftest python-ext/ob-ipython-client-falls-back-outside-a-project ()
-    (python-test--project
-      (let ((default-directory root))
-        (should (equal (moyu/python-ob-ipython-get-python
-                        (lambda () "/usr/bin/python3"))
-                       "/usr/bin/python3")))))
-
-  (ert-deftest python-ext/ob-ipython-client-falls-back-when-jupyter-is-not-local ()
-    "A PATH jupyter needs a PATH client: the environment has no jupyter_client."
-    (python-test--project
-      (python-test--venv root)
-      (let ((default-directory root))
-        (should (equal (moyu/python-ob-ipython-get-python
-                        (lambda () "/usr/bin/python3"))
-                       "/usr/bin/python3")))))
-
-  (ert-deftest python-ext/ob-ipython-leaves-a-project-without-jupyter-alone ()
-    "No jupyter anywhere means the command is left as it was."
-    (python-test--project
-      (python-test--venv root)
-      (with-temp-buffer
-        (setq-local default-directory root)
-        (cl-letf (((symbol-function 'executable-find) (lambda (_name) nil)))
-          (moyu/python-ob-ipython-setup)
-          (should-not (local-variable-p 'ob-ipython-command))))))
+  (ert-deftest python-ext/org-ipython-keeps-ob-ipythons-own-python-otherwise ()
+    "A file that declared nothing leaves ob-ipython's own answer alone."
+    (require 'python)
+    (with-temp-buffer
+      (should (equal (moyu/org-ipython-lift
+                      (lambda () (moyu/org-ipython-get-python (lambda () "fallback"))))
+                     "fallback"))))
 
   ;;; moyu/python-formatter
 
