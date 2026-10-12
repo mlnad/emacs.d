@@ -1027,6 +1027,13 @@ of this configuration's own, which is never buffer-local.
 that, in [[file:lisp/python-ext.el][python-ext]].  A block that drew a figure
 is shown without a second command.
 
+The hook reads the keywords only when the buffer really is in =org-mode=.
+Emacs can run a mode hook in a buffer that has changed mode since the hook was
+queued (consult's file preview, which calls =delay-mode-hooks=, is one way
+there), and the Org parser warns about every =#+KEYWORD=-looking line in a
+buffer that is not Org -- including the lines an Emacs Lisp file's docstrings
+may well contain.
+
 #+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode ("\\.py\\'" . python-ts-mode)
