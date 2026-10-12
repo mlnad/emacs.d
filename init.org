@@ -88,10 +88,11 @@ The file is divided into several major sections:
 ;; function (a subr) such as `call-process' or `make-process' makes Emacs
 ;; build a "subr trampoline" *.eln for it the first time the advised
 ;; function runs, whether or not JIT compilation is enabled.
-(let ((eln-dir (moyu/cache-it "eln-caches/")))
-  (unless (file-exists-p eln-dir)
-    (make-directory eln-dir t))
-  (add-to-list 'native-comp-eln-load-path eln-dir))
+(when (native-comp-available-p)
+  (let ((eln-dir (moyu/cache-it "eln-caches/")))
+    (unless (file-exists-p eln-dir)
+      (make-directory eln-dir t))
+    (add-to-list 'native-comp-eln-load-path eln-dir)))
 
 ;; Native compilation of loaded packages is off.  Delete this line to turn it
 ;; back on: it is faster, but the asynchronous compiler occasionally reports
