@@ -1027,13 +1027,6 @@ of this configuration's own, which is never buffer-local.
 that, in [[file:lisp/python-ext.el][python-ext]].  A block that drew a figure
 is shown without a second command.
 
-The hook reads the keywords only when the buffer really is in =org-mode=.
-Emacs can run a mode hook in a buffer that has changed mode since the hook was
-queued (consult's file preview, which calls =delay-mode-hooks=, is one way
-there), and the Org parser warns about every =#+KEYWORD=-looking line in a
-buffer that is not Org -- including the lines an Emacs Lisp file's docstrings
-may well contain.
-
 #+begin_src emacs-lisp :tangle yes
 (use-package python
   :mode ("\\.py\\'" . python-ts-mode)
@@ -1111,9 +1104,27 @@ may well contain.
 #+end_src
 
 *** org-mode
+
+=org-element-at-point= warns when it is asked to parse a buffer that is not in
+Org mode, and one way into that is worth naming because it looks alarming and
+is harmless.  =org-compat= advises =save-place-find-file-hook= with
+=org-bookmark-jump-unhide=, so that opening an Org file whose saved place is
+hidden by folding shows that place.  What that calls,
+=org-fold-show-context=, contains a deliberate =(redisplay)=; redisplay runs the
+window-change hooks a file preview installs, and by the time
+=org-before-first-heading-p= asks the parser about the current buffer, that
+buffer can be some other one entirely.  So the buffer the warning names is a
+bystander -- an Emacs Lisp file, a README.md -- never the file being opened,
+which is also why it comes and goes.  The parse result is discarded and nothing
+is left half-configured, so only the noise is worth silencing, and the type is
+used by this one warning alone.  =warning-suppress-log-types= rather than
+=warning-suppress-types=, so that it is not logged either.
+
 #+begin_src emacs-lisp :tangle yes
 (use-package org
   :config
+  ;; `org-element-at-point' outside Org -- see the prose above.
+  (add-to-list 'warning-suppress-log-types '(org-element org-element-parser))
   ;; org packages
   (require 'org-tempo)
   ;; org files

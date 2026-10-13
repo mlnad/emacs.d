@@ -343,32 +343,28 @@ the directory of one, which may also be a project with a `.venv' in it."
 
 (defun moyu/org-ipython-setup ()
   "Configure ob-ipython for this buffer when the file asks for it.
-The file asks with an `OB_IPYTHON' keyword; without one this does nothing at
-all, so an Org file that never mentions it keeps `python' blocks to ob-python
-and no jupyter is ever looked for.  With one, the environment named there (or
-the project's own) becomes the `jupyter' ob-ipython starts kernels with and
-the interpreter its client runs with; its `KERNEL' and `SESSION' companions
-give a block what it would otherwise repeat, and the session falls back to the
-file's name because ob-ipython requires one.
+The file asks with `#+OB_IPYTHON:'; without that keyword this does nothing
+at all, so an Org file that never mentions it keeps `python' blocks to
+ob-python and no jupyter is ever looked for.  With it, the environment named
+there (or the project's own) becomes the `jupyter' ob-ipython starts kernels
+with and the interpreter its client runs with, while
 
-Only an Org buffer is worth looking at.  Emacs runs a mode hook later, in a
-buffer that may have changed mode since the hook was queued (see
-`delayed-mode-hooks'), and the Org parser warns about every keyword-looking
-line in a buffer that is not in Org mode."
-  (when (derived-mode-p 'org-mode)
-    (let ((keywords (org-collect-keywords moyu/org-ipython-keywords)))
-      (when (assoc "OB_IPYTHON" keywords #'equal)
-        (cl-labels ((value (name) (cadr (assoc name keywords #'equal))))
-          (if-let* ((environment (moyu/org-ipython-environment (value "OB_IPYTHON"))))
-              (let ((parameters (list (cons :session
-                                            (or (value "OB_IPYTHON_SESSION")
-                                                (file-name-base (or buffer-file-name "ipython")))))))
-                (when-let* ((kernel (value "OB_IPYTHON_KERNEL")))
-                  (push (cons :kernel kernel) parameters))
-                (setq-local ob-ipython-command (car environment))
-                (setq-local python-shell-interpreter (cdr environment))
-                (setq-local org-babel-default-header-args:ipython parameters))
-            (message "ob-ipython: no jupyter for `%s'" (value "OB_IPYTHON"))))))))
+  #+OB_IPYTHON_KERNEL:   the kernel a block gets by default
+  #+OB_IPYTHON_SESSION:  the session a block gets by default, because
+                         ob-ipython requires one; the file's name otherwise"
+  (let ((keywords (org-collect-keywords moyu/org-ipython-keywords)))
+    (when (assoc "OB_IPYTHON" keywords #'equal)
+      (cl-labels ((value (name) (cadr (assoc name keywords #'equal))))
+        (if-let* ((environment (moyu/org-ipython-environment (value "OB_IPYTHON"))))
+            (let ((parameters (list (cons :session
+                                          (or (value "OB_IPYTHON_SESSION")
+                                              (file-name-base (or buffer-file-name "ipython")))))))
+              (when-let* ((kernel (value "OB_IPYTHON_KERNEL")))
+                (push (cons :kernel kernel) parameters))
+              (setq-local ob-ipython-command (car environment))
+              (setq-local python-shell-interpreter (cdr environment))
+              (setq-local org-babel-default-header-args:ipython parameters))
+          (message "ob-ipython: no jupyter for `%s'" (value "OB_IPYTHON")))))))
 
 (defvar moyu/org-ipython--client-python nil
   "The interpreter ob-ipython's client should use, while a block runs.
@@ -414,15 +410,11 @@ Added to `python-base-mode-hook': activate the project's uv environment,
 choose the formatter, and start ruff's linter when that does not duplicate
 what eglot already reports.  The interactive shell is left alone: it is
 `python-shell-interpreter' that decides it, and activating the environment is
-already what makes that name resolve to the project's own Python.
-
-Nothing is done elsewhere: like any mode hook, this one can end up running in
-a buffer that has changed mode since it was queued."
-  (when (derived-mode-p 'python-base-mode)
-    (moyu/python-activate-venv)
-    (when (boundp 'apheleia-formatter)
-      (setq-local apheleia-formatter (moyu/python-formatter)))
-    (moyu/python-flymake-ruff-load)))
+already what makes that name resolve to the project's own Python."
+  (moyu/python-activate-venv)
+  (when (boundp 'apheleia-formatter)
+    (setq-local apheleia-formatter (moyu/python-formatter)))
+  (moyu/python-flymake-ruff-load))
 
 ;;;; ── Driving uv ───────────────────────────────────────────────────────────
 
@@ -626,25 +618,6 @@ keyword setup can be exercised the way a real file would exercise it."
         (insert (mapconcat #'identity lines "\n") "\n")
         (org-mode))
       buffer))
-
-  (ert-deftest python-ext/org-ipython-ignores-a-buffer-that-is-not-org ()
-    "A mode hook can run in a buffer that is no longer in its mode.
-Emacs flushes `delayed-mode-hooks' on the next `run-mode-hooks', and by then
-the buffer may be in another mode -- so scanning it with the Org parser, which
-warns about every keyword-looking line in a buffer that is not Org, is not
-something this hook may do."
-    (let ((buffer (generate-new-buffer "python-ext-probe.el")))
-      (unwind-protect
-          (with-current-buffer buffer
-            (insert "  #+OB_IPYTHON_KERNEL: a line in an Elisp file\n")
-            (emacs-lisp-mode)
-            (let (warning)
-              (cl-letf (((symbol-function 'display-warning)
-                         (lambda (&rest arguments) (setq warning arguments))))
-                (moyu/org-ipython-setup))
-              (should-not warning)
-              (should-not (local-variable-p 'ob-ipython-command))))
-        (kill-buffer buffer))))
 
   (ert-deftest python-ext/org-ipython-is-off-by-default ()
     "An Org file that does not ask keeps ob-python and nothing else.
