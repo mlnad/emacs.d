@@ -158,14 +158,40 @@ used rather than an outer environment."
 
 ;;;; ── Activating it ────────────────────────────────────────────────────────
 
+(defvar-local moyu/python-venv-indicator nil
+  "The mode line text naming the virtualenv this buffer uses.
+Empty, and therefore invisible, unless `moyu/python-activate-venv' found one.
+It is kept in a variable of its own rather than behind `:eval' so that the
+mode line only has to look the value up, not run code on every redisplay.")
+
+(defun moyu/python--venv-indicator (venv)
+  "Name VENV on the mode line of the current buffer, once.
+The name goes into `mode-line-misc-info', which doom-modeline renders in its
+`misc-info' slot, so it appears beside the other miscellaneous information
+rather than inside the mode name."
+  (let ((name (file-name-base (directory-file-name venv))))
+    ;; A virtualenv is normally called `.venv', which says nothing about
+    ;; which project it belongs to, so the project's own name stands in.
+    (when (equal name moyu/python-venv-directory)
+      (setq name (file-name-base
+                  (directory-file-name
+                   (file-name-directory (directory-file-name venv))))))
+    (setq moyu/python-venv-indicator
+          (propertize (format " venv:%s " name)
+                      'face 'mode-line-emphasis
+                      'help-echo venv)))
+  (unless (memq 'moyu/python-venv-indicator mode-line-misc-info)
+    (setq-local mode-line-misc-info
+                (cons 'moyu/python-venv-indicator mode-line-misc-info))))
+
 (defun moyu/python-activate-venv (&optional directory)
   "Make the project's virtualenv the one the current buffer uses.
 DIRECTORY defaults to `default-directory'.  `python-shell-virtualenv-root'
 is set buffer-locally, the environment's bin directory goes to the front of
 `exec-path' and PATH, and `VIRTUAL_ENV' is exported -- so that `run-python',
 eglot, apheleia and flymake all reach the interpreter and the tools the
-project pinned.  Returns the environment, or nil when there is none or
-DIRECTORY is remote.
+project pinned; its name goes on the mode line as well.  Returns the
+environment, or nil when there is none or DIRECTORY is remote.
 
 `pyvenv-activate' -- and the `pythonic' that `uv-mode' wraps -- would do this
 too, but for the whole session: they set the globals and prepend to the global
@@ -176,6 +202,7 @@ each other's environment.  Doing it here is what keeps them apart."
       (when-let* ((venv (moyu/python-venv-root dir)))
         (let ((bin (moyu/python--venv-bin-directory venv)))
           (setq-local python-shell-virtualenv-root venv)
+          (moyu/python--venv-indicator venv)
           ;; A mode hook can run twice for one buffer (a remap, a
           ;; `normal-mode' call); prepending again would grow PATH every time.
           (unless (member bin exec-path)
@@ -565,6 +592,25 @@ script carries and builds the environment it names."
           (should (equal python-shell-virtualenv-root venv))
           (should (equal (getenv "VIRTUAL_ENV") venv))
           (should (equal (car exec-path) (expand-file-name "bin" venv)))))))
+
+  (ert-deftest python-ext/activate-venv-names-the-environment-on-the-mode-line ()
+    "The mode line says which environment the buffer uses, and says it once."
+    (python-test--project
+      (let ((venv (python-test--venv root)))
+        (with-temp-buffer
+          (setq-local default-directory root)
+          (moyu/python-activate-venv)
+          ;; `.venv' says nothing, so the project's name stands in for it.
+          (should (string-match-p "venv:" moyu/python-venv-indicator))
+          (should (string-match-p
+                   (regexp-quote (file-name-base (directory-file-name root)))
+                   moyu/python-venv-indicator))
+          (should (memq 'moyu/python-venv-indicator mode-line-misc-info))
+          ;; A mode hook can run twice for one buffer; the indicator must not
+          ;; end up on the mode line twice.
+          (moyu/python-activate-venv)
+          (should (= 1 (cl-count 'moyu/python-venv-indicator
+                                 mode-line-misc-info)))))))
 
   (ert-deftest python-ext/activate-venv-does-not-grow-the-path ()
     "Running the hook twice must not list the environment's bin twice."

@@ -436,11 +436,44 @@ per-host extra environment variables.  Local buffers are never touched.  See
 #+end_src
 
 *** saveplace
+
+=org-compat= advises =save-place-find-file-hook= with
+=org-bookmark-jump-unhide=, so that opening an Org file whose saved place is
+hidden by folding shows that place.  That advice is not safe inside a
+completion preview: a preview runs this hook for every candidate (it is in
+=consult-preview-allowed-hooks=) with =delay-mode-hooks= in force, and for an
+Org file whose saved place is invisible, =org-fold-show-context= does a literal
+=(redisplay)=.  Redisplay runs the window-change hooks the preview installs,
+the preview then opens the candidate again inside the same =delay-mode-hooks=
+scope, and the buffer it opens keeps its mode hooks -- and so
+=after-change-major-mode-hook=, which is what turns =global-font-lock= on --
+deferred: the file comes up without a single colour.  Only Org files whose
+saved place happens to be invisible are affected, which is why it shows up for
+a file with =#+STARTUP: hideblocks= and not for the rest.  The advice is
+therefore replaced with one that stands aside while the minibuffer is active,
+that is, during a preview, and behaves as before otherwise: a file opened for
+real runs the hook after the minibuffer has exited.  The
+=org-element-at-point= warning that came out of the same ride goes with it.
+
 #+begin_src emacs-lisp :tangle yes
 (use-package saveplace
   :hook (after-init . save-place-mode)
   :init
   (setq save-place-file (moyu/cache-it "places")))
+
+(defun moyu/save-place-org-unhide (&rest _)
+  "Unhide an Org file's saved place, but not while a preview opens it.
+Replaces `org-bookmark-jump-unhide' on `save-place-find-file-hook' with the
+same behaviour minus the preview ride described in the prose above."
+  (unless (active-minibuffer-window)
+    (org-bookmark-jump-unhide)))
+
+(with-eval-after-load 'org-compat
+  (advice-remove 'save-place-find-file-hook #'org-bookmark-jump-unhide)
+  (unless (advice-member-p #'moyu/save-place-org-unhide
+                           'save-place-find-file-hook)
+    (advice-add 'save-place-find-file-hook :after
+                #'moyu/save-place-org-unhide)))
 #+end_src
 
 *** subword
@@ -968,7 +1001,11 @@ The pieces that are more than a =use-package= form live in
 =.venv= uv creates buffer-locally (so eglot, apheleia and flymake all reach
 the project's own tools without two projects fighting over =exec-path=) and
 binds the =uv= commands under =C-c u=.  That prefix is installed once
-=python-base-mode-map= exists, so both Python modes share it.
+=python-base-mode-map= exists, so both Python modes share it.  Activating the
+environment also puts its name on the mode line, as =venv:project=, because
+whether a buffer is really using its project's environment is otherwise
+invisible: doom-modeline shows only the interpreter's version, which says
+nothing when the environment and the system Python carry the same one.
 
 The =:mode= entries besides =.py= are the files around a project.  =uv.lock=
 and =Pipfile= are TOML, and =.toml= already lands in =conf-toml-mode=, which
@@ -1104,27 +1141,9 @@ is shown without a second command.
 #+end_src
 
 *** org-mode
-
-=org-element-at-point= warns when it is asked to parse a buffer that is not in
-Org mode, and one way into that is worth naming because it looks alarming and
-is harmless.  =org-compat= advises =save-place-find-file-hook= with
-=org-bookmark-jump-unhide=, so that opening an Org file whose saved place is
-hidden by folding shows that place.  What that calls,
-=org-fold-show-context=, contains a deliberate =(redisplay)=; redisplay runs the
-window-change hooks a file preview installs, and by the time
-=org-before-first-heading-p= asks the parser about the current buffer, that
-buffer can be some other one entirely.  So the buffer the warning names is a
-bystander -- an Emacs Lisp file, a README.md -- never the file being opened,
-which is also why it comes and goes.  The parse result is discarded and nothing
-is left half-configured, so only the noise is worth silencing, and the type is
-used by this one warning alone.  =warning-suppress-log-types= rather than
-=warning-suppress-types=, so that it is not logged either.
-
 #+begin_src emacs-lisp :tangle yes
 (use-package org
   :config
-  ;; `org-element-at-point' outside Org -- see the prose above.
-  (add-to-list 'warning-suppress-log-types '(org-element org-element-parser))
   ;; org packages
   (require 'org-tempo)
   ;; org files
