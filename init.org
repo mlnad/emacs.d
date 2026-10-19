@@ -1282,6 +1282,13 @@ If some elements are missing, the will be stripped out."
         markdown-fontify-whole-heading-line t))
 #+end_src
 
+#+begin_src emacs-lisp :tangle yes
+(use-package pele
+  :ensure nil
+  :demand t
+  :hook ((markdown-mode gfm-mode markdown-ts-mode) . pele-mode-maybe))
+#+end_src
+
 ** TeX
 #+begin_src emacs-lisp :tangle yes
 (use-package auctex-latexmk
