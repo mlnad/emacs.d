@@ -153,6 +153,9 @@ be overwrited by user configuration in `.cache/userconfig` file.
 Initialize package manager. Elpa packages will be installed into named folders,
 packages will be reinstalled after Emacs is updated.  Emacs 29 or newer is
 assumed, so =use-package= ships with Emacs and needs no installation.
+=etaf.top= is not one of the mirrors: it is appended to =package-archives=
+below because the ETAF packages are published only there (see the ETAF section
+under Applications).
 #+begin_src emacs-lisp :tangle yes
 (defvar moyu/available-package-mirrors
   '((default . (("melpa" . "https://melpa.org/packages/")
@@ -180,6 +183,12 @@ assumed, so =use-package= ships with Emacs and needs no installation.
                                               emacs-minor-version)))
                           (expand-file-name subdir
                                             (expand-file-name "elpa" user-emacs-directory)))))
+
+;; ETAF's own archive, appended so that the package list survives in front of
+;; it.  `moyue install' replays this `add-to-list' from the tangled init.el
+;; with `moyue--configure-package-archives-from-init', so packages installed
+;; from it are fetched by both the CLI and a normal Emacs startup.
+(add-to-list 'package-archives '("etaf" . "https://etaf.top/packages/") t)
 
 ;; Load Emacs packages and initialize them.
 (unless (bound-and-true-p package--initialized)
@@ -1392,6 +1401,52 @@ If some elements are missing, the will be stripped out."
         eshell-hist-ignoredups t
         eshell-glob-case-insensitive t
         eshell-error-if-no-glob t))
+#+end_src
+
+** ETAF
+[[https://github.com/emacs-taf/etaf][ETAF]] builds buffers from declarative components on top of the
+[[https://github.com/emacs-taf/ebox][Ebox]] layout engine and the
+[[https://github.com/emacs-taf/ecss][Ecss]] cascade.  Its packages are published from ETAF's own archive,
+=etaf.top=, which [[*Packages][Packages]] appends to =package-archives=.
+
+Only the engine chain (=ecss=, =ebox=), the package installer (=etaf-install=)
+and the component catalog (=etaf-ui=) are installed here, plus
+[[https://github.com/emacs-taf/etaf-posframe][etaf-posframe]] for floating panels; =etaf= itself arrives as their
+dependency.  The other ETAF applications (=etaf-desktop=, =etaf-db=,
+=etaf-gamekit=, =etaf-telega=, …) are not pulled in until one of them is
+wanted.  The declarations below only ensure the packages are installed from
+the archive; nothing is loaded at startup, and their autoloaded commands
+(=M-x etaf-install=, =M-x etaf-posframe-show=, …) load them on first use.
+#+begin_src emacs-lisp :tangle yes
+(use-package ecss
+  :ensure t
+  :pin "etaf"
+  :defer t)
+
+(use-package ebox
+  :ensure t
+  :pin "etaf"
+  :defer t)
+
+(use-package etaf-install
+  :ensure t
+  :pin "etaf"
+  :defer t)
+
+(use-package etaf-ui
+  :ensure t
+  :pin "etaf"
+  :defer t)
+
+(use-package etaf-posframe
+  :ensure t
+  :pin "etaf"
+  :defer t)
+
+(use-package ekp
+  :ensure t
+  :ping "etaf"
+  :defer t)
 #+end_src
 
 * Keybindings

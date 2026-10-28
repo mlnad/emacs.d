@@ -283,8 +283,42 @@ When :ensure is pkg label, install that label."
     (goto-char (point-min))
     (read (current-buffer))))
 
+(defun moyue--quoted-symbol-p (form symbol)
+  "Return non-nil when FORM is the quoted SYMBOL, e.g. `'package-archives'."
+  (and (consp form)
+       (eq (car form) 'quote)
+       (eq (cadr form) symbol)))
+
+(defun moyue--package-archives-form-p (form)
+  "Return non-nil when FORM describes the configuration's package archives.
+The archives are assembled by the two mirror variables, assigned to
+`package-archives' with a plain `setq', and extended by the private archives
+the configuration appends with `add-to-list'.  Replaying exactly those forms
+gives package.el the archives a real session sees; the rest of init.el is not
+needed and is not run."
+  (cond
+   ((and (consp form)
+         (eq (car form) 'defvar)
+         (memq (cadr form) '(moyu/available-package-mirrors
+                             moyu/used-package-mirror)))
+    t)
+   ((and (consp form)
+         (eq (car form) 'setq)
+         (memq 'package-archives (cdr form)))
+    t)
+   ((and (consp form)
+         (eq (car form) 'add-to-list)
+         (moyue--quoted-symbol-p (cadr form) 'package-archives))
+    t)))
+
 (defun moyue--configure-package-archives-from-init (init-tangle-dst)
-  "Configure package archives by reusing variable definitions in INIT-TANGLE-DST."
+  "Configure package archives by replaying the definitions in INIT-TANGLE-DST.
+Only the forms that describe the archives are evaluated -- the mirror
+variables, the `setq' that gives `package-archives' its value, and any
+`add-to-list' that appends a private archive -- while the rest of init.el is
+read but never run.  This is what lets `moyue install' fetch packages from an
+archive the configuration adds on top of its mirrors (ETAF's, for example)
+without loading the editor."
   (unless (boundp 'moyu/package-mirror)
     (setq moyu/package-mirror 'default))
   (with-temp-buffer
@@ -292,18 +326,12 @@ When :ensure is pkg label, install that label."
     (goto-char (point-min))
     (let ((done nil))
       (while (not done)
-        (let ((form (read (current-buffer))))
-          (cond
-           ((and (consp form)
-                 (eq (car form) 'defvar)
-                 (memq (cadr form) '(moyu/available-package-mirrors
-                                     moyu/used-package-mirror)))
-            (eval form))
-           ((and (consp form)
-                 (eq (car form) 'setq)
-                 (memq 'package-archives (cdr form)))
-            (eval form)
-            (setq done t))))))))
+        (condition-case nil
+            (let ((form (read (current-buffer))))
+              (when (moyue--package-archives-form-p form)
+                (eval form)))
+          (end-of-file
+           (setq done t)))))))
 
 (defun moyue--configure-package-checks ()
   "Point package.el at the package directory used by the configuration.
@@ -1010,6 +1038,14 @@ signals this at run time, which is why it is asserted on the source."
   (moyue--config-check-package popper)
   (moyue--config-check-package svg-tag-mode)
 
+  ;; ETAF: the text application framework installed from its own archive.
+  ;; `etaf' itself is not listed because `etaf-ui' pulls it in as a dependency.
+  (moyue--config-check-package ecss)
+  (moyue--config-check-package ebox)
+  (moyue--config-check-package etaf-install)
+  (moyue--config-check-package etaf-ui)
+  (moyue--config-check-package etaf-posframe)
+
   ;; Editing
   (moyue--config-check-package evil)
   (moyue--config-check-package which-key)
@@ -1206,7 +1242,35 @@ or `moyue doctor lsp' runs one family.  Any check that fails exits non-zero."
       (let ((name (intern (format "config/%s-%s"
                                   (plist-get requirement :kind)
                                   (plist-get requirement :id)))))
-        (should (ert-get-test name))))))
+        (should (ert-get-test name)))))
+
+  (ert-deftest moyue/package-archives-replay-adds-private-archives ()
+    "The archive replay applies both the mirrors and the `add-to-list' extras.
+A configuration can append an archive of its own, as init.org does for ETAF;
+`moyue install' has to see it, or the packages it publishes are not found."
+    (let* ((init (make-temp-file "moyue-init-" nil ".el"))
+           (package-archives nil)
+           (saved-mirror (and (boundp 'moyu/package-mirror)
+                              moyu/package-mirror)))
+      (unwind-protect
+          (progn
+            (with-temp-file init
+              (insert ";;; -*- lexical-binding: t; -*-
+\(defvar moyu/available-package-mirrors
+  '((default . ((\"melpa\" . \"https://melpa.org/packages/\")))))
+\(defvar moyu/used-package-mirror
+  (alist-get moyu/package-mirror moyu/available-package-mirrors))
+\(setq package-archives moyu/used-package-mirror)
+\(add-to-list 'package-archives '(\"etaf\" . \"https://etaf.top/packages/\") t)
+"))
+            (moyue--configure-package-archives-from-init init)
+            (should (equal (alist-get "melpa" package-archives nil nil #'equal)
+                           "https://melpa.org/packages/"))
+            (should (equal (alist-get "etaf" package-archives nil nil #'equal)
+                           "https://etaf.top/packages/")))
+        (delete-file init)
+        (when saved-mirror
+          (setq moyu/package-mirror saved-mirror))))))
 
 ;;;; ──────────────────────────────────────────────────────────────────────────
 ;;;; Optional extension: load the commands from bin/commands/*.el
