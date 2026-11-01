@@ -1445,7 +1445,7 @@ the archive; nothing is loaded at startup, and their autoloaded commands
 
 (use-package ekp
   :ensure t
-  :ping "etaf"
+  :pin "etaf"
   :defer t)
 #+end_src
 
