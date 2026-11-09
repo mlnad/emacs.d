@@ -260,16 +260,16 @@ The implementation is [[file:bin/commands/templates.el][bin/commands/templates.e
 
 * Docker
 The [[file:Dockerfile][Dockerfile]] builds a lean base image (Emacs + git + a C toolchain)
-for three distributions; the configuration itself is never baked in, it is
+for two distributions; the configuration itself is never baked in, it is
 mounted at run time.
 
-| Distribution | Base image         | Emacs package |
-|--------------+--------------------+---------------|
-| archlinux    | =archlinux:latest= | =emacs=       |
-| ubuntu       | =ubuntu:latest=    | =emacs-nox=   |
-| alpine       | =alpine:latest=    | =emacs-nox=   |
+| Distribution | Base image         | Emacs package | Integration tests |
+|--------------+--------------------+---------------+-------------------|
+| ubuntu       | =ubuntu:latest=    | =emacs-nox=   | yes               |
+| alpine       | =alpine:latest=    | =emacs-nox=   | no                |
 
-Arch Linux is the default everywhere.
+Ubuntu is the default. Alpine is kept as a build/run target only; the
+integration test suite runs on Ubuntu alone.
 
 ** dockemacs
 =Dockerfile= is driven by =bin/dockemacs=: build an image, run Emacs
@@ -277,19 +277,18 @@ interactively, or run the integration test suite inside it.
 #+begin_src shell
 bin/dockemacs build [DISTRO]                   # build moyue-base:DISTRO
 bin/dockemacs run   [DISTRO]                   # run terminal Emacs in that image
-bin/dockemacs itest [DISTRO|all] [--rebuild]   # install + test inside the image
+bin/dockemacs itest [DISTRO] [--rebuild]       # install + test inside the image
 bin/dockemacs distros                          # list the supported distributions
 #+end_src
 
 =itest= builds =moyue-base:DISTRO= on first use, then mounts the checkout
 read-only at =/mnt/emacs.d=, copies it into a writable tmpfs at
 =/root/.emacs.d= and runs =moyue install= + =moyue doctor= there, so the
-host tree is never modified:
+host tree is never modified. Only Ubuntu is accepted: =alpine= is a build/run
+target and the command rejects it.
 #+begin_src shell
-bin/dockemacs itest                # archlinux
-bin/dockemacs itest ubuntu
-bin/dockemacs itest alpine --rebuild
-bin/dockemacs itest all            # every distribution, in order
+bin/dockemacs itest                # ubuntu
+bin/dockemacs itest ubuntu --rebuild
 #+end_src
 
 Extra Docker arguments can be injected through the environment, which is useful

@@ -2,9 +2,10 @@
 #
 # dockemacs -- Docker front-end for the MoYu Emacs configuration.
 #
-# One Dockerfile, one image name, three distributions.  The configuration is
+# One Dockerfile, one image name, two distributions.  The configuration is
 # never baked into the image: `run' mounts the checkout, `itest' copies it into
-# a tmpfs and exercises `moyue install' / `moyue doctor' there.
+# a tmpfs and exercises `moyue install' / `moyue doctor' there.  Integration
+# tests are Ubuntu-only; Alpine is kept as a build/run target.
 #
 # This script is POSIX sh on purpose: it must work on a host that has Docker
 # but no Emacs, which an Emacs-side test runner could never cover.
@@ -12,8 +13,10 @@
 EMACSD_DIR=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 DOCKERFILE="$EMACSD_DIR/Dockerfile"
 IMAGE_NAME="moyue-base"
-DEFAULT_DISTRO="archlinux"
-DISTROS="archlinux ubuntu alpine"
+DEFAULT_DISTRO="ubuntu"
+DISTROS="ubuntu alpine"
+# Integration tests run on Ubuntu only; see is_itest_distro().
+ITEST_DISTRO="ubuntu"
 
 # Extra docker arguments, e.g. DOCKEMACS_BUILD_ARGS="--network=host".
 # Word splitting is intentional: the value is a whitespace-separated list.
@@ -26,18 +29,18 @@ usage() {
 Usage: dockemacs COMMAND [DISTRO]
 
 Commands:
-  build [DISTRO]        Build the Docker image for DISTRO (default: archlinux).
+  build [DISTRO]        Build the Docker image for DISTRO (default: ubuntu).
   run   [DISTRO]        Run terminal Emacs in the image for DISTRO.
-  itest [DISTRO|all]    Run `moyue install' + `moyue doctor' in the image.
-        [--rebuild]     Several DISTROs may be given; `all' means every one.
-                        --rebuild forces `docker build --no-cache'.
+  itest [DISTRO]        Run `moyue install' + `moyue doctor' in the image.
+        [--rebuild]     Integration tests are Ubuntu-only, so DISTRO must be
+                        omitted or `ubuntu'.  --rebuild forces
+                        `docker build --no-cache'.
   distros               List the supported distributions.
 
 Distributions:
-  DISTRO       BASE IMAGE
-  archlinux    archlinux:latest  (default)
-  ubuntu       ubuntu:latest
-  alpine       alpine:latest
+  DISTRO       BASE IMAGE          ITEST
+  ubuntu       ubuntu:latest        yes (default)
+  alpine       alpine:latest        no
 
 Environment:
   DOCKEMACS_BUILD_ARGS  extra arguments for `docker build'
@@ -46,12 +49,11 @@ Environment:
                         legacy aliases, used when the DOCKEMACS_* one is unset
 
 Examples:
-  dockemacs build                 # moyue-base:archlinux
-  dockemacs build ubuntu          # moyue-base:ubuntu
+  dockemacs build                 # moyue-base:ubuntu
+  dockemacs build alpine          # moyue-base:alpine
   dockemacs run alpine
-  dockemacs itest                 # archlinux
-  dockemacs itest all
-  dockemacs itest ubuntu alpine --rebuild
+  dockemacs itest                 # ubuntu
+  dockemacs itest ubuntu --rebuild
   DOCKEMACS_BUILD_ARGS=--network=host dockemacs build ubuntu
 EOF
 }
@@ -61,20 +63,24 @@ die() {
     exit 1
 }
 
-# Return 0 when DISTRO is supported.
+# Return 0 when DISTRO is supported for build/run.
 is_distro() {
     case "$1" in
-        archlinux|ubuntu|alpine) return 0 ;;
-        *)                       return 1 ;;
+        ubuntu|alpine) return 0 ;;
+        *)             return 1 ;;
     esac
+}
+
+# Return 0 when DISTRO is supported by the integration tests.
+is_itest_distro() {
+    [ "$1" = "$ITEST_DISTRO" ]
 }
 
 # Echo the Docker Hub base image that backs DISTRO.
 base_image() {
     case "$1" in
-        archlinux) echo "archlinux:latest" ;;
-        ubuntu)    echo "ubuntu:latest" ;;
-        alpine)    echo "alpine:latest" ;;
+        ubuntu) echo "ubuntu:latest" ;;
+        alpine) echo "alpine:latest" ;;
     esac
 }
 
@@ -128,64 +134,43 @@ itest_run() {  # itest_run DISTRO
         "$_ir_image" sh -c "$(itest_container_command)"
 }
 
-# Append DISTRO to ITEST_LIST unless it is already there.
-add_itest_distro() {
-    case " $ITEST_LIST " in
-        *" $1 "*) : ;;
-        *) ITEST_LIST="${ITEST_LIST:+$ITEST_LIST }$1" ;;
-    esac
-}
-
 cmd_itest() {
-    ITEST_LIST=""
+    _it_distro=$ITEST_DISTRO
     _it_rebuild=0
     while [ "$#" -gt 0 ]; do
         case "$1" in
             --rebuild|-r)
                 _it_rebuild=1 ;;
-            --all|-a|all)
-                for _it_d in $DISTROS; do add_itest_distro "$_it_d"; done ;;
             -*)
                 die "unknown option '$1'" ;;
             *)
-                is_distro "$1" || \
-                    die "unsupported distribution '$1' (supported: $DISTROS, all)"
-                add_itest_distro "$1" ;;
+                is_itest_distro "$1" || \
+                    die "unsupported integration-test distribution '$1' (supported: $ITEST_DISTRO)"
+                _it_distro=$1 ;;
         esac
         shift
     done
-    [ -n "$ITEST_LIST" ] || ITEST_LIST=$DEFAULT_DISTRO
 
-    _it_failed=""
-    for _it_d in $ITEST_LIST; do
-        _it_image=$(image_name "$_it_d")
-        echo ""
-        echo "=== itest: $_it_d ($(base_image "$_it_d")) ==="
-        _it_ok=1
-        if [ "$_it_rebuild" = 1 ] || ! image_exists "$_it_image"; then
-            if [ "$_it_rebuild" = 1 ]; then
-                build_image "$_it_d" --no-cache || _it_ok=0
-            else
-                build_image "$_it_d" || _it_ok=0
-            fi
-            [ "$_it_ok" = 1 ] || echo "itest: docker build failed for $_it_d" >&2
-        fi
-        if [ "$_it_ok" = 1 ]; then
-            itest_run "$_it_d" || {
-                _it_ok=0
-                echo "itest: TESTS FAILED for $_it_d" >&2
-            }
-        fi
-        [ "$_it_ok" = 1 ] || _it_failed="${_it_failed:+$_it_failed }$_it_d"
-    done
-
-    if [ -n "$_it_failed" ]; then
-        echo ""
-        echo "itest: FAILED: $_it_failed" >&2
-        exit 1
-    fi
+    _it_image=$(image_name "$_it_distro")
     echo ""
-    echo "itest: ALL TESTS PASSED ($ITEST_LIST)"
+    echo "=== itest: $_it_distro ($(base_image "$_it_distro")) ==="
+    if [ "$_it_rebuild" = 1 ] || ! image_exists "$_it_image"; then
+        _it_build_args=""
+        if [ "$_it_rebuild" = 1 ]; then
+            _it_build_args="--no-cache"
+        fi
+        # shellcheck disable=SC2086
+        build_image "$_it_distro" $_it_build_args || {
+            echo "itest: docker build failed for $_it_distro" >&2
+            exit 1
+        }
+    fi
+    itest_run "$_it_distro" || {
+        echo "itest: TESTS FAILED for $_it_distro" >&2
+        exit 1
+    }
+    echo ""
+    echo "itest: ALL TESTS PASSED ($_it_distro)"
 }
 
 if [ "$#" -lt 1 ]; then
