@@ -126,6 +126,7 @@ be overwrited by user configuration in `.cache/userconfig` file.
 | package-mirror   | 'default                  |
 | ai-provider      | deepseek-flash            |
 | ai-api-key       | 'nil                      |
+| dsh-api-key      | 'nil                      |
 
 #+begin_src emacs-lisp :var vars=default-vars :tangle yes
 (mapc (lambda (row)
@@ -865,6 +866,31 @@ API as-is, so they need to be updated when a provider retires one.
             moyu/ai-provider)))
   ;; Scroll the chat buffer as the response streams in.
   (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll))
+#+end_src
+
+DSH (DeepSeek Harness) is a separate agent runtime, not an in-process Elisp
+package.  Install it with =moyue dsh install=; that command installs the
+self-contained DSH runtime and the =engineer=/=ask= profiles under
+=~/.emacs.d/.cache/dsh=, so Emacs does not depend on a system Node.js.  The
+client in =lisp/dsh.el= exposes two =agent-shell= agents: =dsh-engineer= for
+project work and =dsh-ask= for read-only Q&A.  Each project gets its own
+=DSH_HOME= under =.cache/dsh/projects/<id>/home= (separate sessions, settings
+and caches; installed profiles are shared), and DSH runs with the project root
+as its workspace.
+
+The API key comes from =moyu/dsh-api-key= when set; otherwise from
+=DEEPSEEK_API_KEY=; otherwise from =moyu/ai-api-key= when =moyu/ai-provider=
+selects a DeepSeek provider.
+
+#+begin_src emacs-lisp :tangle yes
+(use-package agent-shell
+  :ensure t
+  :defer t)
+
+(use-package dsh
+  :config
+  ;; Same directory as `moyue dsh install' uses by default.
+  (setq dsh-cache-directory (moyu/cache-it "dsh/")))
 #+end_src
 
 ** Debug
